@@ -10,6 +10,8 @@ namespace FlaxEngine.GUI
     /// <seealso cref="FlaxEngine.GUI.ScrollableControl" />
     public class Panel : ScrollableControl
     {
+	    private bool _layoutChanged;
+
         /// <summary>
         /// The scroll right corner. Used to scroll contents of the panel control.
         /// </summary>
@@ -227,8 +229,25 @@ namespace FlaxEngine.GUI
             base.AddChildInternal(child);
             PerformLayout();
         }
+		
+	    /// <inheritdoc />
+	    public override void PerformLayout(bool force = false)
+	    {
+		    if (!IsLayoutLocked)
+		    {
+			    _layoutChanged = false;
+		    }
 
-        /// <inheritdoc />
+		    base.PerformLayout(force);
+			
+		    if (!IsLayoutLocked && _layoutChanged)
+		    {
+			    _layoutChanged = false;
+				PerformLayout(true);
+		    }
+	    }
+
+	    /// <inheritdoc />
         protected override void PerformLayoutSelf()
         {
             const float ScrollSpaceLeft = 0.1f;
@@ -246,9 +265,10 @@ namespace FlaxEngine.GUI
                 {
                     // Set scroll bar visibility 
                     VScrollBar.Visible = vScrollEnabled;
+	                _layoutChanged = true;
 
-                    // Clear scroll state
-                    VScrollBar.Reset();
+					// Clear scroll state
+					VScrollBar.Reset();
                     _viewOffset.Y = 0;
 
                     // Update
@@ -269,9 +289,10 @@ namespace FlaxEngine.GUI
                 {
                     // Set scroll bar visibility 
                     HScrollBar.Visible = hScrollEnabled;
+	                _layoutChanged = true;
 
-                    // Clear scroll state
-                    HScrollBar.Reset();
+					// Clear scroll state
+					HScrollBar.Reset();
 
                     _viewOffset.X = 0;
 
@@ -315,5 +336,62 @@ namespace FlaxEngine.GUI
         {
             base.PerformLayoutSelf();
         }
+
+	    /// <inheritdoc />
+	    public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
+	    {
+		    var result = base.OnDragMove(ref location, data);
+
+		    // Auto scroll when using drag and drop
+			//if (result == DragDropEffect.None)
+		    {
+			    float width = Width;
+			    float height = Height;
+			    float MinSize = 70;
+			    float AreaSize = 25;
+			    float MoveScale = 4.0f;
+			    Vector2 viewOffset = -_viewOffset;
+
+			    if (VScrollBar != null && VScrollBar.Visible && height > MinSize)
+			    {
+				    if (new Rectangle(0, 0, width, AreaSize).Contains(ref location))
+				    {
+					    viewOffset.Y -= MoveScale;
+				    }
+				    else if (new Rectangle(0, height - AreaSize, width, AreaSize).Contains(ref location))
+				    {
+					    viewOffset.Y += MoveScale;
+				    }
+
+				    viewOffset.Y = Mathf.Clamp(viewOffset.Y, VScrollBar.Minimum, VScrollBar.Maximum);
+				    VScrollBar.Value = viewOffset.Y;
+				}
+
+			    if (HScrollBar != null && HScrollBar.Visible && width > MinSize)
+			    {
+				    if (new Rectangle(0, 0, AreaSize, height).Contains(ref location))
+				    {
+					    viewOffset.X -= MoveScale;
+				    }
+				    else if (new Rectangle(width - AreaSize, 0, AreaSize, height).Contains(ref location))
+				    {
+					    viewOffset.X += MoveScale;
+				    }
+
+				    viewOffset.X = Mathf.Clamp(viewOffset.X, HScrollBar.Minimum, HScrollBar.Maximum);
+				    HScrollBar.Value = viewOffset.X;
+			    }
+
+			    viewOffset *= -1;
+
+				if (viewOffset != _viewOffset)
+			    {
+				    _viewOffset = viewOffset;
+				    PerformLayout();
+			    }
+		    }
+
+		    return result;
+	    }
     }
 }

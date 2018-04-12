@@ -35,6 +35,7 @@ namespace FlaxEditor
         private readonly List<EditorModule> _modules = new List<EditorModule>(16);
         private bool _isAfterInit, _isHeadlessMode;
         private ProjectInfo _projectInfo;
+	    private string _projectToOpen;
 
         /// <summary>
         /// Gets a value indicating whether Flax Engine is the best in the world.
@@ -302,6 +303,15 @@ namespace FlaxEditor
 
             ScriptsBuilder.ScriptsReloadBegin -= ScriptsBuilder_ScriptsReloadBegin;
             ScriptsBuilder.ScriptsReloadEnd -= ScriptsBuilder_ScriptsReloadEnd;
+
+			// Invoke new instance if need to open a project
+	        if (!string.IsNullOrEmpty(_projectToOpen))
+	        {
+		        string editorExePath = Globals.StartupPath + "/Win64/FlaxEditor.exe";
+		        string args = string.Format("-project \"{0}\"", _projectToOpen);
+		        _projectToOpen = null;
+				Application.StartProcess(editorExePath, args);
+	        }
         }
 
         /// <summary>
@@ -343,7 +353,25 @@ namespace FlaxEditor
             }
         }
 
-        /// <summary>
+	    /// <summary>
+	    /// Closes this project with running editor and opens the given project.
+	    /// </summary>
+	    /// <param name="projectFilePath">The project file path.</param>
+	    public void OpenProject(string projectFilePath)
+	    {
+		    if (projectFilePath == null || !System.IO.File.Exists(projectFilePath))
+		    {
+			    // Error
+			    MessageBox.Show("Missing project");
+			    return;
+		    }
+			
+		    // Cache project path and start editor exit (it will open new instance on valid closing)
+		    _projectToOpen = StringUtils.NormalizePath(System.IO.Path.GetDirectoryName(projectFilePath));
+		    Windows.MainWindow.Close(ClosingReason.User);
+	    }
+
+	    /// <summary>
         /// Ensure that editor is in a given state, otherwise throws <see cref="InvalidStateException"/>.
         /// </summary>
         /// <param name="state">Valid state to check.</param>
@@ -489,16 +517,40 @@ namespace FlaxEditor
 #endif
         }
 
-        /// <summary>
-        /// Serializes the given object to json asset.
-        /// </summary>
-        /// <param name="outputPath">The result asset file path.</param>
-        /// <param name="obj">The obj to serialize.</param>
-        /// <returns>True if saving failed, otherwise false.</returns>
+	    /// <summary>
+	    /// Imports the audio asset file to the target location.
+	    /// </summary>
+	    /// <param name="inputPath">The source file path.</param>
+	    /// <param name="outputPath">The result asset file path.</param>
+	    /// <param name="settings">The settings.</param>
+	    /// <returns>True if importing failed, otherwise false.</returns>
 #if UNIT_TEST_COMPILANT
 		[Obsolete("Unit tests, don't support methods calls.")]
 #endif
-        [UnmanagedCall]
+	    [UnmanagedCall]
+	    public static bool Import(string inputPath, string outputPath, AudioImportSettings settings)
+	    {
+		    if (settings == null)
+			    throw new ArgumentNullException();
+#if UNIT_TEST_COMPILANT
+			throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+#else
+		    AudioImportSettings.InternalOptions internalOptions;
+		    settings.ToInternal(out internalOptions);
+		    return Internal_ImportAudio(inputPath, outputPath, ref internalOptions);
+#endif
+	    }
+
+		/// <summary>
+		/// Serializes the given object to json asset.
+		/// </summary>
+		/// <param name="outputPath">The result asset file path.</param>
+		/// <param name="obj">The obj to serialize.</param>
+		/// <returns>True if saving failed, otherwise false.</returns>
+#if UNIT_TEST_COMPILANT
+		[Obsolete("Unit tests, don't support methods calls.")]
+#endif
+		[UnmanagedCall]
         public static bool SaveJsonAsset(string outputPath, object obj)
         {
             if (obj == null)
@@ -817,7 +869,13 @@ namespace FlaxEditor
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern bool Internal_ImportModel(string inputPath, string outputPath, ref ModelImportSettings.InternalOptions options);
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
+	    [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern bool Internal_ImportAudio(string inputPath, string outputPath, ref AudioImportSettings.InternalOptions options);
+
+	    [MethodImpl(MethodImplOptions.InternalCall)]
+	    internal static extern void Internal_GetAudioClipMetadata(IntPtr obj, out int originalSize, out int importedSize);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern bool Internal_SaveJsonAsset(string outputPath, string data, string typename);
 
         [MethodImpl(MethodImplOptions.InternalCall)]

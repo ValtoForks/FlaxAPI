@@ -121,6 +121,7 @@ namespace FlaxEditor.Modules
 
 		internal Sprite FolderClosed12;
 		internal Sprite FolderOpened12;
+		internal Sprite DragBar12;
 
 		internal UIModule(Editor editor)
 			: base(editor)
@@ -372,6 +373,7 @@ namespace FlaxEditor.Modules
 			// Cache icons
 			FolderClosed12 = GetIcon("FolderClosed12");
 			FolderOpened12 = GetIcon("FolderOpened12");
+			DragBar12 = GetIcon("DragBar12");
 			VisjectSurfaceBackground = FlaxEngine.Content.LoadAsyncInternal<Texture>("Editor/VisjectSurface");
 
 			// Set as default
@@ -394,6 +396,8 @@ namespace FlaxEditor.Modules
 			cm.AddButton("Open Visual Studio project", ScriptsBuilder.OpenSolution);
 			cm.AddButton("Regenerate solution file", () => ScriptsBuilder.GenerateProject(true, true));
 			cm.AddButton("Recompile scripts", ScriptsBuilder.Compile);
+			cm.AddSeparator();
+			cm.AddButton("Open project...", OpenProject);
 			cm.AddSeparator();
 			if (Editor.IsDevInstance())
 			{
@@ -546,6 +550,16 @@ namespace FlaxEditor.Modules
 		{
 			// Dock Panel
 			MasterPanel.Parent = mainWindow;
+		}
+
+		private void OpenProject()
+		{
+			// Ask user to select project file
+			var files = MessageBox.OpenFileDialog(Editor.Windows.MainWindow, null, "Project files (Project.xml)\0Project.xml\0All files (*.*)\0*.*\0", false, "Select project file");
+			if (files != null && files.Length > 0)
+			{
+				Editor.OpenProject(files[0]);
+			}
 		}
 		
 		private void OnMenuFileShowHide(Control control)

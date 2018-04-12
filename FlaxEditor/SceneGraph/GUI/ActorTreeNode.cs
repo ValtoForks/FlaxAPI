@@ -18,7 +18,6 @@ namespace FlaxEditor.SceneGraph.GUI
     /// <seealso cref="FlaxEngine.GUI.TreeNode" />
     public class ActorTreeNode : TreeNode
     {
-        private bool _isActive;
         private int _orderInParent;
         private DragActors _dragActors;
         private DragAssets _dragAssets;
@@ -52,22 +51,15 @@ namespace FlaxEditor.SceneGraph.GUI
             _actorNode = node;
             if (node.Actor != null)
             {
-                _isActive = node.Actor.IsActive;
                 _orderInParent = node.Actor.OrderInParent;
             }
             else
             {
-                _isActive = true;
                 _orderInParent = 0;
             }
             UpdateText();
         }
-
-        internal void OnActiveChanged()
-        {
-            _isActive = _actorNode.Actor.IsActive;
-        }
-
+		
         internal void OnOrderInParentChanged()
         {
             if (Parent is ActorTreeNode parent)
@@ -114,7 +106,7 @@ namespace FlaxEditor.SceneGraph.GUI
             if (Parent is ActorTreeNode parent)
             {
                 var style = Style.Current;
-                bool isActive = parent._isActive && _isActive;
+                bool isActive = Actor?.IsActiveInHierarchy ?? true;
                 if (!isActive)
                 {
                     // Inactive
@@ -336,8 +328,18 @@ namespace FlaxEditor.SceneGraph.GUI
 
                             break;
                         }
-
-                        case ContentDomain.Prefab:
+	                    case ContentDomain.Audio:
+	                    {
+			                var actor = AudioSource.New();
+			                actor.StaticFlags = Actor.StaticFlags;
+			                actor.Name = item.ShortName;
+			                actor.Clip = FlaxEngine.Content.LoadAsync<AudioClip>(item.ID);
+			                actor.Transform = Actor.Transform;
+			                Editor.Instance.SceneEditing.Spawn(actor, Actor);
+							
+		                    break;
+	                    }
+						case ContentDomain.Prefab:
                         {
                             throw new NotImplementedException("Spawning prefabs");
                         }
@@ -397,6 +399,7 @@ namespace FlaxEditor.SceneGraph.GUI
             switch (item.ItemDomain)
             {
                 case ContentDomain.Model:
+                case ContentDomain.Audio:
                 case ContentDomain.Prefab: return true;
                 case ContentDomain.Other:
                 {

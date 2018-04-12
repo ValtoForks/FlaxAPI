@@ -185,8 +185,8 @@ namespace FlaxEngine.GUI
             // Check if drag is over
             if (IsDragOver)
             {
-                // Speed up an animation
-                _animationProgress = 1.0f;
+				// Speed up an animation
+				_animationProgress = 1.0f;
             }
 
             // Update
@@ -413,7 +413,7 @@ namespace FlaxEngine.GUI
 
             // Check for long press
             const float longPressTimeSeconds = 0.6f;
-            if (_isMouseDown && Time.UnscaledTime - _mouseDownTime > longPressTimeSeconds)
+            if (_isMouseDown && Time.UnscaledGameTime - _mouseDownTime > longPressTimeSeconds)
             {
                 OnLongPress();
             }
@@ -510,7 +510,7 @@ namespace FlaxEngine.GUI
                 {
                     _isMouseDown = true;
                     _mouseDownPos = location;
-                    _mouseDownTime = Time.UnscaledTime;
+                    _mouseDownTime = Time.UnscaledGameTime;
                 }
 
                 // Handled
@@ -758,7 +758,7 @@ namespace FlaxEngine.GUI
                     {
                         // Expand node
                         Expand();
-                    }
+					}
 
                     if (!_isDragOverHeader)
                         result = OnDragEnterHeader(data);
@@ -836,8 +836,10 @@ namespace FlaxEngine.GUI
         /// <inheritdoc />
         protected override void PerformLayoutSelf()
         {
-            // Prepare
-            float y = DefaultHeaderHeight;
+	        _cachedTextColor = CacheTextColor();
+
+			// Prepare
+			float y = DefaultHeaderHeight;
             float height = DefaultHeaderHeight;
             float xOffset = _xOffset + 12;
             if (Parent is Tree tree)

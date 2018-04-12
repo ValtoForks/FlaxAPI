@@ -37,7 +37,7 @@
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Tools\Bin\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -46,6 +46,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Actors\AudioListener.cs" />
+    <Compile Include="API\Actors\AudioListener.Gen.cs" />
+    <Compile Include="API\Actors\AudioSource.cs" />
+    <Compile Include="API\Actors\AudioSource.Gen.cs" />
     <Compile Include="API\Actors\BoxBrush.cs" />
     <Compile Include="API\Actors\BoxBrush.Gen.cs">
       <DependentUpon>BoxBrush.cs</DependentUpon>
@@ -67,8 +71,6 @@
     <Compile Include="API\Actors\Joint.Gen.cs" />
     <Compile Include="API\Actors\Light.cs" />
     <Compile Include="API\Actors\Light.Gen.cs" />
-    <Compile Include="API\Actors\LightActor.cs" />
-    <Compile Include="API\Actors\LightActor.Gen.cs" />
     <Compile Include="API\Actors\ModelActor.cs" />
     <Compile Include="API\Actors\ModelActor.Gen.cs">
       <DependentUpon>ModelActor.cs</DependentUpon>
@@ -93,6 +95,8 @@
     <Compile Include="API\Assets\BinaryAsset.Gen.cs" />
     <Compile Include="API\Assets\JsonAsset.cs" />
     <Compile Include="API\Assets\JsonAsset.Gen.cs" />
+    <Compile Include="API\BinaryAssets\AudioClip.cs" />
+    <Compile Include="API\BinaryAssets\AudioClip.Gen.cs" />
     <Compile Include="API\BinaryAssets\CollisionData.cs" />
     <Compile Include="API\BinaryAssets\CollisionData.Gen.cs" />
     <Compile Include="API\BinaryAssets\FontAsset.cs" />
@@ -168,6 +172,8 @@
     <Compile Include="API\Objects\Window.Gen.cs" />
     <Compile Include="API\Static\Application.cs" />
     <Compile Include="API\Static\Application.Gen.cs" />
+    <Compile Include="API\Static\Audio.cs" />
+    <Compile Include="API\Static\Audio.Gen.cs" />
     <Compile Include="API\Static\Content.cs" />
     <Compile Include="API\Static\Content.Gen.cs">
       <DependentUpon>Content.cs</DependentUpon>
@@ -188,6 +194,8 @@
     <Compile Include="API\Static\MessageBox.Gen.cs" />
     <Compile Include="API\Static\Physics.cs" />
     <Compile Include="API\Static\Physics.Gen.cs" />
+    <Compile Include="API\Static\Profiler.cs" />
+    <Compile Include="API\Static\Profiler.Gen.cs" />
     <Compile Include="API\Static\Render2D.cs" />
     <Compile Include="API\Static\Render2D.Gen.cs">
       <DependentUpon>Render2D.cs</DependentUpon>
@@ -226,6 +234,7 @@
     <Compile Include="Attributes\Editor\TooltipAttribute.cs" />
     <Compile Include="Attributes\UnmanagedCallAttribute.cs" />
     <Compile Include="Configurations\PersistentDataConfig.cs" />
+    <Compile Include="Engine\AudioDevice.cs" />
     <Compile Include="Engine\BrushSurface.cs" />
     <Compile Include="Engine\Collision.cs" />
     <Compile Include="Engine\ContactPoint.cs" />
@@ -411,9 +420,6 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">

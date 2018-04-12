@@ -15,7 +15,12 @@ namespace FlaxEditor.Windows
     /// <seealso cref="FlaxEditor.Windows.EditorWindow" />
     public class ToolboxWindow : EditorWindow
     {
-        /// <summary>
+		/// <summary>
+		/// Gets the tabs control used by this window. Can be used to add custom toolbox modes.
+		/// </summary>
+		public Tabs TabsControl { get; private set; }
+
+	    /// <summary>
         /// Initializes a new instance of the <see cref="ToolboxWindow"/> class.
         /// </summary>
         /// <param name="editor">The editor.</param>
@@ -28,22 +33,28 @@ namespace FlaxEditor.Windows
         /// <inheritdoc />
         public override void OnInit()
         {
-            var tabs = new Tabs
+	        TabsControl = new Tabs
             {
                 DockStyle = DockStyle.Fill,
                 TabsSize = new Vector2(48, 48),
                 Parent = this
             };
 
-            InitSpawnTab(tabs);
-            InitPaintTab(tabs);
-            InitFoliageTab(tabs);
-            InitCarveTab(tabs);
+            InitSpawnTab(TabsControl);
+            InitPaintTab(TabsControl);
+            InitFoliageTab(TabsControl);
+            InitCarveTab(TabsControl);
 
-            tabs.SelectedTabIndex = 0;
-        }
+	        TabsControl.SelectedTabIndex = 0;
+	        TabsControl.SelectedTabChanged += OnSelectedTabChanged;
+		}
 
-        private void InitSpawnTab(Tabs tabs)
+	    private void OnSelectedTabChanged(Tabs tabs)
+	    {
+		    // TODO: send proper event and adapt the editor to the current mode (hide gizmos, etc.)
+	    }
+
+	    private void InitSpawnTab(Tabs tabs)
         {
             var spawnTab = tabs.AddTab(new Tab(string.Empty, Editor.UI.GetIcon("Add48")));
             var actorGroups = new Tabs
@@ -89,8 +100,10 @@ namespace FlaxEditor.Windows
             groupPhysics.AddChild(CreateActorItem("Hinge Joint", typeof(HingeJoint)));
             groupPhysics.AddChild(CreateActorItem("D6 Joint", typeof(D6Joint)));
 
-            var groupCsg = createGroupWithList(actorGroups, "CSG");
-            groupCsg.AddChild(CreateActorItem("Box Brush", typeof(BoxBrush)));
+            var groupOther = createGroupWithList(actorGroups, "Other");
+            groupOther.AddChild(CreateActorItem("CSG Box Brush", typeof(BoxBrush)));
+            groupOther.AddChild(CreateActorItem("Audio Source", typeof(AudioSource)));
+            groupOther.AddChild(CreateActorItem("Audio Listner", typeof(AudioListener)));
             
             var groupGui = createGroupWithList(actorGroups, "GUI");
 	        groupGui.AddChild(CreateActorItem("Text Render", typeof(TextRender)));

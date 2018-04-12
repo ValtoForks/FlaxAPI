@@ -4,7 +4,7 @@
 
 namespace FlaxEngine
 {
-	public abstract partial class LightActor
+	public sealed partial class AudioListener
 	{
 	}
 }

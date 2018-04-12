@@ -453,7 +453,7 @@ namespace FlaxEngine.Rendering
 		/// <summary>
 		/// Gets or sets the bloom blur sigma parameter.
 		/// </summary>
-		[NoSerialize, EditorOrder(203), EditorDisplay("Bloom", "BlurSigma")]
+		[NoSerialize, EditorOrder(203), EditorDisplay("Bloom", "Blur Sigma")]
 		public float Bloom_BlurSigma
 		{
 			get => data.Bloom_BlurSigma;
@@ -1715,7 +1715,7 @@ namespace FlaxEngine.Rendering
 		/// <summary>
 		/// Gets the post effect materials collection.
 		/// </summary>
-		[NoSerialize, EditorOrder(10000), EditorDisplay("PostFx Materials", "__inline__"), Tooltip("Post effect materials to render")]
+		[NoSerialize, EditorOrder(10000), EditorDisplay("PostFx Materials", EditorDisplayAttribute.InlineStyle), Tooltip("Post effect materials to render")]
 		public unsafe MaterialBase[] PostFxMaterials
 		{
 			get

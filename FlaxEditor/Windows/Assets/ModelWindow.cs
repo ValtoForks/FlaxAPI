@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Xml;
 using FlaxEditor.Content;
 using FlaxEditor.Content.Import;
 using FlaxEditor.CustomEditors;
@@ -33,7 +34,7 @@ namespace FlaxEditor.Windows.Assets
         /// </summary>
         private sealed class PropertiesProxy
         {
-            [EditorOrder(10), EditorDisplay("Materials", "__inline__"), MemberCollection(CanReorderItems = true, NotNullItems = true, ReadOnly = true)]
+            [EditorOrder(10), EditorDisplay("Materials", EditorDisplayAttribute.InlineStyle), MemberCollection(CanReorderItems = true, NotNullItems = true, ReadOnly = true)]
             public MaterialSlot[] MaterialSlots
             {
                 get => Asset?.MaterialSlots;
@@ -256,13 +257,13 @@ namespace FlaxEditor.Windows.Assets
                             // Isolate
                             var isolate = group.Checkbox("Isolate", "Shows only this mesh (and meshes using the same material slot)");
                             isolate.CheckBox.Tag = mesh;
-                            isolate.CheckBox.CheckChanged += () => proxy.SetIsolate(isolate.CheckBox.Checked ? (Mesh)isolate.CheckBox.Tag : null);
+                            isolate.CheckBox.CheckChanged += (box) => proxy.SetIsolate(box.Checked ? (Mesh)box.Tag : null);
                             proxy._isolateCheckBoxes.Add(isolate.CheckBox);
 
                             // Highlight
                             var highlight = group.Checkbox("Highlight", "Highlights this mesh with a tint color (and meshes using the same material slot)");
                             highlight.CheckBox.Tag = mesh;
-                            highlight.CheckBox.CheckChanged += () => proxy.SetHighlight(highlight.CheckBox.Checked ? (Mesh)highlight.CheckBox.Tag : null);
+                            highlight.CheckBox.CheckChanged += (box) => proxy.SetHighlight(box.Checked ? (Mesh)box.Tag : null);
                             proxy._highlightCheckBoxes.Add(highlight.CheckBox);
                         }
                     }
@@ -286,8 +287,8 @@ namespace FlaxEditor.Windows.Assets
             }
         }
 
-
-        private readonly ModelPreview _preview;
+	    private readonly SplitPanel _split;
+		private readonly ModelPreview _preview;
         private readonly CustomEditorPresenter _propertiesPresenter;
         private readonly PropertiesProxy _properties;
 	    private readonly ToolStripButton _saveButton;
@@ -306,7 +307,7 @@ namespace FlaxEditor.Windows.Assets
 			//_toolstrip.AddButton(editor.UI.GetIcon("UV32"), () => {CacheMeshData(); _uvDebugIndex++; if (_uvDebugIndex >= 2) _uvDebugIndex = -1; }).LinkTooltip("Show model UVs (toggles across all channels)"); // TODO: support gather mesh data
             
             // Split Panel
-            var splitPanel = new SplitPanel(Orientation.Horizontal, ScrollBars.None, ScrollBars.Vertical)
+            _split = new SplitPanel(Orientation.Horizontal, ScrollBars.None, ScrollBars.Vertical)
             {
                 DockStyle = DockStyle.Fill,
                 SplitterValue = 0.7f,
@@ -316,12 +317,12 @@ namespace FlaxEditor.Windows.Assets
             // Model preview
             _preview = new ModelPreview(true)
             {
-                Parent = splitPanel.Panel1
+                Parent = _split.Panel1
             };
 
             // Model properties
             _propertiesPresenter = new CustomEditorPresenter(null);
-            _propertiesPresenter.Panel.Parent = splitPanel.Panel2;
+            _propertiesPresenter.Panel.Parent = _split.Panel2;
             _properties = new PropertiesProxy();
             _propertiesPresenter.Select(_properties);
             _propertiesPresenter.Modified += MarkAsEdited;
@@ -475,5 +476,29 @@ namespace FlaxEditor.Windows.Assets
 
             FlaxEngine.Object.Destroy(ref _highlightActor);
         }
-    }
+
+	    /// <inheritdoc />
+	    public override bool UseLayoutData => true;
+
+	    /// <inheritdoc />
+	    public override void OnLayoutSerialize(XmlWriter writer)
+	    {
+		    writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
+	    }
+
+	    /// <inheritdoc />
+	    public override void OnLayoutDeserialize(XmlElement node)
+	    {
+		    float value1;
+
+		    if (float.TryParse(node.GetAttribute("Split"), out value1))
+			    _split.SplitterValue = value1;
+	    }
+
+	    /// <inheritdoc />
+	    public override void OnLayoutDeserialize()
+	    {
+		    _split.SplitterValue = 0.7f;
+	    }
+	}
 }
