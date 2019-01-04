@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -47,7 +45,7 @@ namespace FlaxEngine
         /// </summary>
         /// <param name="logType"></param>
         /// <returns>
-        /// <para>Retrun true in case logs of LogType will be logged otherwise returns false.</para>
+        /// <para>Return true in case logs of LogType will be logged otherwise returns false.</para>
         /// </returns>
         bool IsLogTypeAllowed(LogType logType);
 
@@ -147,7 +145,7 @@ namespace FlaxEngine
         /// <param name="message"></param>
         /// <param name="context"></param>
         void LogWarning(string tag, object message, Object context);
-        
+
         /// <summary>
         /// <para>A variant of ILogHandler.LogFormat that logs an exception message.</para>
         /// </summary>

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -78,6 +76,11 @@ namespace FlaxEditor.Surface
         /// Axis aligned bounding box(two Vector3s)
         /// </summary>
         Box = 1 << 11,
+
+        /// <summary>
+        /// Digital signal (secondary)
+        /// </summary>
+        ImpulseSecondary = 1 << 12,
 
         /// <summary>
         /// Bool, Int, Float

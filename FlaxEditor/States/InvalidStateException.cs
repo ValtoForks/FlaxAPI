@@ -1,4 +1,4 @@
-﻿// Flax Engine scripting API
+﻿// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -15,7 +15,7 @@ namespace FlaxEditor.States
         /// </summary>
         /// <param name="msg">The message.</param>
         public InvalidStateException(string msg)
-            : base(msg)
+        : base(msg)
         {
         }
     }

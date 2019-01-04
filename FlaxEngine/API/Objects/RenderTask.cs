@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -45,12 +43,21 @@ namespace FlaxEngine.Rendering
         [StructLayout(LayoutKind.Sequential)]
         internal struct DrawCall
         {
+            public enum Types : byte
+            {
+                Mesh,
+                TerrainChunk,
+            }
+
             public StaticFlags Flags;
             public int LodIndex;
-            public int MeshIndex;
-            public int Padding;
-            public IntPtr AssetModel;
-            public IntPtr AssetMaterialBase;
+            public Int2 Index0;
+            public Int2 Index1;
+            public Types Type;
+            public byte Padding0;
+            public short Padding1;
+            public IntPtr Object;
+            public IntPtr Material;
             public Matrix World;
         }
 

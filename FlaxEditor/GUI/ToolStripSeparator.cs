@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -18,7 +16,7 @@ namespace FlaxEditor.GUI
         /// </summary>
         /// <param name="height">The height.</param>
         public ToolStripSeparator(float height)
-            : base(0, 0, 4, height)
+        : base(0, 0, 4, height)
         {
             CanFocus = false;
         }

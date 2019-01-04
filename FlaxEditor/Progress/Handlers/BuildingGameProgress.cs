@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -35,17 +33,17 @@ namespace FlaxEditor.Progress.Handlers
         {
             switch (eventType)
             {
-                case GameCooker.EventType.BuildStarted:
-                    OnStart();
-                    OnUpdate(0, "Starting building game..");
-                    break;
-                case GameCooker.EventType.BuildFailed:
-                    OnEnd();
-                    break;
-                case GameCooker.EventType.BuildDone:
-                    OnEnd();
-                    break;
-                default: throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null);
+            case GameCooker.EventType.BuildStarted:
+                OnStart();
+                OnUpdate(0, "Starting building game..");
+                break;
+            case GameCooker.EventType.BuildFailed:
+                OnEnd();
+                break;
+            case GameCooker.EventType.BuildDone:
+                OnEnd();
+                break;
+            default: throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null);
             }
         }
     }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
@@ -11,7 +9,7 @@ namespace FlaxEditor.CustomEditors
     /// Custom <see cref="ValueContainer"/> for <see cref="IDictionary"/>.
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.ValueContainer" />
-    public sealed class DictionaryValueContainer : ValueContainer
+    public class DictionaryValueContainer : ValueContainer
     {
         /// <summary>
         /// The key in the collection.
@@ -24,7 +22,7 @@ namespace FlaxEditor.CustomEditors
         /// <param name="elementType">Type of the collection elements.</param>
         /// <param name="key">The key.</param>
         public DictionaryValueContainer(Type elementType, object key)
-            : base(null, elementType)
+        : base(null, elementType)
         {
             Key = key;
         }
@@ -36,13 +34,23 @@ namespace FlaxEditor.CustomEditors
         /// <param name="key">The key.</param>
         /// <param name="values">The collection values.</param>
         public DictionaryValueContainer(Type elementType, object key, ValueContainer values)
-            : this(elementType, key)
+        : this(elementType, key)
         {
             Capacity = values.Count;
             for (int i = 0; i < values.Count; i++)
             {
                 var v = (IDictionary)values[i];
                 Add(v[Key]);
+            }
+
+            if (values.HasReferenceValue)
+            {
+                var v = (IDictionary)values.ReferenceValue;
+                if (v.Contains(key))
+                {
+                    _referenceValue = v[key];
+                    _hasReferenceValue = true;
+                }
             }
         }
 
@@ -83,6 +91,16 @@ namespace FlaxEditor.CustomEditors
             {
                 var v = (IDictionary)instanceValues[i];
                 v[Key] = this[i];
+            }
+        }
+
+        /// <inheritdoc />
+        public override void RefreshReferenceValue(object instanceValue)
+        {
+            if (instanceValue is IDictionary v)
+            {
+                _referenceValue = v[Key];
+                _hasReferenceValue = true;
             }
         }
     }

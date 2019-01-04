@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.Utilities
 {
@@ -20,7 +20,6 @@ namespace FlaxEngine.Utilities
         /// <summary>
         /// Gets a value indicating whether this state is active.
         /// </summary>
-        /// <value><c>true</c> if this state is active; otherwise, <c>false</c>.</value>
         public bool IsActive => owner != null && owner.CurrentState == this;
 
         /// <summary>
@@ -35,7 +34,7 @@ namespace FlaxEngine.Utilities
         /// <summary>
         /// Checks if can exit from that state
         /// </summary>
-        /// <param name="nextState">Next state to ener after exit from the current state</param>
+        /// <param name="nextState">Next state to enter after exit from the current state</param>
         /// <returns>True if can exit from that state, otherwise false</returns>
         public virtual bool CanExit(State nextState)
         {

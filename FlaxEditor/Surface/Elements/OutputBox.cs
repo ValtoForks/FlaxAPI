@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -15,7 +13,7 @@ namespace FlaxEditor.Surface.Elements
     {
         /// <inheritdoc />
         public OutputBox(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(parentNode, archetype, archetype.Position + new Vector2(parentNode.Archetype.Size.X, 0))
+        : base(parentNode, archetype, archetype.Position + new Vector2(parentNode.Archetype.Size.X, 0))
         {
         }
 
@@ -44,17 +42,19 @@ namespace FlaxEditor.Surface.Elements
         }
 
         /// <summary>
-        /// Draw all connections comming from this box.
+        /// Draw all connections coming from this box.
         /// </summary>
         public void DrawConnections()
         {
             // Draw all the connections
             var center = Size * 0.5f;
-            var startPos = Parent.PointToParent(PointToParent(center));
+            var tmp = PointToParent(ref center);
+            var startPos = Parent.PointToParent(ref tmp);
             for (int i = 0; i < Connections.Count; i++)
             {
                 Box targetBox = Connections[i];
-                Vector2 endPos = targetBox.Parent.PointToParent(targetBox.PointToParent(center));
+                tmp = targetBox.PointToParent(ref center);
+                Vector2 endPos = targetBox.Parent.PointToParent(ref tmp);
                 DrawConnection(ref startPos, ref endPos, ref _currentTypeColor);
             }
         }
@@ -72,7 +72,7 @@ namespace FlaxEditor.Surface.Elements
 
             // Draw text
             var style = Style.Current;
-            var rect = new Rectangle(-100, 0, 100 -2, Height);
+            var rect = new Rectangle(-100, 0, 100 - 2, Height);
             Render2D.DrawText(style.FontSmall, Archetype.Text, rect, Enabled ? style.Foreground : style.ForegroundDisabled, TextAlignment.Far, TextAlignment.Center);
         }
     }

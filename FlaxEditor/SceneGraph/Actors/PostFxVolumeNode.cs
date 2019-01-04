@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -29,28 +27,28 @@ namespace FlaxEditor.SceneGraph.Actors
             /// <param name="id">The identifier.</param>
             /// <param name="index">The index.</param>
             public SideLinkNode(PostFxVolumeNode actor, Guid id, int index)
-                : base(actor, id, index)
+            : base(actor, id, index)
             {
                 switch (index)
                 {
-                    case 0:
-                        _offset = new Vector3(0.5f, 0, 0);
-                        break;
-                    case 1:
-                        _offset = new Vector3(-0.5f, 0, 0);
-                        break;
-                    case 2:
-                        _offset = new Vector3(0, 0.5f, 0);
-                        break;
-                    case 3:
-                        _offset = new Vector3(0, -0.5f, 0);
-                        break;
-                    case 4:
-                        _offset = new Vector3(0, 0, 0.5f);
-                        break;
-                    case 5:
-                        _offset = new Vector3(0, 0, -0.5f);
-                        break;
+                case 0:
+                    _offset = new Vector3(0.5f, 0, 0);
+                    break;
+                case 1:
+                    _offset = new Vector3(-0.5f, 0, 0);
+                    break;
+                case 2:
+                    _offset = new Vector3(0, 0.5f, 0);
+                    break;
+                case 3:
+                    _offset = new Vector3(0, -0.5f, 0);
+                    break;
+                case 4:
+                    _offset = new Vector3(0, 0, 0.5f);
+                    break;
+                case 5:
+                    _offset = new Vector3(0, 0, -0.5f);
+                    break;
                 }
             }
 
@@ -78,10 +76,10 @@ namespace FlaxEditor.SceneGraph.Actors
             }
 
             /// <inheritdoc />
-            public override bool RayCastSelf(ref Ray ray, out float distance)
+            public override bool RayCastSelf(ref RayCastData ray, out float distance)
             {
                 var sphere = new BoundingSphere(Transform.Translation, 1.0f);
-                return sphere.Intersects(ref ray, out distance);
+                return sphere.Intersects(ref ray.Ray, out distance);
             }
 
             /// <inheritdoc />
@@ -93,7 +91,7 @@ namespace FlaxEditor.SceneGraph.Actors
 
         /// <inheritdoc />
         public PostFxVolumeNode(Actor actor)
-            : base(actor)
+        : base(actor)
         {
             var id = ID;
             var bytes = id.ToByteArray();
@@ -105,11 +103,11 @@ namespace FlaxEditor.SceneGraph.Actors
         }
 
         /// <inheritdoc />
-        public override bool RayCastSelf(ref Ray ray, out float distance)
+        public override bool RayCastSelf(ref RayCastData ray, out float distance)
         {
             var volume = (PostFxVolume)_actor;
             var box = volume.OrientedBox;
-            if (!box.Intersects(ref ray, out distance))
+            if (!box.Intersects(ref ray.Ray, out distance))
                 return false;
 
             return true;

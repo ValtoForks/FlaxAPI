@@ -1,12 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.GUI;
 using FlaxEngine;
 using FlaxEngine.GUI;
-using FlaxEngine.GUI.Tabs;
 
 namespace FlaxEditor.Windows.Profiler
 {
@@ -20,7 +17,7 @@ namespace FlaxEditor.Windows.Profiler
         private readonly ToolStripButton _clearButton;
         private readonly ToolStripButton _prevFrameButton;
         private readonly ToolStripButton _nextFrameButton;
-        private readonly ToolStripButton _lastframeButton;
+        private readonly ToolStripButton _lastFrameButton;
         private readonly ToolStripButton _showOnlyLastUpdateEventsButton;
         private readonly Tabs _tabs;
         private int _frameIndex = -1;
@@ -86,7 +83,7 @@ namespace FlaxEditor.Windows.Profiler
         /// </summary>
         /// <param name="editor">The editor.</param>
         public ProfilerWindow(Editor editor)
-            : base(editor, true, ScrollBars.None)
+        : base(editor, true, ScrollBars.None)
         {
             Title = "Profiler";
 
@@ -94,20 +91,20 @@ namespace FlaxEditor.Windows.Profiler
             {
                 Parent = this,
             };
-            _liveRecordingButton = toolstrip.AddButton(editor.UI.GetIcon("Play32"));
+            _liveRecordingButton = toolstrip.AddButton(editor.Icons.Play32);
             _liveRecordingButton.LinkTooltip("Live profiling events recording");
             _liveRecordingButton.AutoCheck = true;
-            _clearButton = toolstrip.AddButton(editor.UI.GetIcon("Rotate32"), Clear);
+            _clearButton = toolstrip.AddButton(editor.Icons.Rotate32, Clear);
             _clearButton.LinkTooltip("Clear data");
             toolstrip.AddSeparator();
-            _prevFrameButton = toolstrip.AddButton(editor.UI.GetIcon("ArrowLeft32"), () => ViewFrameIndex--);
+            _prevFrameButton = toolstrip.AddButton(editor.Icons.ArrowLeft32, () => ViewFrameIndex--);
             _prevFrameButton.LinkTooltip("Previous frame");
-            _nextFrameButton = toolstrip.AddButton(editor.UI.GetIcon("ArrowRight32"), () => ViewFrameIndex++);
+            _nextFrameButton = toolstrip.AddButton(editor.Icons.ArrowRight32, () => ViewFrameIndex++);
             _nextFrameButton.LinkTooltip("Next frame");
-            _lastframeButton = toolstrip.AddButton(editor.UI.GetIcon("Step32"), () => ViewFrameIndex = -1);
-            _lastframeButton.LinkTooltip("Current frame");
+            _lastFrameButton = toolstrip.AddButton(editor.Icons.Step32, () => ViewFrameIndex = -1);
+            _lastFrameButton.LinkTooltip("Current frame");
             toolstrip.AddSeparator();
-            _showOnlyLastUpdateEventsButton = toolstrip.AddButton(editor.UI.GetIcon("PageScale32"), () => ShowOnlyLastUpdateEvents = !ShowOnlyLastUpdateEvents);
+            _showOnlyLastUpdateEventsButton = toolstrip.AddButton(editor.Icons.PageScale32, () => ShowOnlyLastUpdateEvents = !ShowOnlyLastUpdateEvents);
             _showOnlyLastUpdateEventsButton.LinkTooltip("Show only last update events and hide events from the other callbacks (e.g. draw or fixed update)");
 
             _tabs = new Tabs
@@ -129,7 +126,7 @@ namespace FlaxEditor.Windows.Profiler
         /// <param name="mode">The mode.</param>
         public void AddMode(ProfilerMode mode)
         {
-            if(mode == null)
+            if (mode == null)
                 throw new ArgumentNullException();
             mode.Init();
             _tabs.AddTab(mode);
@@ -159,7 +156,7 @@ namespace FlaxEditor.Windows.Profiler
 
             UpdateButtons();
         }
-		
+
         private void OnSelectedTabChanged(Tabs tabs)
         {
             if (tabs.SelectedTab is ProfilerMode mode)
@@ -171,7 +168,7 @@ namespace FlaxEditor.Windows.Profiler
             _clearButton.Enabled = _framesCount > 0;
             _prevFrameButton.Enabled = _frameIndex > 0;
             _nextFrameButton.Enabled = (_framesCount - _frameIndex - 1) > 0;
-            _lastframeButton.Enabled = _framesCount > 0;
+            _lastFrameButton.Enabled = _framesCount > 0;
             _showOnlyLastUpdateEventsButton.Checked = _showOnlyLastUpdateEvents;
         }
 
@@ -182,6 +179,7 @@ namespace FlaxEditor.Windows.Profiler
             AddMode(new Overall());
             AddMode(new CPU());
             AddMode(new GPU());
+            AddMode(new Memory());
 
             // Init view
             _frameIndex = -1;
@@ -199,15 +197,37 @@ namespace FlaxEditor.Windows.Profiler
         {
             if (LiveRecording)
             {
+                ProfilerMode.SharedUpdateData sharedData = new ProfilerMode.SharedUpdateData();
+                sharedData.Begin();
                 for (int i = 0; i < _tabs.ChildrenCount; i++)
                 {
                     if (_tabs.Children[i] is ProfilerMode mode)
-                        mode.Update();
+                        mode.Update(ref sharedData);
                 }
+                sharedData.End();
 
                 _framesCount = Mathf.Min(_framesCount + 1, ProfilerMode.MaxSamples);
                 UpdateButtons();
             }
+        }
+
+        /// <inheritdoc />
+        public override bool OnKeyDown(Keys key)
+        {
+            if (base.OnKeyDown(key))
+                return true;
+
+            switch (key)
+            {
+            case Keys.ArrowLeft:
+                ViewFrameIndex--;
+                return true;
+            case Keys.ArrowRight:
+                ViewFrameIndex++;
+                return true;
+            }
+
+            return false;
         }
     }
 }

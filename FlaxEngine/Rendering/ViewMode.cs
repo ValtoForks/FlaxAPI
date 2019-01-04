@@ -1,11 +1,9 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.Rendering
 {
     /// <summary>
-    /// Describies frame rendering modes.
+    /// Describes frame rendering modes.
     /// </summary>
     public enum ViewMode
     {
@@ -15,9 +13,9 @@ namespace FlaxEngine.Rendering
         Default = 0,
 
         /// <summary>
-        /// Fast rendering. Without post-process
+        /// Without post-process pass
         /// </summary>
-        Fast = 1,
+        NoPostFx = 1,
 
         /// <summary>
         /// Draw Diffuse
@@ -70,13 +68,28 @@ namespace FlaxEngine.Rendering
         ShadingModel = 11,
 
         /// <summary>
-        /// Draw Lights buffer
+        /// Draw Light buffer
         /// </summary>
-        LightsBuffer = 12,
+        LightBuffer = 12,
 
         /// <summary>
         /// Draw reflections buffer
         /// </summary>
         Reflections = 13,
+
+        /// <summary>
+        /// Draw scene objects in wireframe mode
+        /// </summary>
+        Wireframe = 14,
+
+        /// <summary>
+        /// Draw motion vectors debug view
+        /// </summary>
+        MotionVectors = 15,
+
+        /// <summary>
+        /// Draw materials subsurface color debug view
+        /// </summary>
+        SubsurfaceColor = 16,
     }
 }

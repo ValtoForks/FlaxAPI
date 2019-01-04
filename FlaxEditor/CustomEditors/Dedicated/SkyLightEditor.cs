@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -18,7 +16,7 @@ namespace FlaxEditor.CustomEditors.Dedicated
         {
             base.Initialize(layout);
 
-            if (Values.HasDiffrentTypes == false)
+            if (Values.HasDifferentTypes == false)
             {
                 // Add 'Bake' button
                 layout.Space(10);

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -17,6 +15,8 @@ namespace FlaxEditor.Actions
         private bool _isAdd;
         private Script _script;
         private Guid _scriptId;
+        private Guid _prefabId;
+        private Guid _prefabObjectId;
         private Type _scriptType;
         private string _scriptData;
         private Guid _parentId;
@@ -29,6 +29,8 @@ namespace FlaxEditor.Actions
             _script = script;
             _scriptId = script.ID;
             _scriptType = script.GetType();
+            _prefabId = script.PrefabID;
+            _prefabObjectId = script.PrefabObjectID;
             _scriptData = FlaxEngine.Json.JsonSerializer.Serialize(script);
             _parentId = script.Actor.ID;
             _orderInParent = script.OrderInParent;
@@ -45,6 +47,18 @@ namespace FlaxEditor.Actions
             _parentId = parentActor.ID;
             _orderInParent = -1;
             _enabled = true;
+        }
+
+        /// <summary>
+        /// Creates a new added script undo action.
+        /// </summary>
+        /// <param name="script">The new script.</param>
+        /// <returns>The action.</returns>
+        public static AddRemoveScript Added(Script script)
+        {
+            if (script == null)
+                throw new ArgumentNullException(nameof(script));
+            return new AddRemoveScript(true, script);
         }
 
         /// <summary>
@@ -95,11 +109,22 @@ namespace FlaxEditor.Actions
                 DoAdd();
         }
 
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _script = null;
+            _scriptType = null;
+        }
+
         private void DoRemove()
         {
-            // Remove script
-            Editor.Instance.Scene.MarkSceneEdited(_script.Actor.Scene);
-            Object.Destroy(ref _script);
+            // Remove script (it could be removed by sth else, just check it)
+            if (_script)
+            {
+                if (_script.Actor)
+                    Editor.Instance.Scene.MarkSceneEdited(_script.Scene);
+                Object.Destroy(ref _script);
+            }
         }
 
         private void DoAdd()
@@ -126,6 +151,8 @@ namespace FlaxEditor.Actions
             parentActor.AddScript(_script);
             if (_orderInParent != -1)
                 _script.OrderInParent = _orderInParent;
+            if (_prefabObjectId != Guid.Empty)
+                Script.Internal_LinkPrefab(_script.unmanagedPtr, ref _prefabId, ref _prefabObjectId);
             Editor.Instance.Scene.MarkSceneEdited(parentActor.Scene);
         }
     }

@@ -1,12 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
-
-using System;
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.Rendering
 {
-	public partial class RenderBuffers
-	{
-	}
+    public partial class RenderBuffers
+    {
+    }
 }

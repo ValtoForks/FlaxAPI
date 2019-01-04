@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Linq;
 using System.Reflection;
@@ -80,7 +78,7 @@ namespace FlaxEditor.CustomEditors.Elements
             set => FloatValue.Value = value;
         }
 
-	    /// <inheritdoc />
-	    public bool IsSliding => FloatValue.IsSliding;
+        /// <inheritdoc />
+        public bool IsSliding => FloatValue.IsSliding;
     }
 }

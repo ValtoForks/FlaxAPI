@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -116,11 +116,11 @@ namespace FlaxEngine
             MinDepth = 0f;
             MaxDepth = 1f;
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Viewport"/> struct.
         /// </summary>
-        /// <param name="location">The loation of the upper-left corner of the viewport in pixels.</param>
+        /// <param name="location">The location of the upper-left corner of the viewport in pixels.</param>
         /// <param name="size">The size of the viewport in pixels.</param>
         public Viewport(Vector2 location, Vector2 size)
         {
@@ -133,7 +133,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Gets the size of this resource.
+        /// Gets the size of the viewport.
         /// </summary>
         /// <value>The bounds.</value>
         public Rectangle Bounds
@@ -149,6 +149,19 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Gets or sets the size of the viewport (width and height).
+        /// </summary>
+        public Vector2 Size
+        {
+            get => new Vector2(Width, Height);
+            set
+            {
+                Width = value.X;
+                Height = value.Y;
+            }
+        }
+
+        /// <summary>
         /// Determines whether the specified <see cref="Viewport"/> is equal to this instance.
         /// </summary>
         /// <param name="other">The <see cref="Viewport"/> to compare with this instance.</param>
@@ -158,11 +171,11 @@ namespace FlaxEngine
         public bool Equals(ref Viewport other)
         {
             return Mathf.NearEqual(X, other.X) &&
-                Mathf.NearEqual(Y, other.Y) &&
-                Mathf.NearEqual(Width, other.Width) &&
-                Mathf.NearEqual(Height, other.Height) &&
-                Mathf.NearEqual(MinDepth, other.MinDepth) &&
-                Mathf.NearEqual(MaxDepth, other.MaxDepth);
+                   Mathf.NearEqual(Y, other.Y) &&
+                   Mathf.NearEqual(Width, other.Width) &&
+                   Mathf.NearEqual(Height, other.Height) &&
+                   Mathf.NearEqual(MinDepth, other.MinDepth) &&
+                   Mathf.NearEqual(MaxDepth, other.MaxDepth);
         }
 
         /// <summary>

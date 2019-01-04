@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -16,14 +14,14 @@ namespace FlaxEditor.GUI
     {
         private string _startValue;
         private TextBox _inputField;
-        
+
         /// <summary>
         /// Occurs when renaming is done.
         /// </summary>
         public event Action<RenamePopup> Renamed;
 
         /// <summary>
-        /// Occurs when popup is closeing (after renaming done or not).
+        /// Occurs when popup is closing (after renaming done or not).
         /// </summary>
         public event Action<RenamePopup> Closed;
 
@@ -81,8 +79,13 @@ namespace FlaxEditor.GUI
         /// <returns>Created popup.</returns>
         public static RenamePopup Show(Control control, Rectangle area, string value, bool isMultiline)
         {
-            var rename = new RenamePopup(value, area.Size, isMultiline);
-            rename.Show(control, area.Location + new Vector2(0, (area.Height - rename.Height) * 0.5f));
+            // Calculate the control size in the window space to handle scaled controls
+            var upperLeft = control.PointToWindow(area.UpperLeft);
+            var bottomRight = control.PointToWindow(area.BottomRight);
+            var size = bottomRight - upperLeft;
+
+            var rename = new RenamePopup(value, size, isMultiline);
+            rename.Show(control, area.Location + new Vector2(0, (size.Y - rename.Height) * 0.5f));
             return rename;
         }
 
@@ -137,6 +140,16 @@ namespace FlaxEditor.GUI
 
             // Remove itself
             Dispose();
+        }
+
+        /// <inheritdoc />
+        public override void Dispose()
+        {
+            Renamed = null;
+            Closed = null;
+            _inputField = null;
+
+            base.Dispose();
         }
     }
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.SceneGraph;
@@ -63,7 +61,7 @@ namespace FlaxEditor
             protected set => _data = JsonConvert.SerializeObject(value, Formatting.None, JsonSerializer.Settings);
             /*protected set
             {
-                _data = JsonConvert.SerializeObject(value, Formatting.Indented, InternalJsonSerializer.Settings);
+                _data = JsonConvert.SerializeObject(value, Formatting.Indented, JsonSerializer.Settings);
                 Debug.Log(_data);
             }*/
         }
@@ -76,5 +74,11 @@ namespace FlaxEditor
 
         /// <inheritdoc />
         public abstract void Undo();
+
+        /// <inheritdoc />
+        public virtual void Dispose()
+        {
+            _data = null;
+        }
     }
 }

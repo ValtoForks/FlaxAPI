@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -12,7 +10,7 @@ using FlaxEngine;
 namespace FlaxEditor.SceneGraph
 {
     /// <summary>
-    /// A tree node used to visalize scene actors structure in <see cref="SceneTreeWindow"/>. It's a ViewModel object for <see cref="Actor"/>.
+    /// A tree node used to visualize scene actors structure in <see cref="SceneTreeWindow"/>. It's a ViewModel object for <see cref="Actor"/>.
     /// It's part of the Scene Graph.
     /// </summary>
     /// <seealso cref="SceneGraphNode" />
@@ -25,7 +23,7 @@ namespace FlaxEditor.SceneGraph
         protected readonly Actor _actor;
 
         /// <summary>
-        /// The tree node used to present hierachy structure in GUI.
+        /// The tree node used to present hierarchy structure in GUI.
         /// </summary>
         protected readonly ActorTreeNode _treeNode;
 
@@ -49,7 +47,7 @@ namespace FlaxEditor.SceneGraph
         /// </summary>
         /// <param name="actor">The actor.</param>
         public ActorNode(Actor actor)
-            : base(actor.ID)
+        : base(actor.ID)
         {
             _actor = actor;
             _treeNode = new ActorTreeNode();
@@ -62,7 +60,7 @@ namespace FlaxEditor.SceneGraph
         /// <param name="actor">The actor.</param>
         /// <param name="treeNode">The custom tree node.</param>
         protected ActorNode(Actor actor, ActorTreeNode treeNode)
-            : base(actor.ID)
+        : base(actor.ID)
         {
             _actor = actor;
             _treeNode = treeNode;
@@ -70,7 +68,7 @@ namespace FlaxEditor.SceneGraph
         }
 
         internal ActorNode(Actor actor, Guid id)
-            : base(id)
+        : base(id)
         {
             _actor = actor;
             _treeNode = new ActorTreeNode();
@@ -142,6 +140,16 @@ namespace FlaxEditor.SceneGraph
             return null;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this actor can be used to create prefab from it (as a root).
+        /// </summary>
+        public virtual bool CanCreatePrefab => (Actor.HideFlags & HideFlags.DontSave) != HideFlags.DontSave;
+
+        /// <summary>
+        /// Gets a value indicating whether this actor has a valid linkage to the prefab asset.
+        /// </summary>
+        public virtual bool HasPrefabLink => Actor.HasPrefabLink;
+
         /// <inheritdoc />
         public override string Name => _actor.Name;
 
@@ -160,7 +168,7 @@ namespace FlaxEditor.SceneGraph
 
         /// <inheritdoc />
         public override bool CanCopyPaste => (_actor.HideFlags & HideFlags.HideInHierarchy) == 0;
-        
+
         /// <inheritdoc />
         public override bool IsActive => _actor.IsActive;
 
@@ -197,7 +205,7 @@ namespace FlaxEditor.SceneGraph
         public override object EditableObject => _actor;
 
         /// <inheritdoc />
-        public override SceneGraphNode RayCast(ref Ray ray, ref float distance)
+        public override SceneGraphNode RayCast(ref RayCastData ray, ref float distance)
         {
             // Skip actors that should not be selected
             if (_actor != null && (_actor.HideFlags & HideFlags.DontSelect) == HideFlags.DontSelect)
@@ -207,9 +215,9 @@ namespace FlaxEditor.SceneGraph
         }
 
         /// <inheritdoc />
-        public override bool RayCastSelf(ref Ray ray, out float distance)
+        public override bool RayCastSelf(ref RayCastData ray, out float distance)
         {
-            return _actor.IntersectsItself(ref ray, out distance);
+            return _actor.IntersectsItself(ref ray.Ray, out distance);
         }
 
         /// <inheritdoc />
@@ -224,13 +232,13 @@ namespace FlaxEditor.SceneGraph
             FlaxEngine.Object.Destroy(_actor);
         }
 
-		/// <summary>
-		/// Action called after spawning actor in editor (via drag to viewport, with toolbox, etc.).
-		/// Can be used to tweak default values of the actor.
-		/// </summary>
-		public virtual void PostSpawn()
-	    {
-	    }
+        /// <summary>
+        /// Action called after spawning actor in editor (via drag to viewport, with toolbox, etc.).
+        /// Can be used to tweak default values of the actor.
+        /// </summary>
+        public virtual void PostSpawn()
+        {
+        }
 
         /// <inheritdoc />
         protected override void OnParentChanged()
@@ -239,7 +247,7 @@ namespace FlaxEditor.SceneGraph
             _treeNode.Parent = (ParentNode as ActorNode)?.TreeNode;
 
             // Check if it's a new node and parent has been already ready
-            // (eg. we builded new node for spawned actor and link it to the game)
+            // (eg. we build new node for spawned actor and link it to the game)
             if (_treeNode.Parent != null && !_treeNode.Parent.IsLayoutLocked)
             {
                 _treeNode.Parent.SortChildren();

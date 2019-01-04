@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Text.RegularExpressions;
@@ -86,7 +84,7 @@ namespace FlaxEngine
         /// For example: '.TxT' will return 'txt'.
         /// </summary>
         /// <param name="extension">The extension.</param>
-        /// <returns>The nomralized extension.</returns>
+        /// <returns>The normalized extension.</returns>
         public static string NormalizeExtension(string extension)
         {
             if (extension[0] == '.')
@@ -99,11 +97,11 @@ namespace FlaxEngine
         /// </summary>
         /// <param name="left">The left.</param>
         /// <param name="right">The right.</param>
-        /// <returns>The cobined path</returns>
+        /// <returns>The combined path</returns>
         public static string CombinePaths(string left, string right)
         {
             int cnt = left.Length;
-            if (cnt > 1 && left[cnt - 2] != '/' && left[cnt - 2] != '\\'
+            if (cnt > 1 && left[cnt - 1] != '/' && left[cnt - 1] != '\\'
                 && (right.Length == 0 || (right[0] != '/' && right[0] != '\\')))
             {
                 left += '/';
@@ -120,12 +118,11 @@ namespace FlaxEngine
         /// </returns>
         public static bool IsRelative(string path)
         {
-            bool isRooted =
-                (path.Length >= 2 && char.IsLetterOrDigit(path[0]) && path[1] == ':') ||
-                path.StartsWith("\\\\") ||
-                path.StartsWith("/") ||
-                path.StartsWith("\\") ||
-                path.StartsWith("/");
+            bool isRooted = (path.Length >= 2 && char.IsLetterOrDigit(path[0]) && path[1] == ':') ||
+                            path.StartsWith("\\\\") ||
+                            path.StartsWith("/") ||
+                            path.StartsWith("\\") ||
+                            path.StartsWith("/");
             return !isRooted;
         }
 
@@ -155,7 +152,6 @@ namespace FlaxEngine
             else
             {
                 fullyPathed = path;
-
             }
 
             NormalizePath(fullyPathed);
@@ -216,7 +212,6 @@ namespace FlaxEngine
 
                         if (MaxChecks-- < 0)
                             return name + Guid.NewGuid();
-
                     } while (!isValid(result));
 
                     if (result.Length > 0)
@@ -245,7 +240,6 @@ namespace FlaxEngine
 
                         if (MaxChecks-- < 0)
                             return name + Guid.NewGuid();
-
                     } while (!isValid(result));
 
                     if (result.Length > 0)
@@ -261,7 +255,6 @@ namespace FlaxEngine
 
                 if (MaxChecks-- < 0)
                     return name + Guid.NewGuid();
-
             } while (!isValid(result));
 
             return result;

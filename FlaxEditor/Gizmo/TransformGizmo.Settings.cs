@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -23,7 +21,7 @@ namespace FlaxEditor.Gizmo
         private static readonly Color AxisColorY = new Color(61, 255, 12);
         private static readonly Color AxisColorZ = new Color(0, 6, 255);
 
-        private Vector3[] _translationLineVertices =
+        private readonly Vector3[] _translationLineVertices =
         {
             // -- X Axis -- // index 0 - 5
             new Vector3(HalfLineOffset, 0, 0),
@@ -78,11 +76,6 @@ namespace FlaxEditor.Gizmo
         public float PrecisionModeScale = 0.1f;
 
         /// <summary>
-        /// Gizmo scale factor
-        /// </summary>
-        public float ScaleFactor = 0.01f;
-
-        /// <summary>
         /// True if enable grid snapping when moving objects
         /// </summary>
         public bool TranslationSnapEnable = false;
@@ -103,14 +96,14 @@ namespace FlaxEditor.Gizmo
         public float TranslationSnapValue = 10;
 
         /// <summary>
-        /// Rotatino snap value
+        /// Rotation snap value
         /// </summary>
         public float RotationSnapValue = 15;
 
         /// <summary>
         /// Scale snap value
         /// </summary>
-        public float ScaleSnapValue = 4.0f;
+        public float ScaleSnapValue = 1.0f;
 
         /// <summary>
         /// Gets the current pivot type.
@@ -121,7 +114,7 @@ namespace FlaxEditor.Gizmo
         /// Gets the current axis type.
         /// </summary>
         public Axis ActiveAxis => _activeAxis;
-        
+
         /// <summary>
         /// Gets or sts the current gizmo mode.
         /// </summary>
@@ -133,7 +126,7 @@ namespace FlaxEditor.Gizmo
                 if (_activeMode != value)
                 {
                     _activeMode = value;
-                    OnModeChanged?.Invoke();
+                    ModeChanged?.Invoke();
                 }
             }
         }
@@ -141,8 +134,8 @@ namespace FlaxEditor.Gizmo
         /// <summary>
         /// Event fired when active gizmo mode gets changed.
         /// </summary>
-        public Action OnModeChanged;
-        
+        public Action ModeChanged;
+
         /// <summary>
         /// Gets or sets the current gizmo transform space.
         /// </summary>
@@ -154,15 +147,15 @@ namespace FlaxEditor.Gizmo
                 if (_activeTransformSpace != value)
                 {
                     _activeTransformSpace = value;
-                    OnTransformSpaceChanged?.Invoke();
+                    TransformSpaceChanged?.Invoke();
                 }
             }
         }
-        
+
         /// <summary>
         /// Event fired when active transform space gets changed.
         /// </summary>
-        public Action OnTransformSpaceChanged;
+        public Action TransformSpaceChanged;
 
         /// <summary>
         /// Toggles gizmo transform space

@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -25,6 +25,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -60,6 +61,17 @@ namespace FlaxEngine
             Vector3 center = bb.Minimum + (bb.Maximum - bb.Minimum) / 2f;
             Extents = bb.Maximum - center;
             Transformation = Matrix.Translation(center);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrientedBoundingBox"/> struct.
+        /// </summary>
+        /// <param name="extents">The half lengths of the box along each axis.</param>
+        /// <param name="transformation">The matrix which aligns and scales the box, and its translation vector represents the center of the box.</param>
+        public OrientedBoundingBox(Vector3 extents, Matrix transformation)
+        {
+            Extents = extents;
+            Transformation = transformation;
         }
 
         /// <summary>
@@ -130,6 +142,62 @@ namespace FlaxEngine
             corners[7] = center - xv - yv + zv;
 
             return corners;
+        }
+
+        /// <summary>
+        /// Retrieves the eight corners of the bounding box.
+        /// </summary>
+        /// <param name="corners">An array of points representing the eight corners of the bounding box.</param>
+        public void GetCorners(Vector3[] corners)
+        {
+            if (corners == null || corners.Length != 8)
+                throw new ArgumentException();
+
+            var xv = new Vector3(Extents.X, 0, 0);
+            var yv = new Vector3(0, Extents.Y, 0);
+            var zv = new Vector3(0, 0, Extents.Z);
+            Vector3.TransformNormal(ref xv, ref Transformation, out xv);
+            Vector3.TransformNormal(ref yv, ref Transformation, out yv);
+            Vector3.TransformNormal(ref zv, ref Transformation, out zv);
+
+            Vector3 center = Transformation.TranslationVector;
+
+            corners[0] = center + xv + yv + zv;
+            corners[1] = center + xv + yv - zv;
+            corners[2] = center - xv + yv - zv;
+            corners[3] = center - xv + yv + zv;
+            corners[4] = center + xv - yv + zv;
+            corners[5] = center + xv - yv - zv;
+            corners[6] = center - xv - yv - zv;
+            corners[7] = center - xv - yv + zv;
+        }
+
+        /// <summary>
+        /// Retrieves the eight corners of the bounding box.
+        /// </summary>
+        /// <param name="corners">An collection to add the corners of the bounding box.</param>
+        public void GetCorners(List<Vector3> corners)
+        {
+            if (corners == null)
+                throw new ArgumentNullException();
+
+            var xv = new Vector3(Extents.X, 0, 0);
+            var yv = new Vector3(0, Extents.Y, 0);
+            var zv = new Vector3(0, 0, Extents.Z);
+            Vector3.TransformNormal(ref xv, ref Transformation, out xv);
+            Vector3.TransformNormal(ref yv, ref Transformation, out yv);
+            Vector3.TransformNormal(ref zv, ref Transformation, out zv);
+
+            Vector3 center = Transformation.TranslationVector;
+
+            corners.Add(center + xv + yv + zv);
+            corners.Add(center + xv + yv - zv);
+            corners.Add(center - xv + yv - zv);
+            corners.Add(center - xv + yv + zv);
+            corners.Add(center + xv - yv + zv);
+            corners.Add(center + xv - yv - zv);
+            corners.Add(center - xv - yv - zv);
+            corners.Add(center - xv - yv + zv);
         }
 
         /// <summary>
@@ -398,7 +466,7 @@ namespace FlaxEngine
         /// <summary>
         /// Check the intersection between two <see cref="OrientedBoundingBox" />
         /// </summary>
-        /// <param name="obb">The OrientedBoundingBoxs to test.</param>
+        /// <param name="obb">The OrientedBoundingBox to test.</param>
         /// <returns>The type of containment the two objects have.</returns>
         /// <remarks>
         /// For accuracy, The transformation matrix for both <see cref="OrientedBoundingBox" /> must not have any scaling applied
@@ -417,8 +485,8 @@ namespace FlaxEngine
             Vector3[] RotA = GetRows(ref Transformation);
             Vector3[] RotB = GetRows(ref obb.Transformation);
 
-            var R = new Matrix();// Rotation from B to A
-            var AR = new Matrix();// absolute values of R matrix, to use with box extents
+            var R = new Matrix(); // Rotation from B to A
+            var AR = new Matrix(); // absolute values of R matrix, to use with box extents
 
             float ExtentA, ExtentB, Separation;
             int i, k;
@@ -488,7 +556,11 @@ namespace FlaxEngine
         /// </remarks>
         public ContainmentType ContainsLine(ref Vector3 L1, ref Vector3 L2)
         {
-            ContainmentType cornersCheck = Contains(new[] { L1, L2 });
+            ContainmentType cornersCheck = Contains(new[]
+            {
+                L1,
+                L2
+            });
             if (cornersCheck != ContainmentType.Disjoint)
                 return cornersCheck;
 
@@ -552,9 +624,9 @@ namespace FlaxEngine
             float ExtentA, ExtentB, Separation;
             int i, k;
 
-            Matrix R;// Rotation from B to A
+            Matrix R; // Rotation from B to A
             Matrix.Invert(ref Transformation, out R);
-            var AR = new Matrix();// absolute values of R matrix, to use with box extents
+            var AR = new Matrix(); // absolute values of R matrix, to use with box extents
 
             for (i = 0; i < 3; i++)
             for (k = 0; k < 3; k++)
@@ -921,7 +993,7 @@ namespace FlaxEngine
                 return ToString();
 
             return string.Format(CultureInfo.CurrentCulture, "Center: {0}, Extents: {1}", Center.ToString(format, CultureInfo.CurrentCulture),
-                Extents.ToString(format, CultureInfo.CurrentCulture));
+                                 Extents.ToString(format, CultureInfo.CurrentCulture));
         }
 
         /// <summary>
@@ -950,7 +1022,7 @@ namespace FlaxEngine
                 return ToString(formatProvider);
 
             return string.Format(formatProvider, "Center: {0}, Extents: {1}", Center.ToString(format, formatProvider),
-                Extents.ToString(format, formatProvider));
+                                 Extents.ToString(format, formatProvider));
         }
     }
 }

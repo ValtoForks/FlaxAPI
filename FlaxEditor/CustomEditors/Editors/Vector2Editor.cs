@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Linq;
 using FlaxEditor.CustomEditors.Elements;
@@ -39,40 +37,42 @@ namespace FlaxEditor.CustomEditors.Editors
             gridControl.SlotsVertically = 1;
 
             LimitAttribute limit = null;
-            if (Values.Info != null)
+            var attributes = Values.GetAttributes();
+            if (attributes != null)
             {
-                var attributes = Values.Info.GetCustomAttributes(true);
                 limit = (LimitAttribute)attributes.FirstOrDefault(x => x is LimitAttribute);
             }
 
             XElement = grid.FloatValue();
             XElement.SetLimits(limit);
             XElement.FloatValue.ValueChanged += OnValueChanged;
-	        XElement.FloatValue.SlidingEnd += ClearToken;
+            XElement.FloatValue.SlidingEnd += ClearToken;
 
-			YElement = grid.FloatValue();
+            YElement = grid.FloatValue();
             YElement.SetLimits(limit);
             YElement.FloatValue.ValueChanged += OnValueChanged;
-	        YElement.FloatValue.SlidingEnd += ClearToken;
-		}
+            YElement.FloatValue.SlidingEnd += ClearToken;
+        }
 
         private void OnValueChanged()
         {
             if (IsSetBlocked)
                 return;
 
-	        var isSliding = XElement.IsSliding || YElement.IsSliding;
-	        var token = isSliding ? this : null;
-	        var value = new Vector2(
-		        XElement.FloatValue.Value,
-		        YElement.FloatValue.Value);
-	        SetValue(value, token);
-		}
+            var isSliding = XElement.IsSliding || YElement.IsSliding;
+            var token = isSliding ? this : null;
+            var value = new Vector2(
+                XElement.FloatValue.Value,
+                YElement.FloatValue.Value);
+            SetValue(value, token);
+        }
 
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (HasDiffrentValues)
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 // TODO: support different values for ValueBox<T>
             }

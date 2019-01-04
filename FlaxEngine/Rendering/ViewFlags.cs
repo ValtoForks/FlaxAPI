@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -13,9 +11,11 @@ namespace FlaxEngine.Rendering
     public enum ViewFlags : long
     {
         /// <summary>
-        /// Shows/hides dynamic actors
+        /// Nothing.
         /// </summary>
-        DynamicActors = 1 << 0,
+        None = 0,
+
+        //DynamicActors = 1 << 0,
 
         /// <summary>
         /// Shows/hides Editor sprites
@@ -88,12 +88,12 @@ namespace FlaxEngine.Rendering
         Bloom = 1 << 14,
 
         /// <summary>
-        /// Shows/hides tone mapping effct
+        /// Shows/hides tone mapping effect
         /// </summary>
         ToneMapping = 1 << 15,
 
         /// <summary>
-        /// Shows/hides eye adaptation effct
+        /// Shows/hides eye adaptation effect
         /// </summary>
         EyeAdaptation = 1 << 16,
 
@@ -108,12 +108,12 @@ namespace FlaxEngine.Rendering
         LensFlares = 1 << 18,
 
         /// <summary>
-        /// Shows/hides Constructive Solid Geometry
+        /// Shows/hides deferred decals.
         /// </summary>
-        CSG = 1 << 19,
+        Decals = 1 << 19,
 
         /// <summary>
-        /// Shows/hides deph of field effect
+        /// Shows/hides depth of field effect
         /// </summary>
         DepthOfField = 1 << 20,
 
@@ -127,32 +127,29 @@ namespace FlaxEngine.Rendering
         /// </summary>
         Fog = 1 << 22,
 
+        /// <summary>
+        /// Shows/hides the motion blur effect.
+        /// </summary>
+        MotionBlur = 1 << 23,
 
         /// <summary>
         /// Default flags for Game
         /// </summary>
-        DefaultGame = DynamicActors | Reflections | CSG | DepthOfField | Fog
+        DefaultGame = Reflections | DepthOfField | Fog | Decals | MotionBlur
                       | SSR | AO | GI | DirectionalLights | PointLights | SpotLights | SkyLights | Shadows | SpecularLight
                       | AntiAliasing | CustomPostProcess | Bloom | ToneMapping | EyeAdaptation | CameraArtifacts | LensFlares,
 
         /// <summary>
         /// Default flags for Editor
         /// </summary>
-        DefaultEditor = DynamicActors | Reflections | CSG | Fog
+        DefaultEditor = Reflections | Fog | Decals
                         | SSR | AO | GI | DirectionalLights | PointLights | SpotLights | SkyLights | Shadows | SpecularLight
                         | AntiAliasing | CustomPostProcess | Bloom | ToneMapping | EyeAdaptation | CameraArtifacts | LensFlares | EditorSprites,
 
         /// <summary>
-        /// Default flags for Material Previews generating
+        /// Default flags for materials/models previews generating
         /// </summary>
-        DefaultMaterialPreview = DynamicActors | Reflections
-                                 | GI | DirectionalLights | PointLights | SpotLights | SkyLights | SpecularLight
-                                 | AntiAliasing | Bloom | ToneMapping | EyeAdaptation | CameraArtifacts | LensFlares,
-
-        /// <summary>
-        /// Default flags for Material Previews generating
-        /// </summary>
-        DefaultModelPreview = DynamicActors | Reflections
+        DefaultAssetPreview = Reflections | Decals
                               | GI | DirectionalLights | PointLights | SpotLights | SkyLights | SpecularLight
                               | AntiAliasing | Bloom | ToneMapping | EyeAdaptation | CameraArtifacts | LensFlares,
     }

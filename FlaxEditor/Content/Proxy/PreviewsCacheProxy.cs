@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEditor.Windows;
 using FlaxEditor.Windows.Assets;
 using FlaxEngine;
@@ -27,9 +26,9 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x80FFAE);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => PreviewsCache.Domain;
+        public override ContentDomain Domain => ContentDomain.Texture;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(PreviewsCache).FullName;
+        public override Type AssetType => typeof(PreviewsCache);
     }
 }

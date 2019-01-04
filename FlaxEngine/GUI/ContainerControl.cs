@@ -1,10 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using FlaxEngine.Assertions;
 
 namespace FlaxEngine.GUI
@@ -12,22 +9,26 @@ namespace FlaxEngine.GUI
     /// <summary>
     ///     Base interface for all GUI controls that can contain controls
     /// </summary>
+    [HideInEditor]
     public class ContainerControl : Control
     {
         /// <summary>
         /// The children collection.
         /// </summary>
+        [NoSerialize]
         protected readonly List<Control> _children = new List<Control>();
 
         /// <summary>
         /// The contains focus cached flag.
         /// </summary>
+        [NoSerialize]
         protected bool _containsFocus;
 
         /// <summary>
         /// The option to update child controls layout first before self.
         /// Useful for controls which dimensions are based on children.
         /// </summary>
+        [NoSerialize]
         protected bool _performChildrenLayoutFirst;
 
         /// <summary>
@@ -35,30 +36,35 @@ namespace FlaxEngine.GUI
         /// </summary>
         public event Action<Control> OnChildControlResized;
 
-        ///<inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContainerControl"/> class.
+        /// </summary>
         public ContainerControl()
-            : base(0, 0, 64, 64)
         {
             IsLayoutLocked = true;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContainerControl"/> class.
+        /// </summary>
         public ContainerControl(float x, float y, float width, float height)
-            : base(x, y, width, height)
+        : base(x, y, width, height)
         {
             IsLayoutLocked = true;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContainerControl"/> class.
+        /// </summary>
         public ContainerControl(Vector2 location, Vector2 size)
-            : base(location, size)
+        : base(location, size)
         {
             IsLayoutLocked = true;
         }
 
         /// <inheritdoc />
         public ContainerControl(Rectangle bounds)
-            : base(bounds)
+        : base(bounds)
         {
             IsLayoutLocked = true;
         }
@@ -85,17 +91,16 @@ namespace FlaxEngine.GUI
         public override bool ContainsFocus => _containsFocus;
 
         /// <summary>
-        ///     True if automatic updates for control layout are locked (usefull when createing a lot of GUI control to prevent
+        ///     True if automatic updates for control layout are locked (useful when creating a lot of GUI control to prevent
         ///     lags)
         /// </summary>
+        [HideInEditor, NoSerialize]
         public bool IsLayoutLocked { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether apply clipping mask on children during rendering.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if clip children; otherwise, <c>false</c>.
-        /// </value>
+        [EditorOrder(530), Tooltip("If checked, control will apply clipping mask on children during rendering..")]
         public bool ClipChildren { get; set; } = true;
 
         /// <summary>
@@ -167,6 +172,17 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
+        /// Creates a new control and adds it to the container.
+        /// </summary>
+        /// <returns>Added control.</returns>
+        public T AddChild<T>() where T : Control
+        {
+            var child = (T)Activator.CreateInstance(typeof(T));
+            child.Parent = this;
+            return child;
+        }
+
+        /// <summary>
         ///     Add control to the container
         /// </summary>
         /// <param name="child">Control to add</param>
@@ -200,13 +216,30 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
-        ///     Gets child control at given idnex
+        ///     Gets child control at given index.
         /// </summary>
         /// <param name="index">Control index</param>
         /// <returns>Control handle</returns>
         public Control GetChild(int index)
         {
             return _children[index];
+        }
+
+        /// <summary>
+        /// Searches for a child control of a specific type. If there are multiple controls matching the type, only the first one found is returned.
+        /// </summary>
+        /// <typeparam name="T">Type of the control to search for. Includes any controls derived from the type.</typeparam>
+        /// <returns>Control instance if found, null otherwise</returns>
+        public T GetChild<T>() where T : Control
+        {
+            var type = typeof(T);
+            for (int i = 0; i < _children.Count; i++)
+            {
+                var ct = _children[i].GetType();
+                if (type.IsAssignableFrom(ct))
+                    return (T)_children[i];
+            }
+            return null;
         }
 
         /// <summary>
@@ -223,11 +256,45 @@ namespace FlaxEngine.GUI
         {
             int oldIndex = _children.IndexOf(child);
             _children.RemoveAt(oldIndex);
-            _children.Insert(newIndex, child);
+
+            // Check if index is invalid
+            if (newIndex < 0 || newIndex >= _children.Count)
+            {
+                // Append at the end
+                _children.Add(child);
+            }
+            else
+            {
+                // Change order
+                _children.Insert(newIndex, child);
+            }
         }
 
         /// <summary>
-        ///     Tries to find any child contol at given point in control local coordinates
+        ///     Tries to find any child control at given point in control local coordinates
+        /// </summary>
+        /// <param name="point">Local point to check</param>
+        /// <returns>Found control index or -1</returns>
+        public int GetChildIndexAt(Vector2 point)
+        {
+            int result = -1;
+            for (int i = 0; i < _children.Count; i++)
+            {
+                var child = _children[i];
+
+                // Check collision
+                Vector2 childLocation;
+                if (IntersectsChildContent(child, point, out childLocation))
+                {
+                    result = i;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///     Tries to find any child control at given point in control local coordinates
         /// </summary>
         /// <param name="point">Local point to check</param>
         /// <returns>Found control or null</returns>
@@ -250,7 +317,34 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
-        ///     Tries to find lowest child contol at given point in control local coordinates
+        /// Tries to find valid child control at given point in control local coordinates. Uses custom callback method to test controls to pick.
+        /// </summary>
+        /// <param name="point">The local point to check.</param>
+        /// <param name="isValid">Control validation callback</param>
+        /// <returns>Found control or null.</returns>
+        public Control GetChildAt(Vector2 point, Func<Control, bool> isValid)
+        {
+            if (isValid == null)
+                throw new ArgumentNullException(nameof(isValid));
+
+            Control result = null;
+            for (int i = 0; i < _children.Count; i++)
+            {
+                var child = _children[i];
+
+                // Check collision
+                Vector2 childLocation;
+                if (isValid(child) && IntersectsChildContent(child, point, out childLocation))
+                {
+                    result = child;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///     Tries to find lowest child control at given point in control local coordinates
         /// </summary>
         /// <param name="point">Local point to check</param>
         /// <returns>Found control or null</returns>
@@ -294,39 +388,39 @@ namespace FlaxEngine.GUI
 
                 switch (child.DockStyle)
                 {
-                    case DockStyle.None: break;
-                    case DockStyle.Top:
-                    {
-                        float height = Mathf.Min(child.Height, clientArea.Height);
-                        clientArea.Location.Y += height;
-                        clientArea.Size.Y -= height;
-                        break;
-                    }
-                    case DockStyle.Bottom:
-                    {
-                        float height = Mathf.Min(child.Height, clientArea.Height);
-                        clientArea.Size.Y -= height;
-                        break;
-                    }
-                    case DockStyle.Fill:
-                    {
-                        GetDesireClientArea(out clientArea);
-                        break;
-                    }
-                    case DockStyle.Left:
-                    {
-                        float width = Mathf.Min(child.Width, clientArea.Width);
-                        clientArea.Location.X += width;
-                        clientArea.Size.X -= width;
-                        break;
-                    }
-                    case DockStyle.Right:
-                    {
-                        float width = Mathf.Min(child.Width, clientArea.Width);
-                        clientArea.Size.X -= width;
-                        break;
-                    }
-                    default: throw new ArgumentOutOfRangeException();
+                case DockStyle.None: break;
+                case DockStyle.Top:
+                {
+                    float height = Mathf.Min(child.Height, clientArea.Height);
+                    clientArea.Location.Y += height;
+                    clientArea.Size.Y -= height;
+                    break;
+                }
+                case DockStyle.Bottom:
+                {
+                    float height = Mathf.Min(child.Height, clientArea.Height);
+                    clientArea.Size.Y -= height;
+                    break;
+                }
+                case DockStyle.Fill:
+                {
+                    GetDesireClientArea(out clientArea);
+                    break;
+                }
+                case DockStyle.Left:
+                {
+                    float width = Mathf.Min(child.Width, clientArea.Width);
+                    clientArea.Location.X += width;
+                    clientArea.Size.X -= width;
+                    break;
+                }
+                case DockStyle.Right:
+                {
+                    float width = Mathf.Min(child.Width, clientArea.Width);
+                    clientArea.Size.X -= width;
+                    break;
+                }
+                default: throw new ArgumentOutOfRangeException();
                 }
             }
 
@@ -370,7 +464,7 @@ namespace FlaxEngine.GUI
         /// </summary>
         public virtual void OnChildrenChanged()
         {
-            // Check if control isn't durig disposing state
+            // Check if control isn't during disposing state
             if (!IsDisposing)
             {
                 // Arrange child controls
@@ -379,6 +473,17 @@ namespace FlaxEngine.GUI
         }
 
         #region Internal Events
+
+        /// <inheritdoc />
+        internal override void CacheRootHandle()
+        {
+            base.CacheRootHandle();
+
+            for (int i = 0; i < _children.Count; i++)
+            {
+                _children[i].CacheRootHandle();
+            }
+        }
 
         /// <summary>
         ///     Add child control to the container
@@ -480,54 +585,49 @@ namespace FlaxEngine.GUI
 
                 switch (child.DockStyle)
                 {
-                    case DockStyle.None: break;
+                case DockStyle.None: break;
 
-                    case DockStyle.Bottom:
-                    {
-                        float height = child.Height;
-                        float width = clientArea.Width;
-                        child.SetSize(width, height);
-                        child.SetLocation(clientArea.Left, clientArea.Bottom - height);
-                        clientArea.Size.Y -= height;
-                        break;
-                    }
-                    case DockStyle.Fill:
-                    {
-                        child.Size = clientArea.Size;
-                        child.Location = clientArea.Location;
-                        GetDesireClientArea(out clientArea);
-                        break;
-                    }
-                    case DockStyle.Left:
-                    {
-                        float width = child.Width;
-                        float height = clientArea.Height;
-                        child.SetSize(width, height);
-                        child.SetLocation(clientArea.Left, clientArea.Top);
-                        clientArea.Location.X += width;
-                        clientArea.Size.X -= width;
-                        break;
-                    }
-                    case DockStyle.Right:
-                    {
-                        float width = child.Width;
-                        float height = clientArea.Height;
-                        child.SetSize(width, height);
-                        child.SetLocation(clientArea.Right - width, clientArea.Top);
-                        clientArea.Size.X -= width;
-                        break;
-                    }
-                    case DockStyle.Top:
-                    {
-                        float height = child.Height;
-                        float width = clientArea.Width;
-                        child.SetSize(width, height);
-                        child.SetLocation(clientArea.Left, clientArea.Top);
-                        clientArea.Location.Y += height;
-                        clientArea.Size.Y -= height;
-                        break;
-                    }
-                    default: throw new ArgumentOutOfRangeException();
+                case DockStyle.Bottom:
+                {
+                    float height = child.Height;
+                    float width = clientArea.Width;
+                    child.Bounds = new Rectangle(clientArea.Left, clientArea.Bottom - height, width, height);
+                    clientArea.Size.Y -= height;
+                    break;
+                }
+                case DockStyle.Fill:
+                {
+                    child.Bounds = clientArea;
+                    GetDesireClientArea(out clientArea);
+                    break;
+                }
+                case DockStyle.Left:
+                {
+                    float width = child.Width;
+                    float height = clientArea.Height;
+                    child.Bounds = new Rectangle(clientArea.Left, clientArea.Top, width, height);
+                    clientArea.Location.X += width;
+                    clientArea.Size.X -= width;
+                    break;
+                }
+                case DockStyle.Right:
+                {
+                    float width = child.Width;
+                    float height = clientArea.Height;
+                    child.Bounds = new Rectangle(clientArea.Right - width, clientArea.Top, width, height);
+                    clientArea.Size.X -= width;
+                    break;
+                }
+                case DockStyle.Top:
+                {
+                    float height = child.Height;
+                    float width = clientArea.Width;
+                    child.Bounds = new Rectangle(clientArea.Left, clientArea.Top, width, height);
+                    clientArea.Location.Y += height;
+                    clientArea.Size.Y -= height;
+                    break;
+                }
+                default: throw new ArgumentOutOfRangeException();
                 }
             }
         }
@@ -549,37 +649,37 @@ namespace FlaxEngine.GUI
 
                 switch (child.DockStyle)
                 {
-                    case DockStyle.None: break;
-                    case DockStyle.Top:
-                    {
-                        float height = child.Height;
-                        clientArea.Location.Y += height;
-                        clientArea.Size.Y -= height;
-                        break;
-                    }
-                    case DockStyle.Bottom:
-                    {
-                        clientArea.Size.Y -= child.Height;
-                        break;
-                    }
-                    case DockStyle.Fill:
-                    {
-                        GetDesireClientArea(out clientArea);
-                        break;
-                    }
-                    case DockStyle.Left:
-                    {
-                        float width = child.Width;
-                        clientArea.Location.X += width;
-                        clientArea.Size.X -= width;
-                        break;
-                    }
-                    case DockStyle.Right:
-                    {
-                        clientArea.Size.X -= child.Width;
-                        break;
-                    }
-                    default: throw new ArgumentOutOfRangeException();
+                case DockStyle.None: break;
+                case DockStyle.Top:
+                {
+                    float height = child.Height;
+                    clientArea.Location.Y += height;
+                    clientArea.Size.Y -= height;
+                    break;
+                }
+                case DockStyle.Bottom:
+                {
+                    clientArea.Size.Y -= child.Height;
+                    break;
+                }
+                case DockStyle.Fill:
+                {
+                    GetDesireClientArea(out clientArea);
+                    break;
+                }
+                case DockStyle.Left:
+                {
+                    float width = child.Width;
+                    clientArea.Location.X += width;
+                    clientArea.Size.X -= width;
+                    break;
+                }
+                case DockStyle.Right:
+                {
+                    clientArea.Size.X -= child.Width;
+                    break;
+                }
+                default: throw new ArgumentOutOfRangeException();
                 }
             }
         }
@@ -620,7 +720,7 @@ namespace FlaxEngine.GUI
         {
             base.OnDestroy();
 
-            // Pass event futher
+            // Pass event further
             for (int i = 0; i < _children.Count; i++)
             {
                 _children[i].OnDestroy();
@@ -634,11 +734,15 @@ namespace FlaxEngine.GUI
             get
             {
                 if (base.IsMouseOver)
-                {
                     return true;
+
+                for (int i = 0; i < _children.Count && _children.Count > 0; i++)
+                {
+                    if (_children[i].IsMouseOver)
+                        return true;
                 }
 
-                return _children.Any(child => child.IsMouseOver);
+                return false;
             }
         }
 
@@ -698,15 +802,15 @@ namespace FlaxEngine.GUI
                 }
             }
         }
-		
-	    /// <inheritdoc />
-	    public override void PerformLayout(bool force = false)
+
+        /// <inheritdoc />
+        public override void PerformLayout(bool force = false)
         {
             // Check if update is locked
             if (IsLayoutLocked && !force)
                 return;
 
-	        bool wasLocked = IsLayoutLocked;
+            bool wasLocked = IsLayoutLocked;
             IsLayoutLocked = true;
 
             // Switch based on current mode
@@ -845,7 +949,7 @@ namespace FlaxEngine.GUI
                     Vector2 childLocation;
                     if (IntersectsChildContent(child, location, out childLocation))
                     {
-                        // Send event futher
+                        // Send event further
                         if (child.OnMouseDown(childLocation, buttons))
                         {
                             return true;
@@ -871,7 +975,7 @@ namespace FlaxEngine.GUI
                     Vector2 childLocation;
                     if (IntersectsChildContent(child, location, out childLocation))
                     {
-                        // Send event futher
+                        // Send event further
                         if (child.OnMouseUp(childLocation, buttons))
                         {
                             return true;
@@ -897,7 +1001,7 @@ namespace FlaxEngine.GUI
                     Vector2 childLocation;
                     if (IntersectsChildContent(child, location, out childLocation))
                     {
-                        // Send event futher
+                        // Send event further
                         if (child.OnMouseDoubleClick(childLocation, buttons))
                         {
                             return true;
@@ -1067,7 +1171,7 @@ namespace FlaxEngine.GUI
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
             // Lock updates to prevent additional layout calculations
             bool wasLayoutLocked = IsLayoutLocked;
@@ -1077,7 +1181,7 @@ namespace FlaxEngine.GUI
             Vector2 prevSize = Size;
 
             // Base
-            base.SetSizeInternal(size);
+            base.SetSizeInternal(ref size);
 
             // Fire event
             for (int i = 0; i < _children.Count; i++)

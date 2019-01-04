@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -141,9 +139,9 @@ namespace FlaxEditor.Surface.Archetypes
                 Elements = new[]
                 {
                     NodeElementArchetype.Factory.Input(0, "UVs", true, ConnectionType.Vector2, 0),
-                    NodeElementArchetype.Factory.Input(1, "Scale", true, ConnectionType.Float, 1),
-                    NodeElementArchetype.Factory.Input(2, "Min Steps", true, ConnectionType.Float, 2),
-                    NodeElementArchetype.Factory.Input(3, "Max Steps", true, ConnectionType.Float, 3),
+                    NodeElementArchetype.Factory.Input(1, "Scale", true, ConnectionType.Float, 1, 0),
+                    NodeElementArchetype.Factory.Input(2, "Min Steps", true, ConnectionType.Float, 2, 1),
+                    NodeElementArchetype.Factory.Input(3, "Max Steps", true, ConnectionType.Float, 3, 2),
                     NodeElementArchetype.Factory.Input(4, "Heightmap Texture", true, ConnectionType.Object, 4),
                     NodeElementArchetype.Factory.Output(0, "Parallax UVs", ConnectionType.Vector2, 5),
                     NodeElementArchetype.Factory.Text(Surface.Constants.BoxSize + 4, 5 * Surface.Constants.LayoutOffsetY, "Channel"),
@@ -217,20 +215,20 @@ namespace FlaxEditor.Surface.Archetypes
                 Title = "Sample Texture",
                 Description = "Custom texture sampling",
                 Flags = NodeFlags.MaterialOnly,
-                Size = new Vector2(150, 110),
+                Size = new Vector2(160, 110),
                 DefaultValues = new object[]
                 {
                     0,
-                    -1,
+                    -1.0f,
                 },
                 Elements = new[]
                 {
                     NodeElementArchetype.Factory.Input(0, "Texture", true, ConnectionType.Object, 0),
-                    NodeElementArchetype.Factory.Input(1, "UVs", true, ConnectionType.Vector2, 1),
-                    NodeElementArchetype.Factory.Input(2, "Level", true, ConnectionType.Integer, 2, 1),
+                    NodeElementArchetype.Factory.Input(1, "UVs", true, ConnectionType.Vector, 1),
+                    NodeElementArchetype.Factory.Input(2, "Level", true, ConnectionType.Float, 2, 1),
                     NodeElementArchetype.Factory.Input(3, "Offset", true, ConnectionType.Vector2, 3),
                     NodeElementArchetype.Factory.Output(0, "Color", ConnectionType.Vector4, 4),
-                    NodeElementArchetype.Factory.Text(0, Surface.Constants.LayoutOffsetY * 4, "Sampler"),
+                    NodeElementArchetype.Factory.Text(0, Surface.Constants.LayoutOffsetY * 4 + 4, "Sampler"),
                     NodeElementArchetype.Factory.ComboBox(50, Surface.Constants.LayoutOffsetY * 4, 100, 0, typeof(CommonSamplerType))
                 }
             },

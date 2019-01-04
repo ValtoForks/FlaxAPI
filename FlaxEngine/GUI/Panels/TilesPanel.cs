@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -18,12 +16,13 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the size of the tile.
         /// </summary>
+        [EditorOrder(0), Limit(0.01f), Tooltip("The size of the single tile.")]
         public Vector2 TileSize
         {
             get => _tileSize;
             set
             {
-                if(value.MinValue <= 0.0f)
+                if (value.MinValue <= 0.0f)
                     throw new ArgumentException("Tiles cannot have negative size.");
 
                 if (!Vector2.Equals(ref _tileSize, ref value))
@@ -37,6 +36,7 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets a value indicating whether perform automatic resize after tiles arrange.
         /// </summary>
+        [EditorOrder(10), Tooltip("If checked, the automatic control resize will be performed after tiles arrange,")]
         public bool AutoResize
         {
             get => _autoResize;

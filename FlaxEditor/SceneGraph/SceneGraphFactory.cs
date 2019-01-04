@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -14,6 +12,8 @@ namespace FlaxEditor.SceneGraph
     /// </summary>
     public static class SceneGraphFactory
     {
+        private static readonly object[] _sharedArgsContainer = new object[1];
+
         /// <summary>
         /// The custom nodes types. Key = object type, Value = custom graph node type
         /// </summary>
@@ -32,7 +32,7 @@ namespace FlaxEditor.SceneGraph
         public static SceneGraphNode FindNode(Guid id)
         {
             if (id == Guid.Empty)
-                return null; 
+                return null;
 
             SceneGraphNode result;
             Nodes.TryGetValue(id, out result);
@@ -55,11 +55,21 @@ namespace FlaxEditor.SceneGraph
             CustomNodesTypes.Add(typeof(ExponentialHeightFog), typeof(ExponentialHeightFogNode));
             CustomNodesTypes.Add(typeof(SkyLight), typeof(SkyLightNode));
             CustomNodesTypes.Add(typeof(PostFxVolume), typeof(PostFxVolumeNode));
-            CustomNodesTypes.Add(typeof(ModelActor), typeof(ModelActorNode));
+            CustomNodesTypes.Add(typeof(StaticModel), typeof(StaticModelNode));
             CustomNodesTypes.Add(typeof(BoxBrush), typeof(BoxBrushNode));
             CustomNodesTypes.Add(typeof(TextRender), typeof(TextRenderNode));
             CustomNodesTypes.Add(typeof(AudioListener), typeof(AudioListenerNode));
             CustomNodesTypes.Add(typeof(AudioSource), typeof(AudioSourceNode));
+            CustomNodesTypes.Add(typeof(BoneSocket), typeof(BoneSocketNode));
+            CustomNodesTypes.Add(typeof(Decal), typeof(DecalNode));
+            CustomNodesTypes.Add(typeof(BoxCollider), typeof(ColliderNode));
+            CustomNodesTypes.Add(typeof(SphereCollider), typeof(ColliderNode));
+            CustomNodesTypes.Add(typeof(CapsuleCollider), typeof(ColliderNode));
+            CustomNodesTypes.Add(typeof(MeshCollider), typeof(ColliderNode));
+            CustomNodesTypes.Add(typeof(CharacterController), typeof(ColliderNode));
+            CustomNodesTypes.Add(typeof(UICanvas), typeof(UICanvasNode));
+            CustomNodesTypes.Add(typeof(UIControl), typeof(UIControlNode));
+            CustomNodesTypes.Add(typeof(Terrain), typeof(TerrainNode));
         }
 
         /// <summary>
@@ -69,14 +79,11 @@ namespace FlaxEditor.SceneGraph
         /// <returns>The root scene node.</returns>
         public static SceneNode BuildSceneTree(Scene scene)
         {
-            // TODO: make it faster by calling engine internaly only once to gather optimzied scene tree -> but do it in late stage of editor development - no early optimalization!
+            // TODO: make it faster by calling engine internally only once to gather optimized scene tree -> but do it in late stage of editor development - no early optimization!
 
             var sceneNode = new SceneNode(scene);
 
             BuildSceneTree(sceneNode);
-
-            // Unlock tree UI
-            sceneNode.TreeNode.UnlockChildrenRecursive();
 
             return sceneNode;
         }
@@ -97,7 +104,8 @@ namespace FlaxEditor.SceneGraph
                 if (CustomNodesTypes.TryGetValue(actor.GetType(), out customType))
                 {
                     // Use custom type
-                    result = (ActorNode)Activator.CreateInstance(customType, new object[] { actor });
+                    _sharedArgsContainer[0] = actor;
+                    result = (ActorNode)Activator.CreateInstance(customType, _sharedArgsContainer);
                 }
                 else
                 {
@@ -111,22 +119,20 @@ namespace FlaxEditor.SceneGraph
             catch (Exception ex)
             {
                 // Error
-                Debug.LogWarning($"Failed to create scene graph node for actor {actor.Name} (type: {actor.GetType()}).");
-                Debug.LogException(ex);
+                Editor.LogWarning($"Failed to create scene graph node for actor {actor.Name} (type: {actor.GetType()}).");
+                Editor.LogWarning(ex);
             }
-
-            // Unlock tree UI
-            result?.TreeNode.UnlockChildrenRecursive();
 
             return result;
         }
 
         private static void BuildSceneTree(ActorNode node)
         {
-            var children = node.Actor.GetChildren();
-            for (int i = 0; i < children.Length; i++)
+            var childrenCount = node.Actor.ChildrenCount;
+            for (int i = 0; i < childrenCount; i++)
             {
-                var childNode = BuildActorNode(children[i]);
+                var child = node.Actor.GetChild(i);
+                var childNode = BuildActorNode(child);
                 if (childNode != null)
                     childNode.ParentNode = node;
             }

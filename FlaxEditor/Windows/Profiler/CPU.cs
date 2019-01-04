@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.GUI;
@@ -23,7 +21,7 @@ namespace FlaxEditor.Windows.Profiler
         private bool _showOnlyLastUpdateEvents;
 
         public CPU()
-            : base("CPU")
+        : base("CPU")
         {
             // Layout
             var panel = new Panel(ScrollBars.Vertical)
@@ -91,12 +89,19 @@ namespace FlaxEditor.Windows.Profiler
                         TitleBackgroundColor = headerColor,
                         FormatValue = FormatCellMs,
                     },
+                    new ColumnDefinition
+                    {
+                        Title = "Memory",
+                        TitleBackgroundColor = headerColor,
+                        FormatValue = FormatCellBytes,
+                    },
                 },
                 Parent = layout,
             };
             _table.Splits = new[]
             {
-                0.6f,
+                0.5f,
+                0.1f,
                 0.1f,
                 0.1f,
                 0.1f,
@@ -114,6 +119,11 @@ namespace FlaxEditor.Windows.Profiler
             return ((float)x).ToString("0.00");
         }
 
+        private string FormatCellBytes(object x)
+        {
+            return Utilities.Utils.FormatBytesCount((int)x);
+        }
+
         /// <inheritdoc />
         public override void Clear()
         {
@@ -122,13 +132,12 @@ namespace FlaxEditor.Windows.Profiler
         }
 
         /// <inheritdoc />
-        public override void Update()
+        public override void Update(ref SharedUpdateData sharedData)
         {
-            var stats = ProfilingTools.Stats;
-            _mainChart.AddSample(stats.UpdateTimeMs);
+            _mainChart.AddSample(sharedData.Stats.UpdateTimeMs);
 
             // Gather CPU events
-            var data = ProfilingTools.GetEventsCPU();
+            var data = sharedData.GetEventsCPU();
             _events.Add(data);
 
             // Update timeline if using the last frame
@@ -213,14 +222,14 @@ namespace FlaxEditor.Windows.Profiler
             double scale = 100.0;
             float x = (float)((e.Start - startTime) * scale);
             float width = (float)(length * scale);
-            
+
             var control = new Timeline.Event(x + xOffset, e.Depth + depthOffset, width)
             {
                 Name = e.Name,
                 TooltipText = string.Format("{0}, {1} ms", e.Name, ((int)(length * 1000.0) / 1000.0f)),
                 Parent = parent,
             };
-            
+
             // Spawn sub events
             int childrenDepth = e.Depth + 1;
             if (childrenDepth <= maxDepth)
@@ -276,7 +285,7 @@ namespace FlaxEditor.Windows.Profiler
             for (int i = 0; i < data.Length; i++)
             {
                 var events = data[i].Events;
-                
+
                 // Check maximum depth
                 int maxDepth = -1;
                 for (int j = 0; j < events.Length; j++)
@@ -291,7 +300,7 @@ namespace FlaxEditor.Windows.Profiler
                 }
 
                 // Skip empty tracks
-                if(maxDepth == -1)
+                if (maxDepth == -1)
                     continue;
 
                 // Add thread label
@@ -303,7 +312,7 @@ namespace FlaxEditor.Windows.Profiler
                     BackgroundColor = Style.Current.Background * 1.1f,
                     Parent = container,
                 };
-                
+
                 // Add events
                 for (int j = 0; j < events.Length; j++)
                 {
@@ -347,7 +356,7 @@ namespace FlaxEditor.Windows.Profiler
             float totalTimeMs = _mainChart.SelectedSample;
 
             // Add rows
-            var rowColor2 = Style.Current.Background * 1.02f;
+            var rowColor2 = Style.Current.Background * 1.4f;
             for (int j = 0; j < data.Length; j++)
             {
                 var events = data[j].Events;
@@ -371,7 +380,7 @@ namespace FlaxEditor.Windows.Profiler
                         else if (sub.Depth <= e.Depth)
                             break;
                     }
-                    
+
                     var row = new Row
                     {
                         Values = new object[]
@@ -390,6 +399,9 @@ namespace FlaxEditor.Windows.Profiler
 
                             // Self ms
                             (float)(((time - subEventsTimeTotal) * 10000.0f) / 10000.0f),
+
+                            // Memory Alloc
+                            e.MemoryAllocation,
                         },
                         Depth = e.Depth,
                         Width = _table.Width,

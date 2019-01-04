@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Collections.Generic;
 using FlaxEditor.SceneGraph;
@@ -14,7 +12,7 @@ namespace FlaxEditor.Gizmo
     public abstract class GizmoBase
     {
         /// <summary>
-        /// Gets the gizmo wner.
+        /// Gets the gizmo owner.
         /// </summary>
         public IGizmoOwner Owner { get; }
 
@@ -43,10 +41,31 @@ namespace FlaxEditor.Gizmo
         }
 
         /// <summary>
+        /// Called when gizmo gets activated.
+        /// </summary>
+        public virtual void OnActivated()
+        {
+        }
+
+        /// <summary>
+        /// Called when gizmo gets deactivated.
+        /// </summary>
+        public virtual void OnDeactivated()
+        {
+        }
+
+        /// <summary>
         /// Updates the gizmo logic (called even if not active).
         /// </summary>
         /// <param name="dt">Update delta time (in seconds).</param>
         public virtual void Update(float dt)
+        {
+        }
+
+        /// <summary>
+        /// Performs scene object picking. Called by the viewport on left mouse button released.
+        /// </summary>
+        public virtual void Pick()
         {
         }
 

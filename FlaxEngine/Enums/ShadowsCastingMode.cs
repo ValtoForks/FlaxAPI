@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -20,7 +18,7 @@ namespace FlaxEngine
         StaticOnly,
 
         /// <summary>
-        /// Render shados only in dynamic views (game, editor, etc.).
+        /// Render shadows only in dynamic views (game, editor, etc.).
         /// </summary>
         DynamicOnly,
 

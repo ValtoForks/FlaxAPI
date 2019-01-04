@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -15,12 +13,12 @@ namespace FlaxEngine
         public Collider Collider;
 
         /// <summary>
-        /// The normal of the surfacce the ray hit.
+        /// The normal of the surface the ray hit.
         /// </summary>
         public Vector3 Normal;
 
         /// <summary>
-        /// The distance from the ray's orogin to the hit location.
+        /// The distance from the ray's origin to the hit location.
         /// </summary>
         public float Distance;
 

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Runtime.InteropServices;
 
@@ -53,6 +51,16 @@ namespace FlaxEngine.Rendering
         public Quality MaxShadowsQuality;
 
         /// <summary>
+        /// The model LOD bias. Default is 0. Applied to all the objects in the render view.
+        /// </summary>
+        public int ModelLODBias;
+
+        /// <summary>
+        /// The model LOD distance scale factor. Default is 1. Applied to all the objects in the render view. Higher values increase LODs quality.
+        /// </summary>
+        public float ModelLODDistanceFactor;
+
+        /// <summary>
         /// The view flags.
         /// </summary>
         public ViewFlags Flags;
@@ -68,12 +76,12 @@ namespace FlaxEngine.Rendering
         /// <param name="view">The view.</param>
         /// <param name="projection">The projection.</param>
         public void SetUp(Matrix view, Matrix projection)
-	    {
-		    // Copy data
-	        Position = view.TranslationVector;
-		    Projection = projection;
-		    View = view;
-	    }
+        {
+            // Copy data
+            Position = view.TranslationVector;
+            Projection = projection;
+            View = view;
+        }
 
         /// <summary>
         /// Set up view for projector rendering.
@@ -92,12 +100,12 @@ namespace FlaxEngine.Rendering
             Position = position;
 
             // Create projection matrix
-            Matrix.PerspectiveFovLH(angle * Mathf.DegreesToRadians, 1.0f, nearPlane, farPlane, out Projection);
-            
+            Matrix.PerspectiveFov(angle * Mathf.DegreesToRadians, 1.0f, nearPlane, farPlane, out Projection);
+
             // Create view matrix
             Direction = direction;
             Vector3 target = Position + Direction;
-            Matrix.LookAtLH(ref Position, ref target, ref up, out View);
+            Matrix.LookAt(ref Position, ref target, ref up, out View);
         }
 
         /// <summary>

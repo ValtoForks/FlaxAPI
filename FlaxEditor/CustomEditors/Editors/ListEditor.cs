@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
@@ -17,6 +15,19 @@ namespace FlaxEditor.CustomEditors.Editors
     {
         /// <inheritdoc />
         public override int Count => (Values[0] as IList)?.Count ?? 0;
+
+        /// <inheritdoc />
+        protected override IList Allocate(int size)
+        {
+            var listType = Values.Type;
+            var list = (IList)Activator.CreateInstance(listType);
+            var defaultValue = Utilities.Utils.GetDefaultValue(ElementType);
+            for (int i = 0; i < size; i++)
+            {
+                list.Add(defaultValue);
+            }
+            return list;
+        }
 
         /// <inheritdoc />
         protected override void Resize(int newSize)
@@ -54,9 +65,28 @@ namespace FlaxEditor.CustomEditors.Editors
                         newValues.Add(defaultValue);
                     }
                 }
-                
+
                 SetValue(newValues);
             }
+        }
+
+        /// <inheritdoc />
+        protected override IList CloneValues()
+        {
+            var list = Values[0] as IList;
+            if (list == null)
+                return null;
+
+            var size = list.Count;
+            var listType = Values.Type;
+            var cloned = (IList)Activator.CreateInstance(listType);
+
+            for (int i = 0; i < size; i++)
+            {
+                cloned.Add(list[i]);
+            }
+
+            return cloned;
         }
     }
 }

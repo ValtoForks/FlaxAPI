@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.IO;
 using System.Text;
@@ -19,7 +17,7 @@ namespace FlaxEditor.Content
         /// The script files extension.
         /// </summary>
         public static readonly string Extension = "cs";
-        
+
         /// <summary>
         /// The script files extension filter.
         /// </summary>
@@ -41,13 +39,58 @@ namespace FlaxEditor.Content
         }
 
         /// <inheritdoc />
-        public override void Create(string outputPath)
+        public override void Create(string outputPath, object arg)
         {
             // Load template
             var templatePath = StringUtils.CombinePaths(Globals.EditorFolder, "Scripting/ScriptTemplate.cs");
             var scriptTemplate = File.ReadAllText(templatePath);
             var scriptNamespace = Editor.Instance.ProjectInfo.Name.Replace(" ", "");
-            
+
+            // Get directories
+            var sourceDirectory = Globals.ProjectFolder.Replace('\\', '/') + "/Source/";
+            var outputDirectory = new FileInfo(outputPath).DirectoryName.Replace('\\', '/');
+
+            // Generate "sub" namespace from relative path between source root and output path
+            // NOTE: Could probably use Replace instead substring, but this is faster :)
+            var subNamespaceStr = outputDirectory.Substring(sourceDirectory.Length - 1).Replace(" ", "").Replace(".", "").Replace('/', '.');
+
+            // Replace all namespace invalid characters
+            // NOTE: Need to handle number sequence at the beginning since namespace which begin with numeric sequence are invalid
+            string subNamespace = string.Empty;
+            bool isStart = true;
+            for (int pos = 0; pos < subNamespaceStr.Length; pos++)
+            {
+                var c = subNamespaceStr[pos];
+
+                if (isStart)
+                {
+                    // Skip characters that cannot start the sub namespace
+                    if (char.IsLetter(c))
+                    {
+                        isStart = false;
+                        subNamespace += '.';
+                        subNamespace += c;
+                    }
+                }
+                else
+                {
+                    // Add only valid characters
+                    if (char.IsLetterOrDigit(c) || c == '_')
+                    {
+                        subNamespace += c;
+                    }
+                    // Check for sub namespace start
+                    else if (c == '.')
+                    {
+                        isStart = true;
+                    }
+                }
+            }
+
+            // Append if valid
+            if (subNamespace.Length > 1)
+                scriptNamespace += subNamespace;
+
             // Format
             var scriptName = ScriptItem.CreateScriptName(outputPath);
             scriptTemplate = scriptTemplate.Replace("%class%", scriptName);

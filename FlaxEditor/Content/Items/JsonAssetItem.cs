@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -20,7 +18,7 @@ namespace FlaxEditor.Content
         /// <param name="id">The identifier.</param>
         /// <param name="typeName">Name of the resource type.</param>
         public JsonAssetItem(string path, Guid id, string typeName)
-            : base(path, typeName, ref id)
+        : base(path, typeName, ref id)
         {
         }
 
@@ -28,7 +26,10 @@ namespace FlaxEditor.Content
         public override ContentDomain ItemDomain => ContentDomain.Document;
 
         /// <inheritdoc />
-        public override string DefaultThumbnailName => "Document64";
+        public override ContentItemSearchFilter SearchFilter => ContentItemSearchFilter.Json;
+
+        /// <inheritdoc />
+        public override Sprite DefaultThumbnail => Editor.Instance.Icons.Document64;
 
         /// <inheritdoc />
         protected override bool DrawShadow => false;

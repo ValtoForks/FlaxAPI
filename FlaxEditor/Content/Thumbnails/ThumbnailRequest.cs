@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -35,7 +33,7 @@ namespace FlaxEditor.Content.Thumbnails
             /// <summary>
             /// The finalized state.
             /// </summary>
-            Disosed,
+            Disposed,
         };
 
         /// <summary>
@@ -57,6 +55,11 @@ namespace FlaxEditor.Content.Thumbnails
         /// The asset reference. May be null if not cached yet.
         /// </summary>
         public Asset Asset;
+
+        /// <summary>
+        /// The custom tag object used by the thumbnails rendering pipeline. Can be used to store the data related to the thumbnail rendering by the asset proxy.
+        /// </summary>
+        public object Tag;
 
         /// <summary>
         /// Determines whether thumbnail can be drawn for the item.
@@ -81,14 +84,14 @@ namespace FlaxEditor.Content.Thumbnails
         {
             if (State != States.Created)
                 throw new InvalidOperationException();
-            
+
             // Prepare
             Asset = FlaxEngine.Content.LoadAsync(Item.Path);
             Proxy.OnThumbnailDrawPrepare(this);
 
             State = States.Prepared;
         }
-        
+
         /// <summary>
         /// Finishes the rendering and updates the item thumbnail.
         /// </summary>
@@ -97,7 +100,7 @@ namespace FlaxEditor.Content.Thumbnails
         {
             if (State != States.Prepared)
                 throw new InvalidOperationException();
-            
+
             Item.Thumbnail = icon;
 
             State = States.Rendered;
@@ -108,7 +111,7 @@ namespace FlaxEditor.Content.Thumbnails
         /// </summary>
         public void Dispose()
         {
-            if (State == States.Disosed)
+            if (State == States.Disposed)
                 throw new InvalidOperationException();
 
             if (State != States.Created)
@@ -118,8 +121,8 @@ namespace FlaxEditor.Content.Thumbnails
                 Asset = null;
             }
 
-            State = States.Disosed;
+            Tag = null;
+            State = States.Disposed;
         }
     }
-
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Linq;
 using FlaxEditor.CustomEditors.Elements;
@@ -14,7 +12,7 @@ namespace FlaxEditor.CustomEditors.Editors
     [CustomEditor(typeof(float)), DefaultEditor]
     public sealed class FloatEditor : CustomEditor
     {
-        private IFloatValueEditor element;
+        private IFloatValueEditor _element;
 
         /// <inheritdoc />
         public override DisplayStyle Style => DisplayStyle.Inline;
@@ -22,12 +20,12 @@ namespace FlaxEditor.CustomEditors.Editors
         /// <inheritdoc />
         public override void Initialize(LayoutElementsContainer layout)
         {
-            element = null;
+            _element = null;
 
             // Try get limit attribute for value min/max range setting and slider speed
-            if (Values.Info != null)
+            var attributes = Values.GetAttributes();
+            if (attributes != null)
             {
-                var attributes = Values.Info.GetCustomAttributes(true);
                 var range = attributes.FirstOrDefault(x => x is RangeAttribute);
                 if (range != null)
                 {
@@ -35,8 +33,9 @@ namespace FlaxEditor.CustomEditors.Editors
                     var slider = layout.Slider();
                     slider.SetLimits((RangeAttribute)range);
                     slider.Slider.ValueChanged += OnValueChanged;
-	                slider.Slider.SlidingEnd += ClearToken;
-					element = slider;
+                    slider.Slider.SlidingEnd += ClearToken;
+                    _element = slider;
+                    return;
                 }
                 var limit = attributes.FirstOrDefault(x => x is LimitAttribute);
                 if (limit != null)
@@ -45,37 +44,40 @@ namespace FlaxEditor.CustomEditors.Editors
                     var floatValue = layout.FloatValue();
                     floatValue.SetLimits((LimitAttribute)limit);
                     floatValue.FloatValue.ValueChanged += OnValueChanged;
-	                floatValue.FloatValue.SlidingEnd += ClearToken;
-					element = floatValue;
+                    floatValue.FloatValue.SlidingEnd += ClearToken;
+                    _element = floatValue;
+                    return;
                 }
             }
-            if (element == null)
+            if (_element == null)
             {
                 // Use float value editor
                 var floatValue = layout.FloatValue();
                 floatValue.FloatValue.ValueChanged += OnValueChanged;
                 floatValue.FloatValue.SlidingEnd += ClearToken;
-                element = floatValue;
+                _element = floatValue;
             }
         }
 
-	    private void OnValueChanged()
-	    {
-		    var isSliding = element.IsSliding;
-		    var token = isSliding ? this : null;
-		    SetValue(element.Value, token);
-	    }
-
-	    /// <inheritdoc />
-		public override void Refresh()
+        private void OnValueChanged()
         {
-            if (HasDiffrentValues)
+            var isSliding = _element.IsSliding;
+            var token = isSliding ? this : null;
+            SetValue(_element.Value, token);
+        }
+
+        /// <inheritdoc />
+        public override void Refresh()
+        {
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 // TODO: support different values for ValueBox<T>
             }
             else
             {
-                element.Value = (float)Values[0];
+                _element.Value = (float)Values[0];
             }
         }
     }

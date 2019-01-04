@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.Surface
 {
@@ -10,9 +8,9 @@ namespace FlaxEditor.Surface
     public enum NodeElementType
     {
         /// <summary>
-        /// The invlid element.
+        /// The invalid element.
         /// </summary>
-        Invlid = 0,
+        Invalid = 0,
 
         /// <summary>
         /// The input box.
@@ -35,9 +33,9 @@ namespace FlaxEditor.Surface
         BoolValue = 4,
 
         /// <summary>
-        /// The inteager value.
+        /// The integer value.
         /// </summary>
-        InteagerValue = 5,
+        IntegerValue = 5,
 
         /// <summary>
         /// The float value.
@@ -68,5 +66,10 @@ namespace FlaxEditor.Surface
         /// The text box.
         /// </summary>
         TextBox = 14,
+
+        /// <summary>
+        /// The skeleton node selection.
+        /// </summary>
+        SkeletonNodeSelect = 15,
     }
 }

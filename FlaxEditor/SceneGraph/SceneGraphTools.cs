@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -13,7 +11,7 @@ namespace FlaxEditor.SceneGraph
     public static class SceneGraphTools
     {
         /// <summary>
-        /// Delegate for scene graph action exeuction callback.
+        /// Delegate for scene graph action execution callback.
         /// </summary>
         /// <param name="node">The node.</param>
         /// <returns>True if call deeper, otherwise skip calling node children.</returns>
@@ -42,7 +40,7 @@ namespace FlaxEditor.SceneGraph
         /// <param name="nodes">The nodes.</param>
         /// <returns>The result.</returns>
         public static List<T> BuildNodesParents<T>(this List<T> nodes)
-            where T : SceneGraphNode
+        where T : SceneGraphNode
         {
             var list = new List<T>();
             BuildNodesParents(nodes, list);
@@ -56,7 +54,7 @@ namespace FlaxEditor.SceneGraph
         /// <param name="nodes">The nodes.</param>
         /// <param name="result">The result.</param>
         public static void BuildNodesParents<T>(this List<T> nodes, List<T> result)
-            where T : SceneGraphNode
+        where T : SceneGraphNode
         {
             if (nodes == null || result == null)
                 throw new ArgumentNullException();
@@ -83,7 +81,7 @@ namespace FlaxEditor.SceneGraph
         /// <param name="nodes">The nodes.</param>
         /// <returns>The result.</returns>
         public static List<SceneGraphNode> BuildAllNodes<T>(this List<T> nodes)
-            where T : SceneGraphNode
+        where T : SceneGraphNode
         {
             var list = new List<SceneGraphNode>();
             BuildAllNodes(nodes, list);
@@ -105,7 +103,7 @@ namespace FlaxEditor.SceneGraph
         /// <param name="nodes">The nodes.</param>
         /// <param name="result">The result.</param>
         public static void BuildAllNodes<T>(this List<T> nodes, List<SceneGraphNode> result)
-            where T : SceneGraphNode
+        where T : SceneGraphNode
         {
             if (nodes == null || result == null)
                 throw new ArgumentNullException();

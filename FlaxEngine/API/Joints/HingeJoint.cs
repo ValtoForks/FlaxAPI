@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.InteropServices;
@@ -30,7 +28,7 @@ namespace FlaxEngine
     }
 
     /// <summary>
-    /// Properties of a drive that drives the joint's angular velocity towards a paricular value.
+    /// Properties of a drive that drives the joint's angular velocity towards a particular value.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct HingeJointDrive
@@ -41,17 +39,17 @@ namespace FlaxEngine
         [Limit(0)]
         public float Velocity;
 
-		/// <summary>
-		/// Maximum torque the drive is allowed to apply.
-		/// </summary>
-		[Limit(0)]
-		public float ForceLimit;
+        /// <summary>
+        /// Maximum torque the drive is allowed to apply.
+        /// </summary>
+        [Limit(0)]
+        public float ForceLimit;
 
-		/// <summary>
-		/// Scales the velocity of the first body, and its response to drive torque is scaled down.
-		/// </summary>
-		[Limit(0)]
-		public float GearRatio;
+        /// <summary>
+        /// Scales the velocity of the first body, and its response to drive torque is scaled down.
+        /// </summary>
+        [Limit(0)]
+        public float GearRatio;
 
         /// <summary>
         /// If the joint is moving faster than the drive's target speed, the drive will try to break.

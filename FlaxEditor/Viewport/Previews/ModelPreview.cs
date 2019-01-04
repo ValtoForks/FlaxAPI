@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using FlaxEditor.Viewport.Cameras;
 using FlaxEngine;
 using FlaxEngine.GUI;
 using FlaxEngine.Rendering;
@@ -12,22 +11,14 @@ namespace FlaxEditor.Viewport.Previews
     /// <summary>
     /// Model asset preview editor viewport.
     /// </summary>
-    /// <seealso cref="FlaxEditor.Viewport.EditorViewportArcBallCam" />
-    public class ModelPreview : EditorViewportArcBallCam
+    /// <seealso cref="AssetPreview" />
+    public class ModelPreview : AssetPreview
     {
-        private ModelActor _previewModel;
-        private DirectionalLight _previewLight;
-        private EnvironmentProbe _envProbe;
-        private Sky _sky;
-        private SkyLight _skyLight;
-        private PostFxVolume _postFxVolume;
+        private StaticModel _previewModel;
 
         /// <summary>
         /// Gets or sets the model asset to preview.
         /// </summary>
-        /// <value>
-        /// The model.
-        /// </value>
         public Model Model
         {
             get => _previewModel.Model;
@@ -37,61 +28,37 @@ namespace FlaxEditor.Viewport.Previews
         /// <summary>
         /// Gets the model actor used to preview selected asset.
         /// </summary>
-        public ModelActor PreviewModelActor => _previewModel;
-
-        /// <summary>
-        /// Gets the post fx volume. Allows to modify rendering settings.
-        /// </summary>
-        public PostFxVolume PostFxVolume => _postFxVolume;
+        public StaticModel PreviewStaticModel => _previewModel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ModelPreview"/> class.
         /// </summary>
         /// <param name="useWidgets">if set to <c>true</c> use widgets.</param>
         public ModelPreview(bool useWidgets)
-            : base(RenderTask.Create<SceneRenderTask>(), useWidgets, 50, Vector3.Zero)
+        : base(useWidgets)
         {
-            DockStyle = DockStyle.Fill;
-            
-            Task.Flags = ViewFlags.DefaultModelPreview;
             Task.Begin += OnBegin;
 
-            SetView(new Quaternion(0.424461186f, -0.0940724313f, 0.0443938486f, 0.899451137f));
-
             // Setup preview scene
-            _previewModel = ModelActor.New();
-            //
-            _previewLight = DirectionalLight.New();
-            _previewLight.ShadowsMode = ShadowsCastingMode.None;
-            _previewLight.Orientation = Quaternion.Euler(new Vector3(52.1477f, -109.109f, -111.739f));
-            //
-            _envProbe = EnvironmentProbe.New();
-            _envProbe.AutoUpdate = false;
-            _envProbe.CustomProbe = FlaxEngine.Content.LoadAsyncInternal<CubeTexture>(EditorAssets.DefaultSkyCubeTexture);
-            //
-            _sky = Sky.New();
-            _sky.SunLight = _previewLight;
-            //
-            _skyLight = SkyLight.New();
-            _skyLight.Mode = SkyLight.Modes.CustomTexture;
-            _skyLight.Brightness = 1.1f;
-            _skyLight.CustomTexture = _envProbe.CustomProbe;
-            //
-            _postFxVolume = PostFxVolume.New();
-            _postFxVolume.IsBounded = false;
-            _postFxVolume.Settings.Eye_MinLuminance = 0.1f;
+            _previewModel = StaticModel.New();
 
             // Link actors for rendering
-            Task.ActorsSource = ActorsSources.CustomActors;
             Task.CustomActors.Add(_previewModel);
-            Task.CustomActors.Add(_previewLight);
-            Task.CustomActors.Add(_envProbe);
-            Task.CustomActors.Add(_sky);
-            Task.CustomActors.Add(_skyLight);
-            Task.CustomActors.Add(_postFxVolume);
-		}
 
-        private void OnBegin(SceneRenderTask task)
+            if (useWidgets)
+            {
+                // Preview LOD
+                {
+                    var previewLOD = ViewWidgetButtonMenu.AddButton("Preview LOD");
+                    var previewLODValue = new IntValueBox(-1, 75, 2, 50.0f, -1, 10, 0.02f);
+                    previewLODValue.Parent = previewLOD;
+                    previewLODValue.ValueChanged += () => _previewModel.ForcedLOD = previewLODValue.Value;
+                    ViewWidgetButtonMenu.VisibleChanged += control => previewLODValue.Value = _previewModel.ForcedLOD;
+                }
+            }
+        }
+
+        private void OnBegin(SceneRenderTask task, GPUContext context)
         {
             // Update preview model scale to fit the preview
             var model = Model;
@@ -104,18 +71,10 @@ namespace FlaxEditor.Viewport.Previews
         }
 
         /// <inheritdoc />
-        public override bool HasLoadedAssets => base.HasLoadedAssets && _envProbe.Probe.IsLoaded && _sky.HasContentLoaded && _postFxVolume.HasContentLoaded;
-
-        /// <inheritdoc />
         public override void OnDestroy()
         {
             // Ensure to cleanup created actor objects
             Object.Destroy(ref _previewModel);
-            Object.Destroy(ref _previewLight);
-            Object.Destroy(ref _envProbe);
-            Object.Destroy(ref _sky);
-            Object.Destroy(ref _skyLight);
-            Object.Destroy(ref _postFxVolume);
 
             base.OnDestroy();
         }

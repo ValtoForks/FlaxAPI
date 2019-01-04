@@ -1,11 +1,10 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using FlaxEditor.CustomEditors;
+using FlaxEditor.GUI;
 using FlaxEditor.GUI.Dialogs;
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -22,11 +21,28 @@ namespace FlaxEditor.Content.Import
         private CustomEditorPresenter _settingsEditor;
 
         /// <summary>
+        /// Gets the entries count.
+        /// </summary>
+        public int EntriesCount
+        {
+            get
+            {
+                var result = 0;
+                for (int i = 0; i < _rootNode.ChildrenCount; i++)
+                {
+                    if (_rootNode.Children[i].Tag is ImportFileEntry fileEntry)
+                        result++;
+                }
+                return result;
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ImportFilesDialog"/> class.
         /// </summary>
         /// <param name="entries">The entries to edit settings.</param>
         public ImportFilesDialog(List<ImportFileEntry> entries)
-            : base("Import files settings")
+        : base("Import files settings")
         {
             if (entries == null || entries.Count < 1)
                 throw new ArgumentNullException();
@@ -41,7 +57,7 @@ namespace FlaxEditor.Content.Import
                 Text = "Import settings",
                 DockStyle = DockStyle.Top,
                 Parent = this,
-                Font = Style.Current.FontTitle
+                Font = new FontReference(Style.Current.FontTitle)
             };
             var infoLabel = new Label(10, headerLabel.Bottom + 5, TotalWidth - 20, 40)
             {
@@ -86,28 +102,103 @@ namespace FlaxEditor.Content.Import
             // Setup tree
             var tree = new Tree(true);
             tree.Parent = splitPanel.Panel1;
+            tree.RightClick += OnTreeRightClick;
             _rootNode = new TreeNode(false);
             for (int i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
 
                 // TODO: add icons for textures/models/etc from FileEntry to tree node??
-                var node = new TreeNode(false)
+                var node = new ItemNode(entry)
                 {
-                    Text = Path.GetFileName(entry.SourceUrl),
-                    Tag = entry,
                     Parent = _rootNode
                 };
-                node.LinkTooltip(entry.SourceUrl);
             }
             _rootNode.Expand();
+            _rootNode.ChildrenIndent = 0;
             _rootNode.Parent = tree;
+            tree.Margin = new Margin(0.0f, 0.0f, -14.0f, 2.0f); // Hide root node
             tree.SelectedChanged += OnSelectedChanged;
 
             // Select the first item
             tree.Select(_rootNode.Children[0] as TreeNode);
 
             Size = new Vector2(TotalWidth, splitPanel.Bottom);
+        }
+
+        private void OnTreeRightClick(TreeNode node, Vector2 location)
+        {
+            var menu = new ContextMenu();
+            menu.AddButton("Rename", OnRenameClicked);
+            menu.AddButton("Don't import", OnDontImportClicked);
+            menu.AddButton("Show in Explorer", OnShowInExplorerClicked);
+            menu.Tag = node;
+            menu.Show(node, location);
+        }
+
+        private void OnRenameClicked(ContextMenuButton button)
+        {
+            var node = (ItemNode)button.ParentContextMenu.Tag;
+            node.StartRenaming();
+        }
+
+        private void OnDontImportClicked(ContextMenuButton button)
+        {
+            if (EntriesCount == 1)
+            {
+                OnCancel();
+                return;
+            }
+
+            var node = (ItemNode)button.ParentContextMenu.Tag;
+            if (_settingsEditor.Selection.Count == 1 && _settingsEditor.Selection[0] == node.Entry.Settings)
+                _settingsEditor.Deselect();
+            node.Dispose();
+        }
+
+        private void OnShowInExplorerClicked(ContextMenuButton button)
+        {
+            var node = (ItemNode)button.ParentContextMenu.Tag;
+            Application.StartProcess(Path.GetDirectoryName(node.Entry.SourceUrl));
+        }
+
+        private class ItemNode : TreeNode
+        {
+            public ImportFileEntry Entry => (ImportFileEntry)Tag;
+
+            public ItemNode(ImportFileEntry entry)
+            : base(false)
+            {
+                Text = Path.GetFileName(entry.SourceUrl);
+                Tag = entry;
+                LinkTooltip(entry.SourceUrl);
+            }
+
+            /// <inheritdoc />
+            protected override bool OnMouseDoubleClickHeader(ref Vector2 location, MouseButton button)
+            {
+                StartRenaming();
+                return true;
+            }
+
+            /// <summary>
+            /// Shows the rename popup for the item.
+            /// </summary>
+            public void StartRenaming()
+            {
+                // Start renaming the folder
+                var entry = (ImportFileEntry)Tag;
+                var shortName = Path.GetFileNameWithoutExtension(entry.ResultUrl);
+                var dialog = RenamePopup.Show(this, HeaderRect, shortName, false);
+                dialog.Tag = Tag;
+                dialog.Renamed += OnRenamed;
+            }
+
+            private void OnRenamed(RenamePopup popup)
+            {
+                var entry = (ImportFileEntry)Tag;
+                entry.ModifyResultFilename(popup.Text);
+            }
         }
 
         private void OnImport()
@@ -148,6 +239,22 @@ namespace FlaxEditor.Content.Import
 
             settings.MinimumSize = new Vector2(300, 400);
             settings.HasSizingFrame = true;
+        }
+
+        /// <inheritdoc />
+        public override bool OnKeyDown(Keys key)
+        {
+            switch (key)
+            {
+            case Keys.Escape:
+                OnCancel();
+                return true;
+            case Keys.Return:
+                OnImport();
+                return true;
+            }
+
+            return base.OnKeyDown(key);
         }
     }
 }

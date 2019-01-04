@@ -1,6 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+//#define USE_AUTODESK_FBX_SDK
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Collections.Generic;
 using FlaxEditor.GUI.Dialogs;
@@ -17,7 +16,7 @@ namespace FlaxEditor.Windows
     {
         /// <inheritdoc />
         public AboutDialog()
-            : base("About Flax")
+        : base("About Flax")
         {
             Size = new Vector2(400, 260);
 
@@ -34,13 +33,13 @@ namespace FlaxEditor.Windows
         {
             Image icon = new Image(4, 4, 80, 80)
             {
-                ImageSource = new SpriteImageSource(Editor.Instance.UI.GetIcon("Logo128")),
+                Brush = new SpriteBrush(Editor.Instance.Icons.Logo128),
                 Parent = this
             };
             var nameLabel = new Label(icon.Right + 10, icon.Top, 200, 34)
             {
                 Text = "Flax Engine",
-                Font = Style.Current.FontTitle,
+                Font = new FontReference(Style.Current.FontTitle),
                 HorizontalAlignment = TextAlignment.Near,
                 VerticalAlignment = TextAlignment.Center,
                 Parent = this
@@ -118,18 +117,39 @@ namespace FlaxEditor.Windows
                 "UVAtlas - Copyright (c) Microsoft Corporation. All rights reserved.",
                 "LZ4 Library - Copyright (c) Yann Collet. All rights reserved.",
                 "fmt - www.fmtlib.net",
-				"minimp3 - www.github.com/lieff/minimp3",
-				"Ogg and Vorbis - Xiph.org Foundation",
-				"OpenAL Soft - www.github.com/kcat/openal-soft",
-				"pugixml - www.pugixml.org",
+                "minimp3 - www.github.com/lieff/minimp3",
+                "Ogg and Vorbis - Xiph.org Foundation",
+                "OpenAL Soft - www.github.com/kcat/openal-soft",
+                "OpenFBX - www.github.com/nem0/OpenFBX",
+                "pugixml - www.pugixml.org",
                 "rapidjson - www.rapidjson.org",
+#if USE_AUTODESK_FBX_SDK
+				"Autodesk FBX - Copyright (c) Autodesk",
+#endif
                 "Editor icons - www.icons8.com, www.iconfinder.com",
+                "",
+#if USE_AUTODESK_FBX_SDK
+				"This software contains Autodesk® FBX® code developed by Autodesk, Inc.",
+				"Copyright 2017 Autodesk, Inc. All rights, reserved.",
+				"Such code is provided “as is” and Autodesk, Inc. disclaims any and all",
+				"warranties, whether express or implied, including without limitation",
+				"the implied warranties of merchantability, fitness for a particular",
+				"purpose or non - infringement of third party rights.In no event shall",
+				"Autodesk, Inc.be liable for any direct, indirect, incidental, special,",
+				"exemplary, or consequential damages(including, but not limited to," ,
+				"procurement of substitute goods or services; loss of use, data, or",
+				"profits; or business interruption) however caused and on any theory" ,
+				"of liability, whether in contract, strict liability, or tort" ,
+				"(including negligence or otherwise)",
+				"arising in any way out of such code.",
+#endif
             };
             float y = 0;
+            float width = Width;
             for (var i = 0; i < thirdPartyEntries.Length; i++)
             {
                 var entry = thirdPartyEntries[i];
-                var entryLabel = new Label(0, y, Width, 14)
+                var entryLabel = new Label(0, y, width, 14)
                 {
                     Text = entry,
                     HorizontalAlignment = TextAlignment.Near,

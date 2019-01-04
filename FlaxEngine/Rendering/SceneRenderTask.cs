@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -14,16 +12,23 @@ namespace FlaxEngine.Rendering
     public class SceneRenderTask : RenderTask
     {
         /// <summary>
+        /// The global custom post processing effects applied to all <see cref="SceneRenderTask"/> (applied to tasks that have <see cref="AllowGlobalCustomPostFx"/> turned on).
+        /// </summary>
+        public static readonly HashSet<PostProcessEffect> GlobalCustomPostFx = new HashSet<PostProcessEffect>();
+
+        /// <summary>
         /// Action delegate called before scene rendering. Should prepare <see cref="SceneRenderTask.View"/> structure for rendering.
         /// </summary>
         /// <param name="task">The task.</param>
-        public delegate void BeginDelegate(SceneRenderTask task);
+        /// <param name="context">The GPU execution context.</param>
+        public delegate void BeginDelegate(SceneRenderTask task, GPUContext context);
 
         /// <summary>
         /// Action delegate called after scene rendering.
         /// </summary>
         /// <param name="task">The task.</param>
-        public delegate void EndDelegate(SceneRenderTask task);
+        /// <param name="context">The GPU execution context.</param>
+        public delegate void EndDelegate(SceneRenderTask task, GPUContext context);
 
         /// <summary>
         /// Action delegate called during rendering scene part to the view. Should submit custom draw calls using <see cref="DrawCallsCollector"/>.
@@ -87,6 +92,11 @@ namespace FlaxEngine.Rendering
         public readonly HashSet<PostProcessEffect> CustomPostFx = new HashSet<PostProcessEffect>();
 
         /// <summary>
+        /// True if allow using global custom PostFx when rendering this task.
+        /// </summary>
+        public bool AllowGlobalCustomPostFx = true;
+
+        /// <summary>
         /// The action called on rendering begin.
         /// </summary>
         public event BeginDelegate Begin;
@@ -102,11 +112,19 @@ namespace FlaxEngine.Rendering
         /// </summary>
         public event DrawDelegate Draw;
 
+        /// <summary>
+        /// The amount of frame rendered by this task. Is auto incremented on scene rendering.
+        /// </summary>
+        public int FrameCount;
+
         private readonly DrawCallsCollector _collector = new DrawCallsCollector();
+        private readonly HashSet<PostProcessEffect> _postFx = new HashSet<PostProcessEffect>();
 
         internal SceneRenderTask()
         {
+            // Init view defaults
             View.MaxShadowsQuality = Quality.Ultra;
+            View.ModelLODDistanceFactor = 1.0f;
         }
 
         /// <inheritdoc />
@@ -142,7 +160,7 @@ namespace FlaxEngine.Rendering
                 Buffers = RenderBuffers.New();
 
             // Prepare view
-            OnBegin();
+            OnBegin(context);
             Viewport viewport = new Viewport(Vector2.Zero, Buffers.Size);
             if (Camera != null)
             {
@@ -150,30 +168,38 @@ namespace FlaxEngine.Rendering
             }
 
             // Get custom post effects to render (registered ones and from the current camera)
-            var postFx = new HashSet<PostProcessEffect>(CustomPostFx);
+            _postFx.Clear();
+            foreach (var e in CustomPostFx)
+                _postFx.Add(e);
+            if (AllowGlobalCustomPostFx)
+            {
+                foreach (var e in GlobalCustomPostFx)
+                    _postFx.Add(e);
+            }
             if (Camera != null)
             {
                 var perCameraPostFx = Camera.GetScripts<PostProcessEffect>();
                 for (int i = 0; i < perCameraPostFx.Length; i++)
                 {
-                    postFx.Add(perCameraPostFx[i]);
+                    _postFx.Add(perCameraPostFx[i]);
                 }
             }
 
             // Call scene rendering
-            var customActors = CustomActors.Count > 0 ? CustomActors.ToArray() : null;
-            context.DrawScene(this, Output, Buffers, View, Flags, Mode, customActors, ActorsSource, postFx);
+            context.DrawScene(this, Output, Buffers, View, Flags, Mode, CustomActors, ActorsSource, _postFx);
+            FrameCount++;
 
             // Finish
-            OnEnd();
+            OnEnd(context);
         }
 
         /// <summary>
         /// Called when on rendering begin.
         /// </summary>
-        protected virtual void OnBegin()
+        /// <param name="context">The GPU execution context.</param>
+        protected virtual void OnBegin(GPUContext context)
         {
-            Begin?.Invoke(this);
+            Begin?.Invoke(this, context);
 
             // Resize buffers
             if (Output)
@@ -183,9 +209,10 @@ namespace FlaxEngine.Rendering
         /// <summary>
         /// Called when on rendering end.
         /// </summary>
-        protected virtual void OnEnd()
+        /// <param name="context">The GPU execution context.</param>
+        protected virtual void OnEnd(GPUContext context)
         {
-            End?.Invoke(this);
+            End?.Invoke(this, context);
         }
 
         internal override DrawCall[] Internal_Draw()

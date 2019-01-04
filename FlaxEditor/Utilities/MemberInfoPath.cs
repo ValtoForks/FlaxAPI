@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +27,7 @@ namespace FlaxEditor.Utilities
             public readonly int Index;
 
             /// <summary>
-            /// Gets the member type (field or proeprty type).
+            /// Gets the member type (field or property type).
             /// </summary>
             /// <value>
             /// The type.
@@ -154,18 +152,18 @@ namespace FlaxEditor.Utilities
         /// <param name="index">The array index.</param>
         public MemberInfoPath(MemberInfo member, int index = -1)
         {
-            if(member == null)
+            if (member == null)
                 throw new ArgumentNullException();
             _stack = new Entry[1];
             _stack[0] = new Entry(member, index);
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MemberInfoPath"/> class.
         /// </summary>
         /// <param name="members">The members.</param>
         public MemberInfoPath(Stack<Entry> members)
-            : this()
+        : this()
         {
             if (members == null || members.Count == 0)
                 throw new ArgumentNullException();

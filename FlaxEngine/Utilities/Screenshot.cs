@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -45,6 +43,7 @@ namespace FlaxEngine.Utilities
 #if !UNIT_TEST_COMPILANT
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_Capture1(IntPtr targetObj, string pathObj);
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_Capture2(IntPtr targetObj, string pathObj);
 #endif

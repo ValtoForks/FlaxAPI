@@ -1,3 +1,5 @@
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
 using FlaxEditor.Scripting;
 using FlaxEditor.States;
 using NUnit.Framework;
@@ -33,7 +35,7 @@ namespace FlaxEditor.Tests
 
             editor.Init(true);
             editor.EnsureState<LoadingState>();
-            
+
             // Mock scripts compilation finish
             editor.Update();
             Scripting.ScriptsBuilder.Internal_OnEvent(ScriptsBuilder.EventType.CompileEndGood);

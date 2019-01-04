@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -28,7 +26,7 @@ namespace FlaxEditor.GUI
         /// </summary>
         /// <param name="text">The text.</param>
         public MainMenuButton(string text)
-            : base(0, 0, 32, 16)
+        : base(0, 0, 32, 16)
         {
             Text = text;
         }
@@ -58,9 +56,9 @@ namespace FlaxEditor.GUI
             (Parent as MainMenu)?.Select(this);
             return true;
         }
-		
-	    /// <inheritdoc />
-	    public override void PerformLayout(bool force)
+
+        /// <inheritdoc />
+        public override void PerformLayout(bool force)
         {
             var style = Style.Current;
             float width = 12;

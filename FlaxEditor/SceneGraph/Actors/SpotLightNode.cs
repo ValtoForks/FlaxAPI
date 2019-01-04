@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -14,8 +12,17 @@ namespace FlaxEditor.SceneGraph.Actors
     {
         /// <inheritdoc />
         public SpotLightNode(Actor actor)
-            : base(actor)
+        : base(actor)
         {
+        }
+
+        /// <inheritdoc />
+        public override void OnDebugDraw(ViewportDebugDrawData data)
+        {
+            base.OnDebugDraw(data);
+
+            var transform = Actor.Transform;
+            DebugDraw.DrawArrow(transform.Translation, transform.Orientation, Color.Red, 0.3f, 0.0f, false);
         }
     }
 }

@@ -1,277 +1,732 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using FlaxEditor.CustomEditors.GUI;
+using FlaxEngine;
 using FlaxEngine.GUI;
+using Newtonsoft.Json;
+using JsonSerializer = FlaxEngine.Json.JsonSerializer;
+using Object = System.Object;
 
 namespace FlaxEditor.CustomEditors
 {
-	/// <summary>
-	/// Custom editor layout style modes.
-	/// </summary>
-	public enum DisplayStyle
-	{
-		/// <summary>
-		/// Creates a separate group for the editor (drop down element). This is a default value.
-		/// </summary>
-		Group,
+    /// <summary>
+    /// Custom editor layout style modes.
+    /// </summary>
+    public enum DisplayStyle
+    {
+        /// <summary>
+        /// Creates a separate group for the editor (drop down element). This is a default value.
+        /// </summary>
+        Group,
 
-		/// <summary>
-		/// Inlines editor contents into the property area without creating a drop-down group.
-		/// </summary>
-		Inline,
+        /// <summary>
+        /// Inlines editor contents into the property area without creating a drop-down group.
+        /// </summary>
+        Inline,
 
-		/// <summary>
-		/// Inlines editor contents into the parent editor layout. Won;t use property with label name.
-		/// </summary>
-		InlineIntoParent,
-	}
+        /// <summary>
+        /// Inlines editor contents into the parent editor layout. Won;t use property with label name.
+        /// </summary>
+        InlineIntoParent,
+    }
 
-	/// <summary>
-	/// Base class for all custom editors used to present object(s) properties. Allows to extend game objects editing with more logic and customization.
-	/// </summary>
-	public abstract class CustomEditor
-	{
-		private LayoutElementsContainer _layout;
-		private CustomEditorPresenter _presenter;
-		private CustomEditor _parent;
-		private readonly List<CustomEditor> _children = new List<CustomEditor>();
-		private ValueContainer _values;
-		private bool _isSetBlocked;
-		private bool _hasValueDirty;
-		private object _valueToSet;
+    /// <summary>
+    /// Base class for all custom editors used to present object(s) properties. Allows to extend game objects editing with more logic and customization.
+    /// </summary>
+    public abstract class CustomEditor
+    {
+        private LayoutElementsContainer _layout;
+        private CustomEditorPresenter _presenter;
+        private CustomEditor _parent;
+        private readonly List<CustomEditor> _children = new List<CustomEditor>();
+        private ValueContainer _values;
+        private bool _isSetBlocked;
+        private bool _skipChildrenRefresh;
+        private bool _hasValueDirty;
+        private bool _rebuildOnRefresh;
+        private object _valueToSet;
 
-		/// <summary>
-		/// Gets the custom editor style.
-		/// </summary>
-		public virtual DisplayStyle Style => DisplayStyle.Group;
+        /// <summary>
+        /// Gets the custom editor style.
+        /// </summary>
+        public virtual DisplayStyle Style => DisplayStyle.Group;
 
-		/// <summary>
-		/// Gets a value indicating whether single object is selected.
-		/// </summary>
-		public bool IsSingleObject => _values.IsSingleObject;
+        /// <summary>
+        /// Gets a value indicating whether single object is selected.
+        /// </summary>
+        public bool IsSingleObject => _values.IsSingleObject;
 
-		/// <summary>
-		/// Gets a value indicating whether selected objects are diffrent values.
-		/// </summary>
-		public bool HasDiffrentValues => _values.HasDiffrentValues;
+        /// <summary>
+        /// Gets a value indicating whether selected objects are different values.
+        /// </summary>
+        public bool HasDifferentValues => _values.HasDifferentValues;
 
-		/// <summary>
-		/// Gets a value indicating whether selected objects are diffrent types.
-		/// </summary>
-		public bool HasDiffrentTypes => _values.HasDiffrentTypes;
+        /// <summary>
+        /// Gets a value indicating whether selected objects are different types.
+        /// </summary>
+        public bool HasDifferentTypes => _values.HasDifferentTypes;
 
-		/// <summary>
-		/// Gets the values types array (without duplicates).
-		/// </summary>
-		public Type[] ValuesTypes => _values.ValuesTypes;
+        /// <summary>
+        /// Gets the values types array (without duplicates).
+        /// </summary>
+        public Type[] ValuesTypes => _values.ValuesTypes;
 
-		/// <summary>
-		/// Gets the values.
-		/// </summary>
-		public ValueContainer Values => _values;
+        /// <summary>
+        /// Gets the values.
+        /// </summary>
+        public ValueContainer Values => _values;
 
-		/// <summary>
-		/// Gets the parent editor.
-		/// </summary>
-		public CustomEditor ParentEditor => _parent;
+        /// <summary>
+        /// Gets the parent editor.
+        /// </summary>
+        public CustomEditor ParentEditor => _parent;
 
-		/// <summary>
-		/// Gets the presenter control. It's the top most part of the Custom Editors layout.
-		/// </summary>
-		public CustomEditorPresenter Presenter => _presenter;
+        /// <summary>
+        /// Gets the children editors (readonly).
+        /// </summary>
+        public List<CustomEditor> ChildrenEditors => _children;
 
-		/// <summary>
-		/// Gets a value indicating whether setting value is blocked (during refresh).
-		/// </summary>
-		protected bool IsSetBlocked => _isSetBlocked;
+        /// <summary>
+        /// Gets the presenter control. It's the top most part of the Custom Editors layout.
+        /// </summary>
+        public CustomEditorPresenter Presenter => _presenter;
 
-		internal virtual void Initialize(CustomEditorPresenter presenter, LayoutElementsContainer layout, ValueContainer values)
-		{
-			_layout = layout;
-			_presenter = presenter;
-			_values = values;
+        /// <summary>
+        /// Gets a value indicating whether setting value is blocked (during refresh).
+        /// </summary>
+        protected bool IsSetBlocked => _isSetBlocked;
 
-			var prev = CurrentCustomEditor;
-			CurrentCustomEditor = this;
+        /// <summary>
+        /// The linked label used to show this custom editor. Can be null if not used (eg. editor is inlined or is using a very customized UI layout).
+        /// </summary>
+        protected PropertyNameLabel LinkedLabel;
 
-			_isSetBlocked = true;
-			Initialize(layout);
-			Refresh();
-			_isSetBlocked = false;
+        internal virtual void Initialize(CustomEditorPresenter presenter, LayoutElementsContainer layout, ValueContainer values)
+        {
+            _layout = layout;
+            _presenter = presenter;
+            _values = values;
 
-			CurrentCustomEditor = prev;
-		}
+            var prev = CurrentCustomEditor;
+            CurrentCustomEditor = this;
 
-		internal static CustomEditor CurrentCustomEditor;
+            _isSetBlocked = true;
+            Initialize(layout);
+            Refresh();
+            _isSetBlocked = false;
 
-		internal void OnChildCreated(CustomEditor child)
-		{
-			// Link
-			_children.Add(child);
-			child._parent = this;
-		}
+            CurrentCustomEditor = prev;
+        }
 
-		/// <summary>
-		/// Rebuilds the editor layout. Cleans the whole UI with child elements/editors and then builds new hierarchy. Call it only when necessary.
-		/// </summary>
-		public void RebuildLayout()
-		{
-			var values = _values;
-			var presenter = _presenter;
-			var layout = _layout;
-			var control = layout.ContainerControl;
-			var parent = _parent;
-			var parentScrollV = (_presenter.Panel.Parent as Panel)?.VScrollBar?.Value ?? -1;
+        internal static CustomEditor CurrentCustomEditor;
 
-			control.IsLayoutLocked = true;
-			control.DisposeChildren();
+        internal void OnChildCreated(CustomEditor child)
+        {
+            // Link
+            _children.Add(child);
+            child._parent = this;
+        }
 
-			layout.ClearLayout();
-			Cleanup();
+        /// <summary>
+        /// Rebuilds the editor layout. Cleans the whole UI with child elements/editors and then builds new hierarchy. Call it only when necessary.
+        /// </summary>
+        public void RebuildLayout()
+        {
+            var values = _values;
+            var presenter = _presenter;
+            var layout = _layout;
+            var control = layout.ContainerControl;
+            var parent = _parent;
+            var parentScrollV = (_presenter.Panel.Parent as Panel)?.VScrollBar?.Value ?? -1;
 
-			_parent = parent;
-			Initialize(presenter, layout, values);
+            control.IsLayoutLocked = true;
+            control.DisposeChildren();
 
-			control.UnlockChildrenRecursive();
-			control.PerformLayout();
+            layout.ClearLayout();
+            Cleanup();
 
-			// Restore scroll value
-			if (parentScrollV > -1)
-				((Panel)_presenter.Panel.Parent).VScrollBar.Value = parentScrollV;
-		}
+            _parent = parent;
+            Initialize(presenter, layout, values);
 
-		/// <summary>
-		/// Initializes this editor.
-		/// </summary>
-		/// <param name="layout">The layout builder.</param>
-		public abstract void Initialize(LayoutElementsContainer layout);
+            control.UnlockChildrenRecursive();
+            control.PerformLayout();
 
-		/// <summary>
-		/// Cleanups this editor resources and child editors.
-		/// </summary>
-		internal void Cleanup()
-		{
-			for (int i = 0; i < _children.Count; i++)
-			{
-				_children[i].Cleanup();
-			}
+            // Restore scroll value
+            if (parentScrollV > -1 && _presenter != null && _presenter.Panel.Parent is Panel panel && panel.VScrollBar != null)
+                panel.VScrollBar.Value = parentScrollV;
+        }
 
-			_children.Clear();
-			_presenter = null;
-			_parent = null;
-			_hasValueDirty = false;
-			_valueToSet = null;
-			_values = null;
-			_isSetBlocked = false;
-		}
+        /// <summary>
+        /// Rebuilds the editor layout on editor refresh. Postponed after dirty value gets synced. Call it after <see cref="SetValue"/> to update editor after actual value assign.
+        /// </summary>
+        public void RebuildLayoutOnRefresh()
+        {
+            _rebuildOnRefresh = true;
+        }
 
-		internal void RefreshRoot()
-		{
-			for (int i = 0; i < _children.Count; i++)
-				_children[i].RefreshRootChild();
-		}
+        /// <summary>
+        /// Sets the request to skip the custom editor children refresh during next update. Can be used when editor layout has to be rebuild during the update itself.
+        /// </summary>
+        public void SkipChildrenRefresh()
+        {
+            _skipChildrenRefresh = true;
+        }
 
-		internal void RefreshRootChild()
-		{
-			Refresh();
+        /// <summary>
+        /// Initializes this editor.
+        /// </summary>
+        /// <param name="layout">The layout builder.</param>
+        public abstract void Initialize(LayoutElementsContainer layout);
 
-			for (int i = 0; i < _children.Count; i++)
-				_children[i].RefreshInternal();
-		}
+        /// <summary>
+        /// Deinitializes this editor (unbind events and cleanup).
+        /// </summary>
+        protected virtual void Deinitialize()
+        {
+        }
 
-		internal virtual void RefreshInternal()
-		{
-			// Check if need to update value
-			if (_hasValueDirty)
-			{
-				// Cleanup (won't retry update in case of exception)
-				object val = _valueToSet;
-				_hasValueDirty = false;
-				_valueToSet = null;
+        /// <summary>
+        /// Cleanups this editor resources and child editors.
+        /// </summary>
+        internal void Cleanup()
+        {
+            Deinitialize();
 
-				// Assign value
-				_values.Set(_parent.Values, val);
+            for (int i = 0; i < _children.Count; i++)
+            {
+                _children[i].Cleanup();
+            }
 
-				// Propagate values up (eg. when member of structure gets modified, also structure should be updated as a part of the other object)
-				var obj = _parent;
-				while (obj._parent != null)
-				{
-					obj._parent.SyncChildValues(obj.Values);
-					obj = obj._parent;
-				}
-			}
-			else
-			{
-				// Update values
-				_values.Refresh(_parent.Values);
-			}
+            _children.Clear();
+            _presenter = null;
+            _parent = null;
+            _hasValueDirty = false;
+            _valueToSet = null;
+            _values = null;
+            _isSetBlocked = false;
+            _rebuildOnRefresh = false;
+            LinkedLabel = null;
+        }
 
-			// Update itself
-			_isSetBlocked = true;
-			Refresh();
-			_isSetBlocked = false;
+        internal void RefreshRoot()
+        {
+            try
+            {
+                for (int i = 0; i < _children.Count; i++)
+                    _children[i].RefreshRootChild();
+            }
+            catch (TargetException ex)
+            {
+                // This happens when something (from root editor) calls the error.
+                // Just handle it and rebuild UI. Some parts of the pipeline can report data problems via that exception.
+                Editor.LogWarning("Exception while updating the root editors");
+                Editor.LogWarning(ex);
+                Presenter.BuildLayoutOnUpdate();
+            }
+        }
 
-			// Update children
-			for (int i = 0; i < _children.Count; i++)
-				_children[i].RefreshInternal();
-		}
+        internal void RefreshRootChild()
+        {
+            Refresh();
 
-		/// <summary>
-		/// Refreshes this editor.
-		/// </summary>
-		public virtual void Refresh()
-		{
-		}
+            for (int i = 0; i < _children.Count; i++)
+                _children[i].RefreshInternal();
+        }
 
-		/// <summary>
-		/// Sets the object value. Actual update is performed during editor refresh in sync.
-		/// </summary>
-		/// <param name="value">The value.</param>
-		/// <param name="token">The source editor token used by the value setter to support batching Undo actions (eg. for sliders or color pickers).</param>
-		protected void SetValue(object value, object token = null)
-		{
-			if (_isSetBlocked)
-				return;
+        internal virtual void RefreshInternal()
+        {
+            if (_values == null)
+                return;
 
-			if (OnDirty(this, value, token))
-			{
-				_hasValueDirty = true;
-				_valueToSet = value;
-			}
-		}
+            // Check if need to update value
+            if (_hasValueDirty)
+            {
+                // Cleanup (won't retry update in case of exception)
+                object val = _valueToSet;
+                _hasValueDirty = false;
+                _valueToSet = null;
 
-		/// <summary>
-		/// Synchronizes the child values container with this editor values.
-		/// </summary>
-		/// <param name="values">The values to synchronize.</param>
-		protected virtual void SyncChildValues(ValueContainer values)
-		{
-			values.Set(Values);
-		}
+                // Assign value
+                _values.Set(_parent.Values, val);
 
-		/// <summary>
-		/// Called when custom editor gets dirty (UI value has been modified).
-		/// Allows to filter the event, block it or handle in a custom way.
-		/// </summary>
-		/// <param name="editor">The editor.</param>
-		/// <param name="value">The value.</param>
-		/// <param name="token">The source editor token used by the value setter to support batching Undo actions (eg. for sliders or color pickers).</param>
-		/// <returns>True if allow to handle this event, otherwise false.</returns>
-		protected virtual bool OnDirty(CustomEditor editor, object value, object token = null)
-		{
-			ParentEditor.OnDirty(editor, value, token);
-			return true;
-		}
+                // Propagate values up (eg. when member of structure gets modified, also structure should be updated as a part of the other object)
+                var obj = _parent;
+                while (obj._parent != null)
+                {
+                    obj._parent.SyncChildValues(obj.Values);
+                    obj = obj._parent;
+                }
+            }
+            else
+            {
+                // Update values
+                _values.Refresh(_parent.Values);
+            }
 
-		/// <summary>
-		/// Clears the token assigned with <see cref="OnDirty"/> parameter. Called on merged undo action end (eg. users stops using slider).
-		/// </summary>
-		protected virtual void ClearToken()
-		{
-			ParentEditor.ClearToken();
-		}
-	}
+            // Update itself
+            _isSetBlocked = true;
+            Refresh();
+            _isSetBlocked = false;
+
+            // Update children
+            try
+            {
+                var childrenCount = _skipChildrenRefresh ? 0 : _children.Count;
+                for (int i = 0; i < childrenCount; i++)
+                    _children[i].RefreshInternal();
+                _skipChildrenRefresh = false;
+            }
+            catch (TargetException ex)
+            {
+                // This happens when one of the edited objects changes its type.
+                // Eg. from Label to TextBox, while both types were assigned to the same field of type Control.
+                // It's valid, just rebuild the child editors and log the warning to keep it tracking.
+                Editor.LogWarning("Exception while updating the child editors");
+                Editor.LogWarning(ex);
+                RebuildLayoutOnRefresh();
+            }
+
+            // Rebuild if flag is set
+            if (_rebuildOnRefresh)
+            {
+                _rebuildOnRefresh = false;
+                RebuildLayout();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes this editor.
+        /// </summary>
+        public virtual void Refresh()
+        {
+            if (LinkedLabel != null)
+            {
+                // Prefab value diff
+                if (Values.HasReferenceValue)
+                {
+                    var style = FlaxEngine.GUI.Style.Current;
+                    LinkedLabel.HighlightStripColor = CanRevertReferenceValue ? style.BackgroundSelected * 0.8f : Color.Transparent;
+                }
+                // Default value diff
+                else if (Values.HasDefaultValue)
+                {
+                    LinkedLabel.HighlightStripColor = CanRevertDefaultValue ? Color.Yellow * 0.8f : Color.Transparent;
+                }
+            }
+        }
+
+        internal void LinkLabel(PropertyNameLabel label)
+        {
+            LinkedLabel = label;
+        }
+
+        private void RevertDiffToDefault(CustomEditor editor)
+        {
+            if (editor.ChildrenEditors.Count == 0)
+            {
+                // Skip if no change detected
+                if (!editor.Values.IsDefaultValueModified)
+                    return;
+
+                editor.SetValueToDefault();
+            }
+            else
+            {
+                for (int i = 0; i < editor.ChildrenEditors.Count; i++)
+                {
+                    RevertDiffToDefault(editor.ChildrenEditors[i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this editor can revert the value to default value.
+        /// </summary>
+        public bool CanRevertDefaultValue
+        {
+            get
+            {
+                if (!Values.IsDefaultValueModified)
+                    return false;
+
+                // Skip array items (show diff only on a bottom level properties and fields)
+                if (ParentEditor != null && ParentEditor.Values.Type != null && ParentEditor.Values.Type.IsArray)
+                    return false;
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Reverts the property value to default value (if has). Handles undo.
+        /// </summary>
+        public void RevertToDefaultValue()
+        {
+            if (!Values.HasDefaultValue)
+                return;
+
+            Editor.Log("Reverting object changes to default");
+
+            RevertDiffToDefault(this);
+        }
+
+        /// <summary>
+        /// Updates the default value assigned to the editor's values container. Sends the event down the custom editors hierarchy to propagate the change.
+        /// </summary>
+        /// <remarks>
+        /// Has no effect on editors that don't have default value assigned.
+        /// </remarks>
+        public void RefreshDefaultValue()
+        {
+            if (!Values.HasDefaultValue)
+                return;
+
+            if (ParentEditor?.Values?.HasDefaultValue ?? false)
+            {
+                Values.RefreshDefaultValue(ParentEditor.Values.DefaultValue);
+            }
+
+            for (int i = 0; i < ChildrenEditors.Count; i++)
+            {
+                ChildrenEditors[i].RefreshDefaultValue();
+            }
+        }
+
+        /// <summary>
+        /// Clears all the default value of the container in the whole custom editors tree (this container and all children).
+        /// </summary>
+        public void ClearDefaultValueAll()
+        {
+            Values.ClearDefaultValue();
+
+            for (int i = 0; i < ChildrenEditors.Count; i++)
+            {
+                ChildrenEditors[i].ClearDefaultValueAll();
+            }
+        }
+
+        private void RevertDiffToReference(CustomEditor editor)
+        {
+            if (editor.ChildrenEditors.Count == 0)
+            {
+                // Skip if no change detected
+                if (!editor.Values.IsReferenceValueModified)
+                    return;
+
+                editor.SetValueToReference();
+            }
+            else
+            {
+                for (int i = 0; i < editor.ChildrenEditors.Count; i++)
+                {
+                    RevertDiffToReference(editor.ChildrenEditors[i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this editor can revert the value to reference value.
+        /// </summary>
+        public bool CanRevertReferenceValue
+        {
+            get
+            {
+                if (!Values.IsReferenceValueModified)
+                    return false;
+
+                // Skip array items (show diff only on a bottom level properties and fields)
+                if (ParentEditor != null && ParentEditor.Values.Type != null && ParentEditor.Values.Type.IsArray)
+                    return false;
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Reverts the property value to reference value (if has). Handles undo.
+        /// </summary>
+        public void RevertToReferenceValue()
+        {
+            if (!Values.HasReferenceValue)
+                return;
+
+            Editor.Log("Reverting object changes to prefab");
+
+            RevertDiffToReference(this);
+        }
+
+        /// <summary>
+        /// Updates the reference value assigned to the editor's values container. Sends the event down the custom editors hierarchy to propagate the change.
+        /// </summary>
+        /// <remarks>
+        /// Has no effect on editors that don't have reference value assigned.
+        /// </remarks>
+        public void RefreshReferenceValue()
+        {
+            if (!Values.HasReferenceValue)
+                return;
+
+            if (ParentEditor?.Values?.HasReferenceValue ?? false)
+            {
+                Values.RefreshReferenceValue(ParentEditor.Values.ReferenceValue);
+            }
+
+            for (int i = 0; i < ChildrenEditors.Count; i++)
+            {
+                ChildrenEditors[i].RefreshReferenceValue();
+            }
+        }
+
+
+        /// <summary>
+        /// Clears all the reference value of the container in the whole custom editors tree (this container and all children).
+        /// </summary>
+        public void ClearReferenceValueAll()
+        {
+            Values.ClearReferenceValue();
+
+            for (int i = 0; i < ChildrenEditors.Count; i++)
+            {
+                ChildrenEditors[i].ClearReferenceValueAll();
+            }
+        }
+
+        /// <summary>
+        /// Copies the value to the system clipboard.
+        /// </summary>
+        public void Copy()
+        {
+            Editor.Log("Copy custom editor value");
+
+            try
+            {
+                string text;
+                if (typeof(FlaxEngine.Object).IsAssignableFrom(Values.Type))
+                {
+                    text = JsonSerializer.GetStringID(Values[0] as FlaxEngine.Object);
+                }
+                else
+                {
+                    text = JsonSerializer.Serialize(Values[0]);
+                }
+
+                Application.ClipboardText = text;
+            }
+            catch (Exception ex)
+            {
+                Editor.LogWarning(ex);
+                Editor.LogError("Cannot copy property. See log for more info.");
+            }
+        }
+
+        private bool GetClipboardObject(out object result)
+        {
+            result = null;
+            var text = Application.ClipboardText;
+            if (string.IsNullOrEmpty(text))
+                return false;
+
+            object obj;
+            if (typeof(FlaxEngine.Object).IsAssignableFrom(Values.Type))
+            {
+                if (text.Length != 32)
+                    return false;
+                JsonSerializer.ParseID(text, out var id);
+                obj = FlaxEngine.Object.Find<FlaxEngine.Object>(ref id);
+            }
+            else
+            {
+                obj = JsonConvert.DeserializeObject(text, Values.Type, JsonSerializer.Settings);
+            }
+
+            if (obj == null || Values.Type.IsInstanceOfType(obj))
+            {
+                result = obj;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether can paste value from the system clipboard to the property value container.
+        /// </summary>
+        public bool CanPaste
+        {
+            get
+            {
+                try
+                {
+                    return GetClipboardObject(out _);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the value from the system clipboard.
+        /// </summary>
+        public void Paste()
+        {
+            Editor.Log("Paste custom editor value");
+
+            try
+            {
+                if (GetClipboardObject(out var obj))
+                {
+                    SetValue(obj);
+                }
+            }
+            catch (Exception ex)
+            {
+                Editor.LogWarning(ex);
+                Editor.LogError("Cannot paste property value. See log for more info.");
+            }
+        }
+
+        private Actor FindPrefabRoot(CustomEditor editor)
+        {
+            if (editor.Values[0] is Actor actor)
+                return FindPrefabRoot(actor);
+            if (editor.ParentEditor != null)
+                return FindPrefabRoot(editor.ParentEditor);
+            return null;
+        }
+
+        private Actor FindPrefabRoot(Actor actor)
+        {
+            if (actor is Scene)
+                return null;
+            if (actor.IsPrefabRoot)
+                return actor;
+            return FindPrefabRoot(actor.Parent);
+        }
+
+        private ISceneObject FindObjectWithPrefabObjectId(Actor actor, ref Guid prefabObjectId)
+        {
+            if (actor.PrefabObjectID == prefabObjectId)
+                return actor;
+
+            for (int i = 0; i < actor.ScriptsCount; i++)
+            {
+                if (actor.GetScript(i).PrefabObjectID == prefabObjectId)
+                {
+                    var a = actor.GetScript(i);
+                    if (a != null)
+                        return a;
+                }
+            }
+
+            for (int i = 0; i < actor.ChildrenCount; i++)
+            {
+                if (actor.GetChild(i).PrefabObjectID == prefabObjectId)
+                {
+                    var a = actor.GetChild(i);
+                    if (a != null)
+                        return a;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the editor value to the default value (if assigned).
+        /// </summary>
+        public void SetValueToDefault()
+        {
+            SetValue(Values.DefaultValue);
+        }
+
+        /// <summary>
+        /// Sets the editor value to the reference value (if assigned).
+        /// </summary>
+        public void SetValueToReference()
+        {
+            // Special case for object references
+            // If prefab object has reference to other object in prefab needs to revert to matching prefab instance object not the reference prefab object value
+            if (Values.ReferenceValue is ISceneObject referenceSceneObject && referenceSceneObject.HasPrefabLink)
+            {
+                if (Values.Count > 1)
+                {
+                    Editor.LogError("Cannot revert to reference value for more than one object selected.");
+                    return;
+                }
+
+                Actor prefabInstanceRoot = FindPrefabRoot(this);
+                if (prefabInstanceRoot == null)
+                {
+                    Editor.LogError("Cannot revert to reference value. Missing prefab instance root actor.");
+                    return;
+                }
+
+                var prefabObjectId = referenceSceneObject.PrefabObjectID;
+                var prefabInstanceRef = FindObjectWithPrefabObjectId(prefabInstanceRoot, ref prefabObjectId);
+                if (prefabInstanceRef == null)
+                {
+                    Editor.LogWarning("Missing prefab instance reference in the prefab instance. Cannot revert to it.");
+                }
+
+                SetValue(prefabInstanceRef);
+
+                return;
+            }
+
+            SetValue(Values.ReferenceValue);
+        }
+
+        /// <summary>
+        /// Sets the object value. Actual update is performed during editor refresh in sync.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="token">The source editor token used by the value setter to support batching Undo actions (eg. for sliders or color pickers).</param>
+        protected void SetValue(object value, object token = null)
+        {
+            if (_isSetBlocked)
+                return;
+
+            if (OnDirty(this, value, token))
+            {
+                _hasValueDirty = true;
+                _valueToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the child values container with this editor values.
+        /// </summary>
+        /// <param name="values">The values to synchronize.</param>
+        protected virtual void SyncChildValues(ValueContainer values)
+        {
+            values.Set(Values);
+        }
+
+        /// <summary>
+        /// Called when custom editor gets dirty (UI value has been modified).
+        /// Allows to filter the event, block it or handle in a custom way.
+        /// </summary>
+        /// <param name="editor">The editor.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="token">The source editor token used by the value setter to support batching Undo actions (eg. for sliders or color pickers).</param>
+        /// <returns>True if allow to handle this event, otherwise false.</returns>
+        protected virtual bool OnDirty(CustomEditor editor, object value, object token = null)
+        {
+            ParentEditor.OnDirty(editor, value, token);
+            return true;
+        }
+
+        /// <summary>
+        /// Clears the token assigned with <see cref="OnDirty"/> parameter. Called on merged undo action end (eg. users stops using slider).
+        /// </summary>
+        protected virtual void ClearToken()
+        {
+            ParentEditor.ClearToken();
+        }
+    }
 }

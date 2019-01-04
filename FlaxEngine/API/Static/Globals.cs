@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -31,7 +29,7 @@ namespace FlaxEngine
         public static string EngineFolder { get; private set; }
 
         /// <summary>
-        /// Gets the development files fodler path.
+        /// Gets the development files folder path.
         /// Valid only in development builds.
         /// </summary>
         public static string DevelopmentFolder { get; private set; }
@@ -47,17 +45,6 @@ namespace FlaxEngine
         /// </summary>
         public static string ToolsFolder { get; private set; }
 
-        /// <summary>
-        /// Gets the localization data folder path.
-        /// </summary>
-        public static string LocalizationFolder { get; private set; }
-
-        /// <summary>
-        /// Gets the configuration directory path.
-        /// </summary>
-        public static string ConfigFolder { get; private set; }
-
-        // Content directory path
         /// <summary>
         /// Gets the content directory path.
         /// </summary>
@@ -84,7 +71,7 @@ namespace FlaxEngine
         {
             // Initialize paths
             var paths = GetPaths();
-            if (paths == null || paths.Length != 13)
+            if (paths == null || paths.Length != 11)
                 throw new InvalidOperationException("Invalid Globals.");
             StartupPath = paths[0];
             TemporaryFolder = paths[1];
@@ -93,12 +80,10 @@ namespace FlaxEngine
             DevelopmentFolder = paths[4];
             EditorFolder = paths[5];
             ToolsFolder = paths[6];
-            LocalizationFolder = paths[7];
-            ConfigFolder = paths[8];
-            ContentFolder = paths[9];
-            SourceFolder = paths[10];
-            ProjectCacheFolder = paths[11];
-            MonoPath = paths[12];
+            ContentFolder = paths[7];
+            SourceFolder = paths[8];
+            ProjectCacheFolder = paths[9];
+            MonoPath = paths[10];
         }
     }
 }

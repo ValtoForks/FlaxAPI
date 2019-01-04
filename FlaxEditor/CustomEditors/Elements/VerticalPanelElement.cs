@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.GUI;
 
@@ -16,15 +14,6 @@ namespace FlaxEditor.CustomEditors.Elements
         /// The panel.
         /// </summary>
         public readonly VerticalPanel Panel = new VerticalPanel();
-
-        /// <summary>
-        /// Initializes the element.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        public void Init(string text)
-        {
-            Panel.Name = text;
-        }
 
         /// <inheritdoc />
         public override ContainerControl ContainerControl => Panel;

@@ -1,4 +1,4 @@
-﻿// Flax Engine scripting API
+﻿// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -29,7 +29,7 @@ namespace FlaxEditor.States
         public override bool CanReloadScripts => true;
 
         internal EditingSceneState(Editor editor)
-            : base(editor)
+        : base(editor)
         {
         }
     }

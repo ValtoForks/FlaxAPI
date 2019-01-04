@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -19,6 +17,7 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the padding given to each slot.
         /// </summary>
+        [EditorOrder(0), Tooltip("The padding margin appied to each item slot.")]
         public Margin SlotPadding
         {
             get => _slotPadding;
@@ -30,8 +29,9 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
-        /// The cells widths in container width percentage (from top to bottom). Use negative values to set fixed widths for the cells.
+        /// The cells heights in container height percentage (from top to bottom). Use negative values to set fixed widths for the cells.
         /// </summary>
+        [EditorOrder(10), Tooltip("The cells heights in container height percentage (from top to bottom). Use negative values to set fixed height for the cells.")]
         public float[] RowFill
         {
             get => _cellsV;
@@ -47,6 +47,7 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// The cells heights in container width percentage (from left to right). Use negative values to set fixed heights for the cells.
         /// </summary>
+        [EditorOrder(20), Tooltip("The cells heights in container width percentage (from left to right). Use negative values to set fixed width for the cells.")]
         public float[] ColumnFill
         {
             get => _cellsH;
@@ -63,7 +64,7 @@ namespace FlaxEngine.GUI
         /// Initializes a new instance of the <see cref="GridPanel"/> class.
         /// </summary>
         public GridPanel()
-            : this(2)
+        : this(2)
         {
         }
 
@@ -74,8 +75,16 @@ namespace FlaxEngine.GUI
         public GridPanel(float slotPadding)
         {
             SlotPadding = new Margin(slotPadding);
-            _cellsH = new[] { 0.5f, 0.5f };
-            _cellsV = new[] { 0.5f, 0.5f };
+            _cellsH = new[]
+            {
+                0.5f,
+                0.5f
+            };
+            _cellsV = new[]
+            {
+                0.5f,
+                0.5f
+            };
         }
 
         /// <inheritdoc />

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content.Thumbnails;
@@ -40,10 +38,10 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x5C7F69);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => SpriteAtlas.Domain;
+        public override ContentDomain Domain => ContentDomain.Texture;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(SpriteAtlas).FullName;
+        public override Type AssetType => typeof(SpriteAtlas);
 
         /// <inheritdoc />
         public override void OnThumbnailDrawPrepare(ThumbnailRequest request)

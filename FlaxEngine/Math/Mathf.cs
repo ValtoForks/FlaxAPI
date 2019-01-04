@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.ComponentModel;
@@ -258,7 +258,7 @@ namespace FlaxEngine
         {
             return a + (b - a) * t;
         }
-        
+
         /// <summary>
         /// Returns the logarithm of a specified number in a specified base.
         /// </summary>
@@ -293,6 +293,36 @@ namespace FlaxEngine
         /// <param name="a"></param>
         /// <param name="b"></param>
         public static float Max(float a, float b)
+        {
+            return a <= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns largest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static double Max(double a, double b)
+        {
+            return a <= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns largest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static long Max(long a, long b)
+        {
+            return a <= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns largest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static ulong Max(ulong a, ulong b)
         {
             return a <= b ? b : a;
         }
@@ -349,6 +379,36 @@ namespace FlaxEngine
         /// <param name="a"></param>
         /// <param name="b"></param>
         public static float Min(float a, float b)
+        {
+            return a >= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns the smallest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static double Min(double a, double b)
+        {
+            return a >= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns the smallest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static long Min(long a, long b)
+        {
+            return a >= b ? b : a;
+        }
+
+        /// <summary>
+        /// Returns the smallest of two or more values.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        public static ulong Min(ulong a, ulong b)
         {
             return a >= b ? b : a;
         }
@@ -506,7 +566,8 @@ namespace FlaxEngine
             return SmoothDamp(current, target, ref currentVelocity, smoothTime, float.PositiveInfinity, single);
         }
 
-        public static float SmoothDamp(float current, float target, ref float currentVelocity, float smoothTime, [DefaultValue("float.PositiveInfinity")] float maxSpeed, [DefaultValue("Time.DeltaTime")] float deltaTime)
+        public static float SmoothDamp(float current, float target, ref float currentVelocity, float smoothTime, [DefaultValue("float.PositiveInfinity")]
+                                       float maxSpeed, [DefaultValue("Time.DeltaTime")] float deltaTime)
         {
             smoothTime = Max(0.0001f, smoothTime);
             float single = 2f / smoothTime;
@@ -538,7 +599,8 @@ namespace FlaxEngine
             return SmoothDampAngle(current, target, ref currentVelocity, smoothTime, float.PositiveInfinity, Time.DeltaTime);
         }
 
-        public static float SmoothDampAngle(float current, float target, ref float currentVelocity, float smoothTime, [DefaultValue("float.PositiveInfinity")] float maxSpeed, [DefaultValue("Time.DeltaTime")] float deltaTime)
+        public static float SmoothDampAngle(float current, float target, ref float currentVelocity, float smoothTime, [DefaultValue("float.PositiveInfinity")]
+                                            float maxSpeed, [DefaultValue("Time.DeltaTime")] float deltaTime)
         {
             target = current + DeltaAngle(current, target);
             return SmoothDamp(current, target, ref currentVelocity, smoothTime, maxSpeed, deltaTime);
@@ -636,6 +698,36 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Returns square of the given value.
+        /// </summary>
+        /// <param name="f">The value.</param>
+        /// <returns>The value * value.</returns>
+        public static int Square(int f)
+        {
+            return f * f;
+        }
+
+        /// <summary>
+        /// Returns square of the given value.
+        /// </summary>
+        /// <param name="f">The value.</param>
+        /// <returns>The value * value.</returns>
+        public static double Square(double f)
+        {
+            return f * f;
+        }
+
+        /// <summary>
+        /// Returns square of the given value.
+        /// </summary>
+        /// <param name="f">The value.</param>
+        /// <returns>The value * value.</returns>
+        public static float Square(float f)
+        {
+            return f * f;
+        }
+
+        /// <summary>
         /// Returns the tangent of angle f in radians.
         /// </summary>
         /// <param name="f"></param>
@@ -682,6 +774,18 @@ namespace FlaxEngine
             // according to http://code.google.com/p/googletest/source/browse/trunk/include/gtest/internal/gtest-internal.h
             const int maxUlp = 4;
             return ulp <= maxUlp;
+        }
+
+        /// <summary>
+        /// Checks if a and b are almost equals, taking into account the magnitude of floating point numbers .
+        /// See remarks.
+        /// </summary>
+        /// <param name="a">The left value to compare.</param>
+        /// <param name="b">The right value to compare.</param>
+        /// <returns><c>true</c> if a almost equal to b, <c>false</c> otherwise</returns>
+        public static bool NearEqual(double a, double b)
+        {
+            return Math.Abs(a - b) < double.Epsilon * 10;
         }
 
         /// <summary>
@@ -883,7 +987,43 @@ namespace FlaxEngine
         /// <param name="min">The min.</param>
         /// <param name="max">The max.</param>
         /// <returns>The result of clamping a value between min and max</returns>
+        public static long Clamp(long value, long min, long max)
+        {
+            return value < min ? min : value > max ? max : value;
+        }
+
+        /// <summary>
+        /// Clamps the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="min">The min.</param>
+        /// <param name="max">The max.</param>
+        /// <returns>The result of clamping a value between min and max</returns>
+        public static ulong Clamp(ulong value, ulong min, ulong max)
+        {
+            return value < min ? min : value > max ? max : value;
+        }
+
+        /// <summary>
+        /// Clamps the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="min">The min.</param>
+        /// <param name="max">The max.</param>
+        /// <returns>The result of clamping a value between min and max</returns>
         public static float Clamp(float value, float min, float max)
+        {
+            return value < min ? min : value > max ? max : value;
+        }
+
+        /// <summary>
+        /// Clamps the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="min">The min.</param>
+        /// <param name="max">The max.</param>
+        /// <returns>The result of clamping a value between min and max</returns>
+        public static double Clamp(double value, double min, double max)
         {
             return value < min ? min : value > max ? max : value;
         }
@@ -958,8 +1098,8 @@ namespace FlaxEngine
         public static float SmoothStep(float amount)
         {
             return amount <= 0 ? 0
-                : amount >= 1 ? 1
-                    : amount * amount * (3 - 2 * amount);
+                   : amount >= 1 ? 1
+                   : amount * amount * (3 - 2 * amount);
         }
 
         /// <summary>
@@ -972,8 +1112,8 @@ namespace FlaxEngine
         public static float SmootherStep(float amount)
         {
             return amount <= 0 ? 0
-                : amount >= 1 ? 1
-                    : amount * amount * amount * (amount * (amount * 6 - 15) + 10);
+                   : amount >= 1 ? 1
+                   : amount * amount * amount * (amount * (amount * 6 - 15) + 10);
         }
 
         /// <summary>

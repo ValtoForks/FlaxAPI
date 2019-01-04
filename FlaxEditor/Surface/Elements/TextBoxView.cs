@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -27,7 +25,7 @@ namespace FlaxEditor.Surface.Elements
 
         /// <inheritdoc />
         public TextBoxView(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(archetype.BoxID == 1, archetype.Position.X, archetype.Position.Y, archetype.Size.X)
+        : base(archetype.BoxID == 1, archetype.Position.X, archetype.Position.Y, archetype.Size.X)
         {
             ParentNode = parentNode;
             Archetype = archetype;
@@ -36,11 +34,7 @@ namespace FlaxEditor.Surface.Elements
             if (archetype.ValueIndex >= 0)
             {
                 Text = (string)parentNode.Values[archetype.ValueIndex];
-                EditEnd += () =>
-                           {
-                               ParentNode.Values[Archetype.ValueIndex] = Text;
-                               Surface.MarkAsEdited();
-                           };
+                EditEnd += () => ParentNode.SetValue(Archetype.ValueIndex, Text);
             }
         }
 

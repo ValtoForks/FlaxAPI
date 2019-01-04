@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -42,7 +40,7 @@ namespace FlaxEditor.GUI
         /// Initializes a new instance of the <see cref="StatusBar"/> class.
         /// </summary>
         public StatusBar()
-            : base(0, 0, 100, DefaultHeight)
+        : base(0, 0, 100, DefaultHeight)
         {
             CanFocus = false;
             DockStyle = DockStyle.Bottom;
@@ -54,12 +52,11 @@ namespace FlaxEditor.GUI
             base.Draw();
 
             var style = Style.Current;
-            var window = ParentWindow;
 
             // Draw size grip
-            if (window != null && !window.IsMaximized)
+            if (Root is WindowRootControl window && !window.IsMaximized)
                 Render2D.DrawSprite(style.StatusBarSizeGrip, new Rectangle(Width - 12, 10, 12, 12));
-            
+
             // Draw status text
             Render2D.DrawText(style.FontSmall, Text, new Rectangle(4, 0, Width - 20, Height), style.Foreground, TextAlignment.Near, TextAlignment.Center);
         }

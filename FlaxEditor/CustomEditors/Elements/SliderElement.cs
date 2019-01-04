@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Linq;
 using System.Reflection;
@@ -14,13 +12,13 @@ namespace FlaxEditor.CustomEditors.Elements
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.LayoutElement" />
     public class SliderElement : LayoutElement, IFloatValueEditor, IIntegerValueEditor
-	{
+    {
         /// <summary>
         /// The slider control.
         /// </summary>
         public readonly SliderControl Slider;
-		
-		/// <summary>
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SliderElement"/> class.
         /// </summary>
         public SliderElement()
@@ -68,14 +66,14 @@ namespace FlaxEditor.CustomEditors.Elements
             set => Slider.Value = value;
         }
 
-		/// <inheritdoc />
-		int IIntegerValueEditor.Value
-		{
-			get => (int)Slider.Value;
-			set => Slider.Value = value;
-		}
+        /// <inheritdoc />
+        int IIntegerValueEditor.Value
+        {
+            get => (int)Slider.Value;
+            set => Slider.Value = value;
+        }
 
-		/// <inheritdoc cref="IFloatValueEditor.IsSliding" />
-		public bool IsSliding => Slider.IsSliding;
+        /// <inheritdoc cref="IFloatValueEditor.IsSliding" />
+        public bool IsSliding => Slider.IsSliding;
     }
 }

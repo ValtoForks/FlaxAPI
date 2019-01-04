@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -12,7 +10,7 @@ namespace FlaxEngine
     /// <summary>
     /// Base class for all actor types on the scene
     /// </summary>
-    public abstract partial class Actor : ITransformable
+    public abstract partial class Actor : ITransformable, ISceneObject
     {
         /// <summary>
         /// Returns true if object is fully static on the scene
@@ -22,7 +20,7 @@ namespace FlaxEngine
         public bool IsStatic
         {
 #if UNIT_TEST_COMPILANT
-			get; set;
+            get { return StaticFlags == StaticFlags.FullyStatic; }
 #else
             get { return Internal_GetStaticFlags(unmanagedPtr) == StaticFlags.FullyStatic; }
 #endif
@@ -99,7 +97,7 @@ namespace FlaxEngine
         [NoSerialize]
         public Vector3 Direction
         {
-            get => Vector3.ForwardLH * Orientation;
+            get => Vector3.Forward * Orientation;
             set
             {
                 Vector3 right = Vector3.Cross(value, Vector3.Up);
@@ -123,7 +121,12 @@ namespace FlaxEngine
 #if UNIT_TEST_COMPILANT
 			get; set;
 #else
-            get { return Internal_GetScripts(unmanagedPtr); }
+            get
+            {
+                if (Internal_GetScriptsCount(unmanagedPtr) == 0)
+                    return Enumerable.Empty<Script>() as Script[];
+                return Internal_GetScripts(unmanagedPtr);
+            }
             internal set { }
 #endif
         }
@@ -167,73 +170,58 @@ namespace FlaxEngine
             LocalTransform = Transform.Identity;
         }
 
-		/// <summary>
-		/// Rotates the actor so the forward vector points at target's current position.
-		/// </summary>
-		/// <param name="target">The target object to point towards.</param>
-		public void LookAt(Actor target)
-		{
-			if(target == null)
-				throw new ArgumentNullException();
-			var pos = target.Position;
-			var up = Vector3.Up;
-			LookAt(ref pos, ref up);
-		}
-
-		/// <summary>
-		/// Rotates the actor so the forward vector points at target's current position.
-		/// </summary>
-		/// <param name="target">The target object to point towards.</param>
-		/// <param name="worldUp">The upward direction vector (in world space).</param>
-		public void LookAt(Actor target, Vector3 worldUp)
-		{
-			if (target == null)
-				throw new ArgumentNullException();
-			var pos = target.Position;
-			LookAt(ref pos, ref worldUp);
-		}
-
-		/// <summary>
-		/// Rotates the actor so the forward vector points at target's current position.
-		/// </summary>
-		/// <param name="worldPosition">The target point to look at.</param>
-		public void LookAt(Vector3 worldPosition)
-	    {
-		    var up = Vector3.Up;
-			LookAt(ref worldPosition, ref up);
-		}
-
-	    /// <summary>
-	    /// Rotates the actor so the forward vector points at target's current position.
-	    /// </summary>
-	    /// <param name="worldPosition">The target point to look at.</param>
-	    /// <param name="worldUp">The upward direction vector (in world space).</param>
-	    public void LookAt(ref Vector3 worldPosition, ref Vector3 worldUp)
-	    {
-		    var direction = worldPosition - Position;
-		    Orientation = Quaternion.LookRotation(direction, worldUp);
-	    }
-
-	    /// <summary>
-		/// Casts this actor instance to the given actor type.
-		/// </summary>
-		/// <typeparam name="T">The actor type.</typeparam>
-		/// <returns>The actor instance cast to the given actor type.</returns>
-		public T As<T>() where T : Actor
-	    {
-		    return (T)this;
-	    }
-
-	    /// <summary>
-        /// Creates new instance of the script and adds it to the actor.
+        /// <summary>
+        /// Rotates the actor so the forward vector points at target's current position.
         /// </summary>
-        /// <typeparam name="T">The script type.</typeparam>
-        /// <returns>Created script object.</returns>
-        public T AddScript<T>() where T : Script
+        /// <param name="target">The target object to point towards.</param>
+        public void LookAt(Actor target)
         {
-            var script = New<T>();
-            AddScript(script);
-            return script;
+            if (target == null)
+                throw new ArgumentNullException();
+            var pos = target.Position;
+            Internal_LookAt1(unmanagedPtr, ref pos);
+        }
+
+        /// <summary>
+        /// Rotates the actor so the forward vector points at target's current position.
+        /// </summary>
+        /// <param name="target">The target object to point towards.</param>
+        /// <param name="worldUp">The upward direction vector (in world space).</param>
+        public void LookAt(Actor target, Vector3 worldUp)
+        {
+            if (target == null)
+                throw new ArgumentNullException();
+            var pos = target.Position;
+            Internal_LookAt2(unmanagedPtr, ref pos, ref worldUp);
+        }
+
+        /// <summary>
+        /// Rotates the actor so the forward vector points at target's current position.
+        /// </summary>
+        /// <param name="worldPosition">The target point to look at.</param>
+        public void LookAt(Vector3 worldPosition)
+        {
+            Internal_LookAt1(unmanagedPtr, ref worldPosition);
+        }
+
+        /// <summary>
+        /// Rotates the actor so the forward vector points at target's current position.
+        /// </summary>
+        /// <param name="worldPosition">The target point to look at.</param>
+        /// <param name="worldUp">The upward direction vector (in world space).</param>
+        public void LookAt(ref Vector3 worldPosition, ref Vector3 worldUp)
+        {
+            Internal_LookAt2(unmanagedPtr, ref worldPosition, ref worldUp);
+        }
+
+        /// <summary>
+        /// Casts this actor instance to the given actor type.
+        /// </summary>
+        /// <typeparam name="T">The actor type.</typeparam>
+        /// <returns>The actor instance cast to the given actor type.</returns>
+        public T As<T>() where T : Actor
+        {
+            return (T)this;
         }
 
         /// <summary>
@@ -273,6 +261,30 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Creates a new child actor of the given type.
+        /// </summary>
+        /// <param name="type">Type of the actor.</param>
+        /// <returns>The child actor.</returns>
+        public Actor AddChild(Type type)
+        {
+            var result = (Actor)New(type);
+            result.SetParent(this, false);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a new child actor of the given type.
+        /// </summary>
+        /// <typeparam name="T">Type of the actor.</typeparam>
+        /// <returns>The child actor.</returns>
+        public T AddChild<T>() where T : Actor
+        {
+            var result = New<T>();
+            result.SetParent(this, false);
+            return result;
+        }
+
+        /// <summary>
         /// Finds the child actor of the given type or creates a new one.
         /// </summary>
         /// <typeparam name="T">Type of the actor.</typeparam>
@@ -286,6 +298,30 @@ namespace FlaxEngine
                 result.SetParent(this, false);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Creates a new script of a specific type and adds it to the actor.
+        /// </summary>
+        /// <param name="type">Type of the script to create.</param>
+        /// <returns>The created script instance, null otherwise.</returns>
+        public Script AddScript(Type type)
+        {
+            var script = (Script)New(type);
+            AddScript(script);
+            return script;
+        }
+
+        /// <summary>
+        /// Creates a new script of a specific type and adds it to the actor.
+        /// </summary>
+        /// <typeparam name="T">Type of the script to create.</typeparam>
+        /// <returns>The created script instance, null otherwise.</returns>
+        public T AddScript<T>() where T : Script
+        {
+            var script = New<T>();
+            AddScript(script);
+            return script;
         }
 
         /// <summary>
@@ -330,7 +366,7 @@ namespace FlaxEngine
         /// <param name="data">The data.</param>
         /// <param name="idsMapping">
         /// The serialized objects ids mapping table used to change object ids and keep valid reference
-        /// links. Use null value to skipp ids mapping.
+        /// links. Use null value to skip ids mapping. To generate a new ids for the loaded objects use <see cref="TryGetSerializedObjectsIds"/> to extract the object ids from the data.
         /// </param>
         /// <returns>Spawned actors deserialized from the data. Returns null if fails.</returns>
 #if UNIT_TEST_COMPILANT
@@ -347,47 +383,124 @@ namespace FlaxEngine
 #endif
         }
 
-		/// <summary>
-		/// Searches for a child script of a specific type. If there are multiple scripts matching the type, only the first one found is returned.
-		/// </summary>
-		/// <param name="scriptType">Type of the script to search for. Includes any scripts derived from the type.</param>
-		/// <returns>Script instance if found, null otherwise.</returns>
+        /// <summary>
+        /// Searches for a child actor of a specific type. If there are multiple actors matching the type, only the first one found is returned.
+        /// </summary>
+        /// <typeparam name="T">Type of the actor to search for. Includes any actors derived from the type.</typeparam>
+        /// <returns>Actor instance if found, null otherwise</returns>
 #if UNIT_TEST_COMPILANT
-		[Obsolete("Unit tests, don't support methods calls.")]
+        [Obsolete("Unit tests, don't support methods calls.")]
 #endif
-		[UnmanagedCall]
-	    public Script GetScript(Type scriptType)
-	    {
+        [UnmanagedCall]
+        public T GetChild<T>() where T : Actor
+        {
 #if UNIT_TEST_COMPILANT
-			throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
 #else
-		    return Internal_GetScript(unmanagedPtr, scriptType);
+            return (T)Internal_GetChild(unmanagedPtr, typeof(T));
 #endif
-	    }
+        }
 
-		/// <summary>
-		/// Searches for all scripts of a specific type.
-		/// </summary>
-		/// <param name="scriptType">Type of the script to search for. Includes any scripts derived from the type.</param>
-		/// <returns>All scripts matching the specified type.</returns>
+        /// <summary>
+        /// Searches for all actors of a specific type.
+        /// </summary>
+        /// <typeparam name="T">Type of the actor to search for. Includes any actors derived from the type.</typeparam>
+        /// <returns>All actors matching the specified type</returns>
 #if UNIT_TEST_COMPILANT
-		[Obsolete("Unit tests, don't support methods calls.")]
+        [Obsolete("Unit tests, don't support methods calls.")]
 #endif
-		[UnmanagedCall]
-	    public Script[] GetScripts(Type scriptType)
-	    {
+        [UnmanagedCall]
+        public T[] GetChildren<T>() where T : Actor
+        {
 #if UNIT_TEST_COMPILANT
-			throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
 #else
-		    return Internal_GetScriptsPerType(unmanagedPtr, scriptType);
+            // TODO: use a proper array allocation and convertion on backend to reduce memory allocations
+            return Array.ConvertAll(Internal_GetChildrenPerType(unmanagedPtr, typeof(T)), x => (T)x);
 #endif
-	    }
+        }
 
-		/// <summary>
-		/// Destroys the children. Calls Object.Destroy on every child actor and unlink them for the parent.
-		/// </summary>
-		/// <param name="timeLeft">The time left to destroy object (in seconds).</param>
-		public void DestroyChildren(float timeLeft = 0.0f)
+        /// <summary>
+        /// Searches for a child script of a specific type. If there are multiple scripts matching the type, only the first one found is returned.
+        /// </summary>
+        /// <typeparam name="T">Type of the script to search for. Includes any scripts derived from the type.</typeparam>
+        /// <returns>Script instance if found, null otherwise.</returns>
+#if UNIT_TEST_COMPILANT
+        [Obsolete("Unit tests, don't support methods calls.")]
+#endif
+        [UnmanagedCall]
+        public T GetScript<T>() where T : Script
+        {
+#if UNIT_TEST_COMPILANT
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+#else
+            return (T)Internal_GetScript(unmanagedPtr, typeof(T));
+#endif
+        }
+
+        /// <summary>
+        /// Searches for all scripts of a specific type.
+        /// </summary>
+        /// <typeparam name="T">Type of the scripts to search for. Includes any scripts derived from the type.</typeparam>
+        /// <returns>All scripts matching the specified type.</returns>
+#if UNIT_TEST_COMPILANT
+        [Obsolete("Unit tests, don't support methods calls.")]
+#endif
+        [UnmanagedCall]
+        public T[] GetScripts<T>() where T : Script
+        {
+#if UNIT_TEST_COMPILANT
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+#else
+            // TODO: use a proper array allocation and convertion on backend to reduce memory allocations
+            return Array.ConvertAll(Internal_GetScriptsPerType(unmanagedPtr, typeof(T)), x => (T)x);
+#endif
+        }
+
+        /// <summary>
+        /// Searches for a child script of a specific type in this actor or any of its children. If there are multiple scripts matching the type, only the first one found is returned.
+        /// </summary>
+        /// <param name="includeDisabled">Determines whether include disabled scripts into results (disabled scripts and/or inactive actors).</param>
+        /// <typeparam name="T">Type of the script to search for. Includes any scripts derived from the type.</typeparam>
+        /// <returns>Script instance if found, null otherwise.</returns>
+#if UNIT_TEST_COMPILANT
+        [Obsolete("Unit tests, don't support methods calls.")]
+#endif
+        [UnmanagedCall]
+        public T GetScriptInChildren<T>(bool includeDisabled = false) where T : Script
+        {
+#if UNIT_TEST_COMPILANT
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+#else
+            return (T)Internal_GetScriptInChildren(unmanagedPtr, typeof(T), includeDisabled);
+#endif
+        }
+
+        /// <summary>
+        /// Searches for all scripts of a specific type in this actor and any of its children.
+        /// </summary>
+        /// <param name="includeDisabled">Determines whether include inactive scripts into results (disabled scripts and/or inactive actors).</param>
+        /// <typeparam name="T">Type of the scripts to search for. Includes any scripts derived from the type.</typeparam>
+        /// <returns>All scripts matching the specified type and query options.</returns>
+#if UNIT_TEST_COMPILANT
+        [Obsolete("Unit tests, don't support methods calls.")]
+#endif
+        [UnmanagedCall]
+        public T[] GetScriptsInChildren<T>(bool includeDisabled = false) where T : Script
+        {
+#if UNIT_TEST_COMPILANT
+            throw new NotImplementedException("Unit tests, don't support methods calls. Only properties can be get or set.");
+#else
+            // TODO: use a proper array allocation and convertion on backend to reduce memory allocations
+            return Array.ConvertAll(Internal_GetScriptsInChildrenPerType(unmanagedPtr, typeof(T), includeDisabled), x => (T)x);
+#endif
+        }
+
+        /// <summary>
+        /// Destroys the children. Calls Object.Destroy on every child actor and unlink them for the parent.
+        /// </summary>
+        /// <param name="timeLeft">The time left to destroy object (in seconds).</param>
+        public void DestroyChildren(float timeLeft = 0.0f)
         {
             Actor[] children = GetChildren();
             for (var i = 0; i < children.Length; i++)
@@ -397,49 +510,49 @@ namespace FlaxEngine
             }
         }
 
-		/// <summary>
-		/// Gets the matrix that transformes a point from the world space to local space of the actor.
-		/// </summary>
-		public Matrix WorldToLocalMatrix
-	    {
-		    get
-		    {
-			    Matrix worldToLocal;
-			    Internal_WorldToLocal(unmanagedPtr, out worldToLocal);
-			    return worldToLocal;
-		    }
-	    }
+        /// <summary>
+        /// Gets the matrix that transforms a point from the world space to local space of the actor.
+        /// </summary>
+        public Matrix WorldToLocalMatrix
+        {
+            get
+            {
+                Matrix worldToLocal;
+                Internal_WorldToLocal(unmanagedPtr, out worldToLocal);
+                return worldToLocal;
+            }
+        }
 
-		/// <summary>
-		/// Gets the matrix that transformes a point from the world space to local space of the actor.
-		/// </summary>
-		/// <param name="worldToLocal">The world to local matrix.</param>
-		public void GetWorldToLocalMatrix(out Matrix worldToLocal)
-	    {
-			Internal_WorldToLocal(unmanagedPtr, out worldToLocal);
-	    }
+        /// <summary>
+        /// Gets the matrix that transforms a point from the world space to local space of the actor.
+        /// </summary>
+        /// <param name="worldToLocal">The world to local matrix.</param>
+        public void GetWorldToLocalMatrix(out Matrix worldToLocal)
+        {
+            Internal_WorldToLocal(unmanagedPtr, out worldToLocal);
+        }
 
-		/// <summary>
-		/// Gets the matrix that transformes a point from the local space of the actor to world space.
-		/// </summary>
-		public Matrix LocalToWorldMatrix
-	    {
-		    get
-		    {
-			    Matrix localToWorld;
-			    Internal_WorldToLocal(unmanagedPtr, out localToWorld);
-			    return localToWorld;
-		    }
-	    }
+        /// <summary>
+        /// Gets the matrix that transforms a point from the local space of the actor to world space.
+        /// </summary>
+        public Matrix LocalToWorldMatrix
+        {
+            get
+            {
+                Matrix localToWorld;
+                Internal_LocalToWorld(unmanagedPtr, out localToWorld);
+                return localToWorld;
+            }
+        }
 
-		/// <summary>
-		/// Gets the matrix that transformes a point from the local space of the actor to world space.
-		/// </summary>
-		/// <param name="localToWorld">The world to local matrix.</param>
-		public void GetLocalToWorldMatrix(out Matrix localToWorld)
-	    {
-			Internal_LocalToWorld(unmanagedPtr, out localToWorld);
-	    }
+        /// <summary>
+        /// Gets the matrix that transforms a point from the local space of the actor to world space.
+        /// </summary>
+        /// <param name="localToWorld">The world to local matrix.</param>
+        public void GetLocalToWorldMatrix(out Matrix localToWorld)
+        {
+            Internal_LocalToWorld(unmanagedPtr, out localToWorld);
+        }
 
         /// <inheritdoc />
         [UnmanagedCall]
@@ -448,13 +561,22 @@ namespace FlaxEngine
             return $"{Name} ({GetType().Name})";
         }
 
+        #region Internal Calls
+
+#if !UNIT_TEST_COMPILANT
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern Script[] Internal_GetScripts(IntPtr obj);
 
-	    [MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Internal_LookAt1(IntPtr obj, ref Vector3 worldPos);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Internal_LookAt2(IntPtr obj, ref Vector3 worldPos, ref Vector3 worldUp);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_WorldToLocal(IntPtr obj, out Matrix matrix);
 
-	    [MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_LocalToWorld(IntPtr obj, out Matrix matrix);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -465,5 +587,11 @@ namespace FlaxEngine
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern Actor[] Internal_FromBytes(byte[] data, Guid[] idsMappingKeys, Guid[] idsMappingValues);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Internal_LinkPrefab(IntPtr obj, ref Guid prefabId, ref Guid prefabObjectId);
+#endif
+
+        #endregion
     }
 }

@@ -1,9 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.InteropServices;
+
 // ReSharper disable ConvertToAutoProperty
 
 namespace FlaxEngine

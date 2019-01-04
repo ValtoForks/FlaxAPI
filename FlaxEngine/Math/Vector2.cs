@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -50,6 +50,7 @@
 */
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -60,6 +61,7 @@ namespace FlaxEngine
     /// Represents a two dimensional mathematical vector.
     /// </summary>
     [Serializable]
+    [TypeConverter(typeof(TypeConverters.Vector2Converter))]
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct Vector2 : IEquatable<Vector2>, IFormattable
     {
@@ -134,6 +136,26 @@ namespace FlaxEngine
         /// <summary>
         /// Initializes a new instance of the <see cref="Vector2" /> struct.
         /// </summary>
+        /// <param name="value">A vector containing the values with which to initialize the X and Y components.</param>
+        public Vector2(Vector3 value)
+        {
+            X = value.X;
+            Y = value.Y;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector2" /> struct.
+        /// </summary>
+        /// <param name="value">A vector containing the values with which to initialize the X and Y components.</param>
+        public Vector2(Vector4 value)
+        {
+            X = value.X;
+            Y = value.Y;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector2" /> struct.
+        /// </summary>
         /// <param name="values">
         /// The values to assign to the X and Y components of the vector. This must be an array with two
         /// elements.
@@ -200,10 +222,8 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        return X;
-                    case 1:
-                        return Y;
+                case 0: return X;
+                case 1: return Y;
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector2 run from 0 to 1, inclusive.");
@@ -213,14 +233,13 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        X = value;
-                        break;
-                    case 1:
-                        Y = value;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector2 run from 0 to 1, inclusive.");
+                case 0:
+                    X = value;
+                    break;
+                case 1:
+                    Y = value;
+                    break;
+                default: throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector2 run from 0 to 1, inclusive.");
                 }
             }
         }
@@ -265,7 +284,11 @@ namespace FlaxEngine
         /// <returns>A two-element array containing the components of the vector.</returns>
         public float[] ToArray()
         {
-            return new[] {X, Y};
+            return new[]
+            {
+                X,
+                Y
+            };
         }
 
         /// <summary>
@@ -338,7 +361,7 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="left">The input vector</param>
-        /// <param name="right">The scalar value to be subtraced from elements</param>
+        /// <param name="right">The scalar value to be subtracted from elements</param>
         /// <param name="result">The vector with subtracted scalar for each element.</param>
         public static void Subtract(ref Vector2 left, ref float right, out Vector2 result)
         {
@@ -349,7 +372,7 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="left">The input vector</param>
-        /// <param name="right">The scalar value to be subtraced from elements</param>
+        /// <param name="right">The scalar value to be subtracted from elements</param>
         /// <returns>The vector with subtracted scalar for each element.</returns>
         public static Vector2 Subtract(Vector2 left, float right)
         {
@@ -359,7 +382,7 @@ namespace FlaxEngine
         /// <summary>
         /// Perform a component-wise subtraction
         /// </summary>
-        /// <param name="left">The scalar value to be subtraced from elements</param>
+        /// <param name="left">The scalar value to be subtracted from elements</param>
         /// <param name="right">The input vector</param>
         /// <param name="result">The vector with subtracted scalar for each element.</param>
         public static void Subtract(ref float left, ref Vector2 right, out Vector2 result)
@@ -370,7 +393,7 @@ namespace FlaxEngine
         /// <summary>
         /// Perform a component-wise subtraction
         /// </summary>
-        /// <param name="left">The scalar value to be subtraced from elements</param>
+        /// <param name="left">The scalar value to be subtracted from elements</param>
         /// <param name="right">The input vector</param>
         /// <returns>The vector with subtracted scalar for each element.</returns>
         public static Vector2 Subtract(float left, Vector2 right)
@@ -505,7 +528,7 @@ namespace FlaxEngine
         public static void Barycentric(ref Vector2 value1, ref Vector2 value2, ref Vector2 value3, float amount1, float amount2, out Vector2 result)
         {
             result = new Vector2(value1.X + amount1 * (value2.X - value1.X) + amount2 * (value3.X - value1.X),
-                value1.Y + amount1 * (value2.Y - value1.Y) + amount2 * (value3.Y - value1.Y));
+                                 value1.Y + amount1 * (value2.Y - value1.Y) + amount2 * (value3.Y - value1.Y));
         }
 
         /// <summary>
@@ -637,6 +660,28 @@ namespace FlaxEngine
         /// Calculates the squared distance between two vectors.
         /// </summary>
         /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector</param>
+        /// <returns>The squared distance between the two vectors.</returns>
+        /// <remarks>
+        /// Distance squared is the value before taking the square root.
+        /// Distance squared can often be used in place of distance if relative comparisons are being made.
+        /// For example, consider three points A, B, and C. To determine whether B or C is further from A,
+        /// compare the distance between A and B to the distance between A and C. Calculating the two distances
+        /// involves two square roots, which are computationally expensive. However, using distance squared
+        /// provides the same information and avoids calculating two square roots.
+        /// </remarks>
+        public static float DistanceSquared(ref Vector2 value1, ref Vector2 value2)
+        {
+            float x = value1.X - value2.X;
+            float y = value1.Y - value2.Y;
+
+            return x * x + y * y;
+        }
+
+        /// <summary>
+        /// Calculates the squared distance between two vectors.
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
         /// <param name="value2">The second vector.</param>
         /// <returns>The squared distance between the two vectors.</returns>
         /// <remarks>
@@ -672,9 +717,53 @@ namespace FlaxEngine
         /// <param name="left">First source vector.</param>
         /// <param name="right">Second source vector.</param>
         /// <returns>The dot product of the two vectors.</returns>
+        public static float Dot(ref Vector2 left, ref Vector2 right)
+        {
+            return left.X * right.X + left.Y * right.Y;
+        }
+
+        /// <summary>
+        /// Calculates the dot product of two vectors.
+        /// </summary>
+        /// <param name="left">First source vector.</param>
+        /// <param name="right">Second source vector.</param>
+        /// <returns>The dot product of the two vectors.</returns>
         public static float Dot(Vector2 left, Vector2 right)
         {
             return left.X * right.X + left.Y * right.Y;
+        }
+
+        /// <summary>
+        /// Calculates the cross product of two vectors.
+        /// </summary>
+        /// <param name="left">First source vector.</param>
+        /// <param name="right">Second source vector.</param>
+        /// <param name="result">When the method completes, contains the cross product of the two vectors.</param>
+        public static void Cross(ref Vector2 left, ref Vector2 right, out float result)
+        {
+            result = left.X * right.Y - left.Y * right.X;
+        }
+
+        /// <summary>
+        /// Calculates the cross product of two vectors.
+        /// </summary>
+        /// <param name="left">First source vector.</param>
+        /// <param name="right">Second source vector.</param>
+        /// <returns>The cross product of the two vectors.</returns>
+        public static float Cross(ref Vector2 left, ref Vector2 right)
+        {
+            return left.X * right.Y - left.Y * right.X;
+        }
+
+        /// <summary>
+        /// Calculates the cross product of two vectors.
+        /// </summary>
+        /// <param name="left">First source vector.</param>
+        /// <param name="right">Second source vector.</param>
+        /// <returns>The cross product of the two vectors.</returns>
+        public static float Cross(Vector2 left, Vector2 right)
+        {
+            return left.X * right.Y - left.Y * right.X;
         }
 
         /// <summary>
@@ -705,9 +794,9 @@ namespace FlaxEngine
         /// <param name="v">The value.</param>
         /// <returns>The result.</returns>
         public static Vector2 Round(Vector2 v)
-	    {
-		    return new Vector2(Mathf.Round(v.X), Mathf.Round(v.Y));
-	    }
+        {
+            return new Vector2(Mathf.Round(v.X), Mathf.Round(v.Y));
+        }
 
         /// <summary>
         /// Returns the vector with components containing the smallest integer greater to or equal to the original value.
@@ -715,9 +804,9 @@ namespace FlaxEngine
         /// <param name="v">The value.</param>
         /// <returns>The result.</returns>
         public static Vector2 Ceil(Vector2 v)
-	    {
-		    return new Vector2(Mathf.Ceil(v.X), Mathf.Ceil(v.Y));
-	    }
+        {
+            return new Vector2(Mathf.Ceil(v.X), Mathf.Ceil(v.Y));
+        }
 
         /// <summary>
         /// Breaks the components of the vector into an integral and a fractional part. Returns vector made of fractional parts.
@@ -827,6 +916,26 @@ namespace FlaxEngine
             Vector2 result;
             Hermite(ref value1, ref tangent1, ref value2, ref tangent2, amount, out result);
             return result;
+        }
+
+        /// <summary>
+        /// Calculates the 2D vector perpendicular to the given 2D vector. The result is always rotated 90-degrees in a counter-clockwise direction for a 2D coordinate system where the positive Y axis goes up.
+        /// </summary>
+        /// <param name="inDirection">The input direction.</param>
+        /// <returns>The result.</returns>
+        public static Vector2 Perpendicular(Vector2 inDirection)
+        {
+            return new Vector2(-inDirection.Y, inDirection.X);
+        }
+
+        /// <summary>
+        /// Calculates the 2D vector perpendicular to the given 2D vector. The result is always rotated 90-degrees in a counter-clockwise direction for a 2D coordinate system where the positive Y axis goes up.
+        /// </summary>
+        /// <param name="inDirection">The in direction.</param>
+        /// <param name="result">When the method completes, contains the result of the calculation.</param>
+        public static void Perpendicular(ref Vector2 inDirection, out Vector2 result)
+        {
+            result = new Vector2(-inDirection.Y, inDirection.X);
         }
 
         /// <summary>
@@ -1507,8 +1616,8 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="value">The input vector.</param>
-        /// <param name="scalar">The scalar value to be subtraced from elements</param>
-        /// <returns>The vector with subtraced scalar from each element.</returns>
+        /// <param name="scalar">The scalar value to be subtracted from elements</param>
+        /// <returns>The vector with subtracted scalar from each element.</returns>
         public static Vector2 operator -(Vector2 value, float scalar)
         {
             return new Vector2(value.X - scalar, value.Y - scalar);
@@ -1518,8 +1627,8 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="value">The input vector.</param>
-        /// <param name="scalar">The scalar value to be subtraced from elements</param>
-        /// <returns>The vector with subtraced scalar from each element.</returns>
+        /// <param name="scalar">The scalar value to be subtracted from elements</param>
+        /// <returns>The vector with subtracted scalar from each element.</returns>
         public static Vector2 operator -(float scalar, Vector2 value)
         {
             return new Vector2(scalar - value.X, scalar - value.Y);

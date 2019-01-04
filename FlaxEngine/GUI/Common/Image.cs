@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -15,31 +13,31 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the image source.
         /// </summary>
-        public IImageSource ImageSource { get; set; }
+        [EditorOrder(10), Tooltip("The image to draw.")]
+        public IBrush Brush { get; set; }
 
         /// <summary>
         /// Gets or sets the margin for the image.
         /// </summary>
+        [EditorOrder(20), Tooltip("Margins of the image area.")]
         public Margin Margin { get; set; }
 
         /// <summary>
         /// Gets or sets the color used to multiply the image pixels.
         /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000)]
         public Color Color { get; set; } = Color.White;
 
         /// <summary>
         /// Gets or sets the color used to multiply the image pixels when mouse is over the image.
         /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000)]
         public Color MouseOverColor { get; set; } = Color.White;
 
         /// <summary>
-        /// Gets or sets a value indicating whether render image with alpha blending.
+        /// Gets or sets a value indicating whether keep aspect ratio when drawing the image.
         /// </summary>
-        public bool WithAlpha { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets a value indicating whether keep aspect ratio whend rawing the image.
-        /// </summary>
+        [EditorOrder(60), Tooltip("If checked, control will keep aspect ratio of the image.")]
         public bool KeepAspectRatio { get; set; } = true;
 
         /// <summary>
@@ -49,28 +47,28 @@ namespace FlaxEngine.GUI
 
         /// <inheritdoc />
         public Image()
-            : base(0, 0, 64, 64)
+        : base(0, 0, 64, 64)
         {
             CanFocus = false;
         }
 
         /// <inheritdoc />
         public Image(float x, float y, float width, float height)
-            : base(x, y, width, height)
+        : base(x, y, width, height)
         {
             CanFocus = false;
         }
 
         /// <inheritdoc />
         public Image(Vector2 location, Vector2 size)
-            : base(location, size)
+        : base(location, size)
         {
             CanFocus = false;
         }
 
         /// <inheritdoc />
         public Image(Rectangle bounds)
-            : base(bounds)
+        : base(bounds)
         {
             CanFocus = false;
         }
@@ -80,7 +78,7 @@ namespace FlaxEngine.GUI
         {
             base.Draw();
 
-            if (ImageSource == null)
+            if (Brush == null)
                 return;
 
             Rectangle rect;
@@ -88,7 +86,7 @@ namespace FlaxEngine.GUI
             {
                 // Figure out the ratio
                 var size = Size;
-                var imageSize = ImageSource.Size;
+                var imageSize = Brush.Size;
                 if (imageSize.LengthSquared < 1)
                     return;
                 var ratio = size / imageSize;
@@ -110,7 +108,7 @@ namespace FlaxEngine.GUI
 
             Margin.ShrinkRectangle(ref rect);
 
-            ImageSource.Draw(rect, IsMouseOver ? MouseOverColor : Color, WithAlpha);
+            Brush.Draw(rect, IsMouseOver ? MouseOverColor : Color);
         }
 
         /// <inheritdoc />

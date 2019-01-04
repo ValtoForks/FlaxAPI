@@ -1,11 +1,11 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
+using System.Runtime.InteropServices;
 
 namespace FlaxEngine
 {
     /// <summary>
-    /// Specifies the alignment of the text along horizontal or vetical direction in the layout box
+    /// Specifies the alignment of the text along horizontal or vertical direction in the layout box
     /// </summary>
     public enum TextAlignment
     {
@@ -49,6 +49,7 @@ namespace FlaxEngine
     /// <summary>
     /// Structure which describes text layout properties
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct TextLayoutOptions
     {
         /// <summary>
@@ -72,6 +73,11 @@ namespace FlaxEngine
         public TextWrapping TextWrapping;
 
         /// <summary>
+        /// The text scale.
+        /// </summary>
+        public float Scale;
+
+        /// <summary>
         /// Base line gap scale
         /// </summary>
         public float BaseLinesGapScale;
@@ -79,16 +85,11 @@ namespace FlaxEngine
         /// <summary>
         /// Gets the default layout.
         /// </summary>
-        public static TextLayoutOptions Default
+        public static TextLayoutOptions Default => new TextLayoutOptions
         {
-            get
-            {
-                return new TextLayoutOptions
-                {
-                    Bounds = new Rectangle(0, 0, float.MaxValue, float.MaxValue),
-                    BaseLinesGapScale = 1.0f,
-                };
-            }
-        }
+            Bounds = new Rectangle(0, 0, float.MaxValue, float.MaxValue),
+            Scale = 1.0f,
+            BaseLinesGapScale = 1.0f,
+        };
     }
 }

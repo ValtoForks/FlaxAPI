@@ -1,13 +1,11 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
 namespace FlaxEngine
 {
     /// <summary>
-    /// Overrides default editor provided for the target object/class/field/property. Allows to extend visuals and editing experaince of the objects.
+    /// Overrides default editor provided for the target object/class/field/property. Allows to extend visuals and editing experience of the objects.
     /// </summary>
     /// <seealso cref="CustomEditorAttribute"/>
     /// <seealso cref="System.Attribute" />

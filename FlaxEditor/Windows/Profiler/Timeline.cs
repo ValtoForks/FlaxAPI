@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -50,13 +48,18 @@ namespace FlaxEditor.Windows.Profiler
             public const float DefaultHeight = 25.0f;
 
             /// <summary>
+            /// Gets or sets the event name.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
             /// Initializes a new instance of the <see cref="Event"/> class.
             /// </summary>
             /// <param name="x">The x position.</param>
             /// <param name="depth">The timeline row index (event depth).</param>
             /// <param name="width">The width.</param>
             public Event(float x, int depth, float width)
-                : base(x, depth * DefaultHeight, width, DefaultHeight - 1)
+            : base(x, depth * DefaultHeight, width, DefaultHeight - 1)
             {
                 _nameLength = -1;
             }
@@ -102,6 +105,11 @@ namespace FlaxEditor.Windows.Profiler
         /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
         public class TrackLabel : ContainerControl
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            public string Name { get; set; }
+
             /// <inheritdoc />
             public override void Draw()
             {
@@ -116,7 +124,7 @@ namespace FlaxEditor.Windows.Profiler
         }
 
         /// <summary>
-        /// Gets the events container control. Use it to remvoe/add events to the timeline.
+        /// Gets the events container control. Use it to remove/add events to the timeline.
         /// </summary>
         public ContainerControl EventsContainer => this;
 
@@ -124,7 +132,7 @@ namespace FlaxEditor.Windows.Profiler
         /// Initializes a new instance of the <see cref="Timeline"/> class.
         /// </summary>
         public Timeline()
-            : base(ScrollBars.Both)
+        : base(ScrollBars.Both)
         {
         }
     }

@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.Utilities;
 
@@ -70,6 +70,11 @@ namespace FlaxEditor.States
         /// </summary>
         /// <returns>True if state is valid for Editor UI calls and other stuff, otherwise false</returns>
         public virtual bool IsEditorReady => true;
+
+        /// <summary>
+        /// Gets the state status message for the UI. Returns null if use the default value.
+        /// </summary>
+        public virtual string Status => null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EditorState"/> class.

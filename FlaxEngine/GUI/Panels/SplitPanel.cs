@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.GUI
 {
@@ -6,15 +6,16 @@ namespace FlaxEngine.GUI
     /// GUI control that contains two child panels and the splitter between them.
     /// </summary>
     /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
+    [HideInEditor]
     public class SplitPanel : ContainerControl
     {
         /// <summary>
-        /// The spliter size (in pixels).
+        /// The splitter size (in pixels).
         /// </summary>
         public const int SpliterSize = 4;
 
         /// <summary>
-        /// The spliter half size (in pixels).
+        /// The splitter half size (in pixels).
         /// </summary>
         private const int SpliterSizeHalf = SpliterSize / 2;
 
@@ -67,7 +68,6 @@ namespace FlaxEngine.GUI
                 value = Mathf.Clamp01(value);
                 if (!Mathf.NearEqual(_splitterValue, value))
                 {
-
                     // Set new value
                     _splitterValue = value;
 
@@ -132,7 +132,7 @@ namespace FlaxEngine.GUI
                 EndMouseCapture();
             }
         }
-        
+
         /// <inheritdoc />
         public override void Draw()
         {
@@ -208,9 +208,9 @@ namespace FlaxEngine.GUI
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
-            base.SetSizeInternal(size);
+            base.SetSizeInternal(ref size);
 
             // Refresh
             UpdateSplitRect();

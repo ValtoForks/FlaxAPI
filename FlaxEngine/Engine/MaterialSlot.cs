@@ -1,28 +1,20 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
-using System.Configuration;
 using System.Runtime.CompilerServices;
 
 namespace FlaxEngine
 {
     /// <summary>
-    /// Single material slot desribies how to render meshes using it.
+    /// Single material slot describes how to render meshes using it.
     /// </summary>
     public sealed class MaterialSlot
     {
-        internal Model _model;
+        internal BinaryAsset _model;
         internal readonly int _index;
 
         /// <summary>
-        /// Gets the parent model asset.
-        /// </summary>
-        public Model ParentModel => _model;
-
-        /// <summary>
-        /// Gets the index of the slot (in the parnet model).
+        /// Gets the index of the slot (in the parent model).
         /// </summary>
         public int SlotIndex => _index;
 
@@ -35,7 +27,7 @@ namespace FlaxEngine
             get => Internal_GetMaterial(_model.unmanagedPtr, _index);
             set => Internal_SetMaterial(_model.unmanagedPtr, _index, Object.GetUnmanagedPtr(value));
         }
-        
+
         /// <summary>
         /// Gets or sets the shadows casting mode by the meshes using this slot.
         /// </summary>
@@ -56,7 +48,7 @@ namespace FlaxEngine
             set => Internal_SetName(_model.unmanagedPtr, _index, value);
         }
 
-        internal MaterialSlot(Model model, int index)
+        internal MaterialSlot(BinaryAsset model, int index)
         {
             _model = model;
             _index = index;

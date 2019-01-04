@@ -1,10 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using FlaxEditor.CustomEditors;
+using FlaxEditor.GUI;
 using FlaxEditor.GUI.Dialogs;
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -25,10 +24,10 @@ namespace FlaxEditor.Content.Create
         /// </summary>
         /// <param name="entry">The entry to edit it's settings.</param>
         public CreateFilesDialog(CreateFileEntry entry)
-            : base("Create file settings")
+        : base("Create file settings")
         {
             _entry = entry ?? throw new ArgumentNullException();
-            
+
             const float TotalWidth = 520;
             const float EditorHeight = 250;
             Width = TotalWidth;
@@ -39,7 +38,7 @@ namespace FlaxEditor.Content.Create
                 Text = "Asset Options",
                 DockStyle = DockStyle.Top,
                 Parent = this,
-                Font = Style.Current.FontTitle
+                Font = new FontReference(Style.Current.FontTitle)
             };
             var infoLabel = new Label(10, headerLabel.Bottom + 5, TotalWidth - 20, 40)
             {

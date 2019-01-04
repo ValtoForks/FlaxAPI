@@ -1,8 +1,9 @@
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
 using System;
 using FlaxEditor.History;
 using NUnit.Framework;
 using Assert = FlaxEngine.Assertions.Assert;
-using System.Collections.Generic;
 
 namespace FlaxEditor.Tests
 {
@@ -12,11 +13,12 @@ namespace FlaxEditor.Tests
         public class HistoryTestObject : IHistoryAction
         {
             public int Item;
+
             public HistoryTestObject(int item)
             {
                 Item = item;
             }
-            
+
             public override bool Equals(object obj)
             {
                 var historyTestObject = (HistoryTestObject)obj;
@@ -46,6 +48,10 @@ namespace FlaxEditor.Tests
             }
 
             public string ActionString { get; set; }
+
+            public void Dispose()
+            {
+            }
         }
 
         [Test]

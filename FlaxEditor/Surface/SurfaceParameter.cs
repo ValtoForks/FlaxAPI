@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -67,7 +65,7 @@ namespace FlaxEditor.Surface
         /// Creates the new parameter of the given type.
         /// </summary>
         /// <param name="type">The type.</param>
-        /// <returns></returns>
+        /// <returns>The created parameter.</returns>
         public static SurfaceParameter Create(ParameterType type)
         {
             // Create new parameter with default values
@@ -85,34 +83,40 @@ namespace FlaxEditor.Surface
             // Initialize default value in a proper way
             switch (type)
             {
-                case ParameterType.Bool:
-                    param.Value = false;
-                    break;
-                case ParameterType.Inteager:
-                    param.Value = 0;
-                    break;
-                case ParameterType.Float:
-                    param.Value = 0.0f;
-                    break;
-                case ParameterType.Vector2:
-                    param.Value = Vector2.Zero;
-                    break;
-                case ParameterType.Vector3:
-                    param.Value = Vector3.Zero;
-                    break;
-                case ParameterType.Vector4:
-                    param.Value = Vector4.Zero;
-                    break;
-                case ParameterType.Color:
-                    param.Value = Color.White;
-                    break;
-                case ParameterType.CubeTexture:
-                case ParameterType.Texture:
-                case ParameterType.NormalMap:
-                case ParameterType.RenderTarget:
-                    param.Value = Guid.Empty;
-                    break;
-                default: throw new IndexOutOfRangeException();
+            case ParameterType.Bool:
+                param.Value = false;
+                break;
+            case ParameterType.Integer:
+                param.Value = 0;
+                break;
+            case ParameterType.Float:
+                param.Value = 0.0f;
+                break;
+            case ParameterType.Vector2:
+                param.Value = Vector2.Zero;
+                break;
+            case ParameterType.Vector3:
+                param.Value = Vector3.Zero;
+                break;
+            case ParameterType.Vector4:
+                param.Value = Vector4.Zero;
+                break;
+            case ParameterType.Color:
+                param.Value = Color.White;
+                break;
+            case ParameterType.Matrix:
+                param.Value = Matrix.Identity;
+                break;
+            case ParameterType.CubeTexture:
+            case ParameterType.Texture:
+            case ParameterType.NormalMap:
+            case ParameterType.RenderTarget:
+            case ParameterType.RenderTargetArray:
+            case ParameterType.RenderTargetCube:
+            case ParameterType.RenderTargetVolume:
+                param.Value = Guid.Empty;
+                break;
+            default: throw new IndexOutOfRangeException();
             }
 
             return param;

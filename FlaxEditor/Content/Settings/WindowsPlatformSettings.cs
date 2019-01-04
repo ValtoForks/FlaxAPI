@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -40,7 +38,7 @@ namespace FlaxEditor.Content.Settings
         /// </summary>
         [EditorOrder(1010), EditorDisplay("Other", "Run In Background"), Tooltip("Enables game running when application window loses focus.")]
         public bool RunInBackground = false;
-        
+
         /// <summary>
         /// Limits maximum amount of concurrent game instances running to one, otherwise user may launch application more than once.
         /// </summary>

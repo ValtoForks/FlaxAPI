@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.Utilities;
 
@@ -16,8 +16,11 @@ namespace FlaxEditor.States
         /// <inheritdoc />
         public override bool IsEditorReady => false;
 
+        /// <inheritdoc />
+        public override string Status => "Closing...";
+
         internal ClosingState(Editor editor)
-            : base(editor)
+        : base(editor)
         {
         }
 

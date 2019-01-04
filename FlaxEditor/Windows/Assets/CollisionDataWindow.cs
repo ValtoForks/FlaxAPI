@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Xml;
 using FlaxEditor.Content;
@@ -8,6 +6,7 @@ using FlaxEditor.Content.Create;
 using FlaxEditor.CustomEditors;
 using FlaxEditor.CustomEditors.Editors;
 using FlaxEditor.CustomEditors.Elements;
+using FlaxEditor.Viewport.Cameras;
 using FlaxEditor.Viewport.Previews;
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -97,7 +96,7 @@ namespace FlaxEditor.Windows.Assets
                 private int ConvexVertexLimit;
 
                 public CookData(PropertiesProxy proxy, string resultUrl, CollisionDataType type, Model model, int modelLodIndex, ConvexMeshGenerationFlags convexFlags, int convexVertexLimit)
-                    : base("Collision Data", resultUrl)
+                : base("Collision Data", resultUrl)
                 {
                     Proxy = proxy;
                     Type = type;
@@ -153,12 +152,17 @@ namespace FlaxEditor.Windows.Assets
         private readonly CustomEditorPresenter _propertiesPresenter;
         private readonly PropertiesProxy _properties;
         private Model _collisionWiresModel;
-        private ModelActor _collisionWiresShowActor;
+        private StaticModel _collisionWiresShowActor;
+        private bool _updateWireMesh;
 
         /// <inheritdoc />
         public CollisionDataWindow(Editor editor, AssetItem item)
-            : base(editor, item)
+        : base(editor, item)
         {
+            // Toolstrip
+            _toolstrip.AddSeparator();
+            _toolstrip.AddButton(editor.Icons.Docs32, () => Application.StartProcess(Utilities.Constants.DocsUrl + "manual/physics/colliders/collision-data.html")).LinkTooltip("See documentation to learn more");
+
             // Split Panel
             _split = new SplitPanel(Orientation.Horizontal, ScrollBars.None, ScrollBars.Vertical)
             {
@@ -170,6 +174,7 @@ namespace FlaxEditor.Windows.Assets
             // Model preview
             _preview = new ModelPreview(true)
             {
+                ViewportCamera = new FPSCamera(),
                 Parent = _split.Panel1
             };
 
@@ -183,10 +188,10 @@ namespace FlaxEditor.Windows.Assets
         /// <inheritdoc />
         public override void Update(float deltaTime)
         {
-            // Sync helper actor size with actual preview model (preview scales model for better usage experiance)
+            // Sync helper actor size with actual preview model (preview scales model for better usage experience)
             if (_collisionWiresShowActor && _collisionWiresShowActor.IsActive)
             {
-                _collisionWiresShowActor.Transform = _preview.PreviewModelActor.Transform;
+                _collisionWiresShowActor.Transform = _preview.PreviewStaticModel.Transform;
             }
 
             base.Update(deltaTime);
@@ -197,16 +202,24 @@ namespace FlaxEditor.Windows.Assets
         /// </summary>
         private void UpdateWiresModel()
         {
+            // Don't update on a importer/worker thread
+            if (!Application.IsInMainThread)
+            {
+                _updateWireMesh = true;
+                return;
+            }
+
             if (_collisionWiresModel == null)
             {
                 _collisionWiresModel = FlaxEngine.Content.CreateVirtualAsset<Model>();
+                _collisionWiresModel.SetupLODs(1);
             }
             Editor.Internal_GetCollisionWires(Asset.unmanagedPtr, out var triangles, out var indices);
             if (triangles != null && indices != null)
-                _collisionWiresModel.UpdateMesh(triangles, indices);
+                _collisionWiresModel.LODs[0].Meshes[0].UpdateMesh(triangles, indices);
             if (_collisionWiresShowActor == null)
             {
-                _collisionWiresShowActor = ModelActor.New();
+                _collisionWiresShowActor = StaticModel.New();
                 _preview.Task.CustomActors.Add(_collisionWiresShowActor);
             }
             _collisionWiresShowActor.Model = _collisionWiresModel;
@@ -254,6 +267,18 @@ namespace FlaxEditor.Windows.Assets
         }
 
         /// <inheritdoc />
+        public override void OnUpdate()
+        {
+            if (_updateWireMesh)
+            {
+                _updateWireMesh = false;
+                UpdateWiresModel();
+            }
+
+            base.OnUpdate();
+        }
+
+        /// <inheritdoc />
         public override void OnDestroy()
         {
             base.OnDestroy();
@@ -262,28 +287,28 @@ namespace FlaxEditor.Windows.Assets
             Object.Destroy(ref _collisionWiresModel);
         }
 
-	    /// <inheritdoc />
-	    public override bool UseLayoutData => true;
+        /// <inheritdoc />
+        public override bool UseLayoutData => true;
 
-	    /// <inheritdoc />
-	    public override void OnLayoutSerialize(XmlWriter writer)
-	    {
-		    writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
-	    }
+        /// <inheritdoc />
+        public override void OnLayoutSerialize(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
+        }
 
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize(XmlElement node)
-	    {
-		    float value1;
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize(XmlElement node)
+        {
+            float value1;
 
-		    if (float.TryParse(node.GetAttribute("Split"), out value1))
-			    _split.SplitterValue = value1;
-	    }
+            if (float.TryParse(node.GetAttribute("Split"), out value1))
+                _split.SplitterValue = value1;
+        }
 
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize()
-	    {
-		    _split.SplitterValue = 0.7f;
-	    }
-	}
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize()
+        {
+            _split.SplitterValue = 0.7f;
+        }
+    }
 }

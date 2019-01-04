@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEditor.Content.Thumbnails;
 using FlaxEditor.Viewport.Previews;
 using FlaxEditor.Windows;
@@ -39,10 +38,10 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x3498db);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => CubeTexture.Domain;
+        public override ContentDomain Domain => ContentDomain.CubeTexture;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(CubeTexture).FullName;
+        public override Type AssetType => typeof(CubeTexture);
 
         /// <inheritdoc />
         public override void OnThumbnailDrawPrepare(ThumbnailRequest request)
@@ -53,12 +52,12 @@ namespace FlaxEditor.Content
                 _preview.RenderOnlyWithWindow = false;
                 _preview.Task.Enabled = false;
                 _preview.PostFxVolume.Settings.Eye_Technique = EyeAdaptationTechnique.None;
-	            _preview.PostFxVolume.Settings.Eye_Exposure = 0.1f;
-	            _preview.PostFxVolume.Settings.data.Flags4 |= 0b1001;
-				_preview.Size = new Vector2(PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize);
+                _preview.PostFxVolume.Settings.Eye_Exposure = 0.1f;
+                _preview.PostFxVolume.Settings.data.Flags4 |= 0b1001;
+                _preview.Size = new Vector2(PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize);
                 _preview.SyncBackbufferSize();
             }
-            
+
             // TODO: disable streaming for asset during thumbnail rendering (and restore it after)
         }
 

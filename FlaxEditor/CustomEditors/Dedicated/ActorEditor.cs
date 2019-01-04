@@ -1,610 +1,24 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using FlaxEditor.Actions;
-using FlaxEditor.Content;
 using FlaxEditor.CustomEditors.Editors;
 using FlaxEditor.GUI;
-using FlaxEditor.GUI.Drag;
-using FlaxEditor.Scripting;
 using FlaxEngine;
 using FlaxEngine.GUI;
+using FlaxEngine.Json;
 
 namespace FlaxEditor.CustomEditors.Dedicated
 {
     /// <summary>
-    /// Deciated custom editor for <see cref="Actor"/> objects.
+    /// Dedicated custom editor for <see cref="Actor"/> objects.
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.Editors.GenericEditor" />
     [CustomEditor(typeof(Actor)), DefaultEditor]
     public class ActorEditor : GenericEditor
     {
-		/// <summary>
-		/// Drag and drop scripts area control.
-		/// </summary>
-		/// <seealso cref="FlaxEngine.GUI.Control" />
-		public class DragAreaControl : ContainerControl
-        {
-            private DragScriptItems _dragScriptItems;
-
-            /// <summary>
-            /// The parent scripts editor.
-            /// </summary>
-            public ScriptsEditor ScriptsEditor;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="DragAreaControl"/> class.
-            /// </summary>
-            public DragAreaControl()
-                : base(0, 0, 120, 40)
-            {
-                CanFocus = false;
-
-				// Add script button
-	            float addScriptButtonWidth = 60.0f;
-				var addScriptButton = new Button((Width - addScriptButtonWidth) / 2, 1, addScriptButtonWidth, 18)
-				{
-					TooltipText = "Add new scripts to the actor",
-					AnchorStyle = AnchorStyle.UpperCenter,
-					Text = "Add script",
-					Parent = this,
-				};
-	            addScriptButton.ButtonClicked += AddScriptButtonOnClicked;
-			}
-
-	        private void AddScriptButtonOnClicked(Button button)
-	        {
-		        var scripts = Editor.Instance.CodeEditing.GetScripts();
-		        if (scripts.Count == 0)
-		        {
-			        // No scripts
-			        var cm1 = new ContextMenu();
-			        cm1.AddButton("No scripts in project");
-			        cm1.Show(this, button.BottomLeft);
-			        return;
-		        }
-
-				// Show context menu with list of scripts to add
-		        var cm = new ItemsListContextMenu(180);
-		        for (int i = 0; i < scripts.Count; i++)
-		        {
-			        var script = scripts[i];
-			        cm.ItemsPanel.AddChild(new ItemsListContextMenu.Item(script.ScriptName, script));
-		        }
-		        cm.ItemClicked += script => AddScript((ScriptItem)script.Tag);
-				cm.SortChildren();
-		        cm.Show(this, button.BottomLeft);
-			}
-
-	        /// <inheritdoc />
-            public override void Draw()
-            {
-                var style = FlaxEngine.GUI.Style.Current;
-                var size = Size;
-
-                // Info
-                Render2D.DrawText(style.FontSmall, "Drag scripts here", new Rectangle(2, 22, size.X - 4, size.Y - 4 - 20), style.ForegroundDisabled, TextAlignment.Center, TextAlignment.Center, TextWrapping.WrapWords);
-
-                // Check if drag is over
-                if (IsDragOver && _dragScriptItems != null && _dragScriptItems.HasValidDrag)
-                {
-                    var area = new Rectangle(Vector2.Zero, size);
-                    Render2D.FillRectangle(area, Color.Orange * 0.5f, true);
-                    Render2D.DrawRectangle(area, Color.Black);
-                }
-
-	            base.Draw();
-            }
-
-            private bool ValidateScript(ScriptItem scriptItem)
-            {
-                var scriptName = scriptItem.ScriptName;
-                var scriptType = ScriptsBuilder.FindScript(scriptName);
-                return scriptType != null;
-            }
-
-            /// <inheritdoc />
-            public override DragDropEffect OnDragEnter(ref Vector2 location, DragData data)
-            {
-                var result = base.OnDragEnter(ref location, data);
-
-                if (_dragScriptItems == null)
-                    _dragScriptItems = new DragScriptItems();
-                if (_dragScriptItems.OnDragEnter(data, ValidateScript))
-                    result = _dragScriptItems.Effect;
-
-                return result;
-            }
-
-            /// <inheritdoc />
-            public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
-            {
-                var result = base.OnDragMove(ref location, data);
-
-                if (_dragScriptItems.HasValidDrag)
-                    result = _dragScriptItems.Effect;
-
-                return result;
-            }
-
-            /// <inheritdoc />
-            public override void OnDragLeave()
-            {
-                _dragScriptItems.OnDragLeave();
-
-                base.OnDragLeave();
-            }
-
-            /// <inheritdoc />
-            public override DragDropEffect OnDragDrop(ref Vector2 location, DragData data)
-            {
-                var result = base.OnDragDrop(ref location, data);
-
-                if (_dragScriptItems.HasValidDrag)
-                {
-                    result = _dragScriptItems.Effect;
-	                AddScripts(_dragScriptItems.Objects);
-                }
-
-                _dragScriptItems.OnDragDrop();
-
-                return result;
-            }
-
-	        private void AddScript(ScriptItem items)
-	        {
-		        var list = new List<ScriptItem>(1) { items };
-		        AddScripts(list);
-	        }
-
-	        private void AddScripts(List<ScriptItem> items)
-	        {
-		        var actions = new List<IUndoAction>(4);
-
-		        for (int i = 0; i < items.Count; i++)
-		        {
-			        var item = items[i];
-			        var scriptName = item.ScriptName;
-			        var scriptType = ScriptsBuilder.FindScript(scriptName);
-
-			        var actors = ScriptsEditor.ParentEditor.Values;
-			        for (int j = 0; j < actors.Count; j++)
-			        {
-				        var actor = (Actor)actors[j];
-				        actions.Add(AddRemoveScript.Add(actor, scriptType));
-			        }
-		        }
-
-		        if (actions.Count == 0)
-		        {
-			        Editor.LogWarning("Failed to spawn scripts");
-			        return;
-		        }
-
-		        var multiAction = new MultiUndoAction(actions);
-		        multiAction.Do();
-		        Editor.Instance.Undo.AddAction(multiAction);
-			}
-        }
-
-		/// <summary>
-		/// Small image control added per script group that allows to drag and drop a reference to it. Also used to reorder the scripts.
-		/// </summary>
-		/// <seealso cref="FlaxEngine.GUI.Image" />
-		private class ScriptDragIcon : Image
-		{
-			private ScriptsEditor _editor;
-			private bool _isMosueDown;
-			private Vector2 _mosueDownPos;
-			
-			/// <summary>
-			/// Gets the target script.
-			/// </summary>
-			public Script Script => (Script)Tag;
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="ScriptDragIcon"/> class.
-			/// </summary>
-			/// <param name="editor">The script editor.</param>
-			/// <param name="script">The target script.</param>
-			/// <param name="x">The x position.</param>
-			/// <param name="y">The y position.</param>
-			/// <param name="size">The size (both width and height).</param>
-			public ScriptDragIcon(ScriptsEditor editor, Script script, float x, float y, float size)
-			    : base(x, y, size, size)
-			{
-				Tag = script;
-				_editor = editor;
-			}
-
-			/// <inheritdoc />
-			public override void OnMouseEnter(Vector2 location)
-			{
-				_mosueDownPos = Vector2.Minimum;
-
-				base.OnMouseEnter(location);
-			}
-
-			/// <inheritdoc />
-			public override void OnMouseLeave()
-			{
-				// Check if start drag drop
-				if (_isMosueDown)
-				{
-					DoDrag();
-					_isMosueDown = false;
-				}
-
-				base.OnMouseLeave();
-			}
-
-			/// <inheritdoc />
-			public override void OnMouseMove(Vector2 location)
-			{
-				// Check if start drag drop
-				if (_isMosueDown && Vector2.Distance(location, _mosueDownPos) > 10.0f)
-				{
-					DoDrag();
-					_isMosueDown = false;
-				}
-
-				base.OnMouseMove(location);
-			}
-
-			/// <inheritdoc />
-			public override bool OnMouseUp(Vector2 location, MouseButton buttons)
-			{
-				if (buttons == MouseButton.Left)
-				{
-					// Clear flag
-					_isMosueDown = false;
-				}
-
-				return base.OnMouseUp(location, buttons);
-			}
-
-			/// <inheritdoc />
-			public override bool OnMouseDown(Vector2 location, MouseButton buttons)
-			{
-				if (buttons == MouseButton.Left)
-				{
-					// Set flag
-					_isMosueDown = true;
-					_mosueDownPos = location;
-				}
-
-				return base.OnMouseDown(location, buttons);
-			}
-
-			private void DoDrag()
-			{
-				var script = Script;
-				_editor.OnScriptDragChange(true, script);
-				DoDragDrop(DragScripts.GetDragData(script));
-				_editor.OnScriptDragChange(false, script);
-			}
-		}
-
-	    private class ScriptArrangeBar : Control
-	    {
-		    private ScriptsEditor _editor;
-		    private int _index;
-		    private Script _script;
-		    private DragDropEffect _dragEffect;
-
-		    public ScriptArrangeBar()
-			    : base(0, 0, 120, 6)
-		    {
-			    CanFocus = false;
-			    Visible = false;
-		    }
-
-		    public void Init(int index, ScriptsEditor editor)
-		    {
-			    _editor = editor;
-			    _index = index;
-			    _editor.ScriptDragChange += OnScriptDragChange;
-		    }
-
-		    private void OnScriptDragChange(bool start, Script script)
-		    {
-			    _script = start ? script : null;
-				Visible = start;
-			    OnDragLeave();
-		    }
-
-		    /// <inheritdoc />
-		    public override void Draw()
-		    {
-			    base.Draw();
-
-			    var color = FlaxEngine.GUI.Style.Current.BackgroundSelected * (IsDragOver ? 0.9f : 0.1f);
-				Render2D.FillRectangle(new Rectangle(Vector2.Zero, Size), color, true);
-			}
-
-		    /// <inheritdoc />
-		    public override DragDropEffect OnDragEnter(ref Vector2 location, DragData data)
-		    {
-			    _dragEffect = DragDropEffect.None;
-
-				var result = base.OnDragEnter(ref location, data);
-			    if (result != DragDropEffect.None)
-				    return result;
-
-			    if (data is DragDataText textData && DragScripts.IsValidData(textData))
-				    return _dragEffect = DragDropEffect.Move;
-
-			    return result;
-		    }
-
-		    /// <inheritdoc />
-		    public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
-		    {
-			    return _dragEffect;
-		    }
-
-		    /// <inheritdoc />
-		    public override void OnDragLeave()
-		    {
-			    _dragEffect = DragDropEffect.None;
-
-				base.OnDragLeave();
-		    }
-
-		    /// <inheritdoc />
-		    public override DragDropEffect OnDragDrop(ref Vector2 location, DragData data)
-		    {
-			    var result = base.OnDragDrop(ref location, data);
-			    if (result != DragDropEffect.None)
-				    return result;
-
-			    if (_dragEffect != DragDropEffect.None)
-			    {
-				    result = _dragEffect;
-				    _dragEffect = DragDropEffect.None;
-
-					_editor.ReorderScript(_script, _index);
-			    }
-
-			    return result;
-		    }
-	    }
-
-		/// <summary>
-		/// Custom editor for actor scripts collection.
-		/// </summary>
-		/// <seealso cref="CustomEditor" />
-		public sealed class ScriptsEditor : SyncPointEditor
-        {
-			/// <summary>
-			/// Delegate for script drag start and event events.
-			/// </summary>
-			/// <param name="start">Set to true if drag started, otherwise false.</param>
-			/// <param name="script">The target script to reorder.</param>
-			public delegate void ScriptDragDelegate(bool start, Script script);
-
-	        /// <summary>
-	        /// Occurs when script drag changes (starts or ends).
-	        /// </summary>
-	        public event ScriptDragDelegate ScriptDragChange;
-
-			/// <summary>
-			/// The scripts collection. Undo operations are recorder for scripts.
-			/// </summary>
-			private readonly List<Script> _scripts = new List<Script>();
-
-            /// <inheritdoc />
-            public override IEnumerable<object> UndoObjects => _scripts;
-
-            /// <inheritdoc />
-            public override void Initialize(LayoutElementsContainer layout)
-            {
-                _scripts.Clear();
-
-				// Area for drag&drop scripts
-				var dragArea = layout.CustomContainer<DragAreaControl>();
-                dragArea.CustomControl.ScriptsEditor = this;
-
-                // No support to show scripts for more than one actor selected
-				// TODO: support showing scripts from objects that has the same scripts layout
-                if (Values.Count != 1)
-                    return;
-
-	            // Scripts arrange bar
-				var dragBar = layout.Custom<ScriptArrangeBar>();
-	            dragBar.CustomControl.Init(0, this);
-
-				// Scripts
-				var scripts = (Script[])Values[0];
-                _scripts.AddRange(scripts);
-                var elementType = typeof(Script);
-                for (int i = 0; i < scripts.Length; i++)
-                {
-                    var script = scripts[i];
-                    if (script == null)
-                    {
-                        layout.Group("Missing script");
-                        continue;
-                    }
-                    var values = new ListValueContainer(elementType, i, Values);
-                    var type = script.GetType();
-                    var editor = CustomEditorsUtil.CreateEditor(type, false);
-
-                    // Create group
-                    var title = CustomEditorsUtil.GetPropertyNameUI(type.Name);
-                    var group = layout.Group(title);
-					group.Panel.Open(false);
-	                
-					// Add toggle button to the group
-					var scriptToggle = new CheckBox(2, 0, script.Enabled)
-					{
-						TooltipText = "If checked, script will be enabled",
-						IsScrollable = false,
-						Size = new Vector2(14, 14),
-						BoxSize = 12.0f,
-						Tag = script,
-						Parent = group.Panel
-					};
-	                scriptToggle.CheckChanged += ScriptToggleOnCheckChanged;
-
-					// Add drag button to the group
-	                const float dragIconSize = 14;
-					var scriptDrag = new ScriptDragIcon(this, script, scriptToggle.Right, 0.5f, dragIconSize)
-					{
-						TooltipText = "Script reference",
-						CanFocus = true,
-						IsScrollable = false,
-						Color = new Color(0.7f),
-						Margin = new Margin(1),
-						ImageSource = new SpriteImageSource(Editor.Instance.UI.DragBar12),
-						Tag = script,
-						Parent = group.Panel
-					};
-
-					// Add settings button to the group
-					const float settingsButtonSize = 14;
-                    var settingsButton = new Image(group.Panel.Width - settingsButtonSize, 0, settingsButtonSize, settingsButtonSize)
-                    {
-						TooltipText = "Settings",
-                        CanFocus = true,
-                        AnchorStyle = AnchorStyle.UpperRight,
-                        IsScrollable = false,
-                        Color = new Color(0.7f),
-                        Margin = new Margin(1),
-                        ImageSource = new SpriteImageSource(FlaxEngine.GUI.Style.Current.Settings),
-                        Tag = script,
-                        Parent = group.Panel
-                    };
-                    settingsButton.Clicked += SettingsButtonOnClicked;
-
-	                group.Panel.HeaderMargin = new Margin(scriptDrag.Right, 15, 2, 2);
-					group.Object(values, editor);
-
-					// Scripts arrange bar
-	                dragBar = layout.Custom<ScriptArrangeBar>();
-	                dragBar.CustomControl.Init(i + 1, this);
-				}
-
-                base.Initialize(layout);
-            }
-
-	        public void OnScriptDragChange(bool start, Script script)
-	        {
-				ScriptDragChange.Invoke(start, script);
-	        }
-
-			/// <summary>
-			/// Changes the script order (with undo).
-			/// </summary>
-			/// <param name="script">The script to reorder.</param>
-			/// <param name="targetIndex">The target index to move script.</param>
-			public void ReorderScript(Script script, int targetIndex)
-	        {
-				// Skip if no change
-		        if (script.OrderInParent == targetIndex)
-			        return;
-
-		        var action = ChangeScriptAction.ChangeOrder(script, targetIndex);
-		        action.Do();
-		        Editor.Instance.Undo.AddAction(action);
-			}
-
-			private void ScriptToggleOnCheckChanged(CheckBox box)
-	        {
-		        var script = (Script)box.Tag;
-		        script.Enabled = box.Checked;
-	        }
-
-	        private void SettingsButtonOnClicked(Image image, MouseButton mouseButton)
-            {
-                if (mouseButton != MouseButton.Left)
-                    return;
-
-                var script = (Script)image.Tag;
-
-                var cm = new ContextMenu();
-                cm.Tag = script;
-                //cm.AddButton("Reset").Enabled = false;// TODO: finish this
-                //cm.AddSeparator();
-                cm.AddButton("Remove", OnClickRemove);
-                cm.AddButton("Move up", OnClickMoveUp).Enabled = script.OrderInParent > 0;
-                cm.AddButton("Move down", OnClickMoveDown).Enabled = script.OrderInParent < script.Actor.Scripts.Length - 1;
-                // TODO: copy script
-                // TODO: paste script values
-                // TODO: paste script as new
-                // TODO: copy script reference
-                cm.AddSeparator();
-	            cm.AddButton("Copy name", OnClickCopyName);
-                cm.AddButton("Edit script", OnClickEditScript);
-                cm.AddButton("Show in content window", OnClickShowScript);
-                cm.Show(image, image.Size);
-            }
-
-	        private void OnClickRemove(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-		        var action = AddRemoveScript.Remove(script);
-		        action.Do();
-		        Editor.Instance.Undo.AddAction(action);
-			}
-
-			private void OnClickMoveUp(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-				var action = ChangeScriptAction.ChangeOrder(script, script.OrderInParent - 1);
-		        action.Do();
-		        Editor.Instance.Undo.AddAction(action);
-			}
-
-			private void OnClickMoveDown(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-				var action = ChangeScriptAction.ChangeOrder(script, script.OrderInParent + 1);
-		        action.Do();
-		        Editor.Instance.Undo.AddAction(action);
-			}
-
-			private void OnClickCopyName(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-			    Application.ClipboardText = script.GetType().FullName;
-			}
-
-			private void OnClickEditScript(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-				var item = Editor.Instance.ContentDatabase.FindScriptWitScriptName(script);
-		        if (item != null)
-			        Editor.Instance.ContentEditing.Open(item);
-			}
-
-	        private void OnClickShowScript(ContextMenuButton button)
-	        {
-		        var script = (Script)button.ParentContextMenu.Tag;
-		        var item = Editor.Instance.ContentDatabase.FindScriptWitScriptName(script);
-		        if (item != null)
-			        Editor.Instance.Windows.ContentWin.Select(item);
-	        }
-
-	        /// <inheritdoc />
-            public override void Refresh()
-            {
-                if (Values.Count == 1)
-                {
-                    var scripts = ((Actor)ParentEditor.Values[0]).Scripts;
-                    if (!Utils.ArraysEqual(scripts, _scripts))
-                    {
-                        ParentEditor.RebuildLayout();
-                        return;
-                    }
-                }
-
-                base.Refresh();
-            }
-        }
+        private Guid _linkedPrefabId;
 
         /// <inheritdoc />
         protected override void SpawnProperty(LayoutElementsContainer itemLayout, ValueContainer itemValues, ItemInfo item)
@@ -613,31 +27,31 @@ namespace FlaxEditor.CustomEditors.Dedicated
             int order = item.Order?.Order ?? int.MinValue;
             switch (order)
             {
-				// Override static flags editor
-				case -80:
-					item.CustomEditor = new CustomEditorAttribute(typeof(ActorStaticFlagsEditor));
-					break;
+            // Override static flags editor
+            case -80:
+                item.CustomEditor = new CustomEditorAttribute(typeof(ActorStaticFlagsEditor));
+                break;
 
-                // Override layer editor
-                case -69:
-                    item.CustomEditor = new CustomEditorAttribute(typeof(ActorLayerEditor));
-                    break;
+            // Override layer editor
+            case -69:
+                item.CustomEditor = new CustomEditorAttribute(typeof(ActorLayerEditor));
+                break;
 
-                // Override tag editor
-                case -68:
-                    item.CustomEditor = new CustomEditorAttribute(typeof(ActorTagEditor));
-                    break;
+            // Override tag editor
+            case -68:
+                item.CustomEditor = new CustomEditorAttribute(typeof(ActorTagEditor));
+                break;
 
-                // Override position/scale editor
-                case -30:
-                case -10:
-                    item.CustomEditor = new CustomEditorAttribute(typeof(ActorTransformEditor.PositionScaleEditor));
-                    break;
+            // Override position/scale editor
+            case -30:
+            case -10:
+                item.CustomEditor = new CustomEditorAttribute(typeof(ActorTransformEditor.PositionScaleEditor));
+                break;
 
-                // Override orientation editor
-                case -20:
-                    item.CustomEditor = new CustomEditorAttribute(typeof(ActorTransformEditor.OrientationEditor));
-                    break;
+            // Override orientation editor
+            case -20:
+                item.CustomEditor = new CustomEditorAttribute(typeof(ActorTransformEditor.OrientationEditor));
+                break;
             }
 
             base.SpawnProperty(itemLayout, itemValues, item);
@@ -658,6 +72,300 @@ namespace FlaxEditor.CustomEditors.Dedicated
             }
 
             return items;
+        }
+
+        /// <inheritdoc />
+        public override void Initialize(LayoutElementsContainer layout)
+        {
+            // Check for prefab link
+            if (Values.IsSingleObject && Values[0] is Actor actor && actor.HasPrefabLink)
+            {
+                // TODO: consider editing more than one instance of the same prefab asset at once
+
+                var prefab = FlaxEngine.Content.LoadAsync<Prefab>(actor.PrefabID);
+                // TODO: don't stall here?
+                if (prefab && !prefab.WaitForLoaded())
+                {
+                    var prefabObjectId = actor.PrefabObjectID;
+                    var prefabInstance = Prefab.Internal_GetDefaultInstance(prefab.unmanagedPtr, ref prefabObjectId);
+                    if (prefabInstance != null)
+                    {
+                        // Use default prefab instance as a reference for the editor
+                        Values.SetReferenceValue(prefabInstance);
+
+                        // Add some UI
+                        var panel = layout.CustomContainer<UniformGridPanel>();
+                        panel.CustomControl.Height = 20.0f;
+                        panel.CustomControl.SlotsVertically = 1;
+                        panel.CustomControl.SlotsHorizontally = 2;
+
+                        // Selecting actor prefab asset
+                        var selectPrefab = panel.Button("Select Prefab");
+                        selectPrefab.Button.Clicked += () => Editor.Instance.Windows.ContentWin.Select(prefab);
+
+                        // Viewing changes applied to this actor
+                        var viewChanges = panel.Button("View Changes");
+                        viewChanges.Button.Clicked += () => ViewChanges(viewChanges.Button, new Vector2(0.0f, 20.0f));
+
+                        // Link event to update editor on prefab apply
+                        _linkedPrefabId = prefab.ID;
+                        Editor.Instance.Prefabs.PrefabApplying += OnPrefabApplying;
+                        Editor.Instance.Prefabs.PrefabApplied += OnPrefabApplied;
+                    }
+                }
+            }
+
+            base.Initialize(layout);
+        }
+
+        /// <inheritdoc />
+        protected override void Deinitialize()
+        {
+            base.Deinitialize();
+
+            if (_linkedPrefabId != Guid.Empty)
+            {
+                _linkedPrefabId = Guid.Empty;
+                Editor.Instance.Prefabs.PrefabApplied -= OnPrefabApplying;
+                Editor.Instance.Prefabs.PrefabApplied -= OnPrefabApplied;
+            }
+        }
+
+        private void OnPrefabApplied(Prefab prefab, Actor instance)
+        {
+            if (prefab.ID == _linkedPrefabId)
+            {
+                // This works fine but in PrefabWindow when using live update it crashes on using color picker/float slider because UI is being rebuild
+                //Presenter.BuildLayoutOnUpdate();
+
+                // Better way is to just update the reference value using the new default instance of the prefab, created after changes apply
+                if (prefab && !prefab.WaitForLoaded())
+                {
+                    var actor = (Actor)Values[0];
+                    var prefabObjectId = actor.PrefabObjectID;
+                    var prefabInstance = Prefab.Internal_GetDefaultInstance(prefab.unmanagedPtr, ref prefabObjectId);
+                    if (prefabInstance != null)
+                    {
+                        Values.SetReferenceValue(prefabInstance);
+                        RefreshReferenceValue();
+                    }
+                }
+            }
+        }
+
+        private void OnPrefabApplying(Prefab prefab, Actor instance)
+        {
+            if (prefab.ID == _linkedPrefabId)
+            {
+                // Unlink reference value (it gets deleted by the prefabs system during apply)
+                ClearReferenceValueAll();
+            }
+        }
+
+        private TreeNode CreateDiffNode(CustomEditor editor)
+        {
+            var node = new TreeNode(false);
+
+            node.Tag = editor;
+
+            // Removed Script
+            if (editor is RemovedScriptDummy removed)
+            {
+                node.TextColor = Color.OrangeRed;
+                node.Text = CustomEditorsUtil.GetPropertyNameUI(removed.PrefabObject.GetType().Name);
+            }
+            // Actor or Script
+            else if (editor.Values[0] is ISceneObject sceneObject)
+            {
+                node.TextColor = sceneObject.HasPrefabLink ? FlaxEngine.GUI.Style.Current.ProgressNormal : FlaxEngine.GUI.Style.Current.BackgroundSelected;
+                node.Text = CustomEditorsUtil.GetPropertyNameUI(sceneObject.GetType().Name);
+            }
+            // Array Item
+            else if (editor.ParentEditor?.Values?.Type?.IsArray ?? false)
+            {
+                node.Text = "Element " + editor.ParentEditor.ChildrenEditors.IndexOf(editor);
+            }
+            // Common type
+            else if (editor.Values.Info != null)
+            {
+                node.Text = CustomEditorsUtil.GetPropertyNameUI(editor.Values.Info.Name);
+            }
+            // Custom type
+            else if (editor.Values[0] != null)
+            {
+                node.Text = editor.Values[0].ToString();
+            }
+
+            node.Expand(true);
+
+            return node;
+        }
+
+        private class RemovedScriptDummy : CustomEditor
+        {
+            /// <summary>
+            /// The removed prefab object (from the prefab default instance).
+            /// </summary>
+            public Script PrefabObject;
+
+            /// <inheritdoc />
+            public override void Initialize(LayoutElementsContainer layout)
+            {
+                // Not used
+            }
+        }
+
+        private TreeNode ProcessDiff(CustomEditor editor, bool skipIfNotModified = true)
+        {
+            // Special case for new Script added to actor
+            if (editor.Values[0] is Script script && !script.HasPrefabLink)
+            {
+                return CreateDiffNode(editor);
+            }
+
+            // Skip if no change detected
+            if (!editor.Values.IsReferenceValueModified && skipIfNotModified)
+                return null;
+
+            TreeNode result = null;
+
+            if (editor.ChildrenEditors.Count == 0)
+                result = CreateDiffNode(editor);
+
+            bool isScriptEditorWithRefValue = editor is ScriptsEditor && editor.Values.HasReferenceValue;
+
+            for (int i = 0; i < editor.ChildrenEditors.Count; i++)
+            {
+                var child = ProcessDiff(editor.ChildrenEditors[i], !isScriptEditorWithRefValue);
+                if (child != null)
+                {
+                    if (result == null)
+                        result = CreateDiffNode(editor);
+
+                    result.AddChild(child);
+                }
+            }
+
+            // Show scripts removed from prefab instance (user may want to restore them)
+            if (editor is ScriptsEditor && editor.Values.HasReferenceValue && editor.Values.ReferenceValue is Script[] prefabObjectScripts)
+            {
+                for (int j = 0; j < prefabObjectScripts.Length; j++)
+                {
+                    var prefabObjectScript = prefabObjectScripts[j];
+                    bool isRemoved = true;
+
+                    for (int i = 0; i < editor.ChildrenEditors.Count; i++)
+                    {
+                        if (editor.ChildrenEditors[i].Values is ScriptsEditor.ScriptsContainer container && container.PrefabObjectId == prefabObjectScript.PrefabObjectID)
+                        {
+                            // Found
+                            isRemoved = false;
+                            break;
+                        }
+                    }
+
+                    if (isRemoved)
+                    {
+                        var dummy = new RemovedScriptDummy
+                        {
+                            PrefabObject = prefabObjectScript
+                        };
+
+                        var child = CreateDiffNode(dummy);
+                        if (result == null)
+                            result = CreateDiffNode(editor);
+                        result.AddChild(child);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private void ViewChanges(Control target, Vector2 targetLocation)
+        {
+            // Build a tree out of modified properties
+            var rootNode = ProcessDiff(this, false);
+
+            // Skip if no changes detected
+            if (rootNode == null || rootNode.ChildrenCount == 0)
+            {
+                var cm1 = new ContextMenu();
+                cm1.AddButton("No changes detected");
+                cm1.Show(target, targetLocation);
+                return;
+            }
+
+            // Create context menu
+            var cm = new PrefabDiffContextMenu();
+            cm.Tree.AddChild(rootNode);
+            cm.Tree.RightClick += OnDiffNodeRightClick;
+            cm.Tree.Tag = cm;
+            cm.RevertAll += OnDiffRevertAll;
+            cm.ApplyAll += OnDiffApplyAll;
+            cm.Show(target, targetLocation);
+        }
+
+        private void OnDiffNodeRightClick(TreeNode node, Vector2 location)
+        {
+            var diffMenu = (PrefabDiffContextMenu)node.ParentTree.Tag;
+
+            var menu = new ContextMenu();
+            menu.AddButton("Revert", () => OnDiffRevert((CustomEditor)node.Tag));
+            menu.AddSeparator();
+            menu.AddButton("Revert All", OnDiffRevertAll);
+            menu.AddButton("Apply All", OnDiffApplyAll);
+
+            diffMenu.ShowChild(menu, node.PointToParent(diffMenu, new Vector2(location.X, node.HeaderHeight)));
+        }
+
+        private void OnDiffRevertAll()
+        {
+            RevertToReferenceValue();
+        }
+
+        private void OnDiffApplyAll()
+        {
+            Editor.Instance.Prefabs.ApplyAll((Actor)Values[0]);
+
+            // Ensure to refresh the layout
+            Presenter.BuildLayoutOnUpdate();
+        }
+
+        private void OnDiffRevert(CustomEditor editor)
+        {
+            // Special case for removed Script from actor
+            if (editor is RemovedScriptDummy removed)
+            {
+                Editor.Log("Reverting removed script changes to prefab (adding it)");
+
+                var actor = (Actor)Values[0];
+                var restored = actor.AddScript(removed.PrefabObject.GetType());
+                var prefabId = actor.PrefabID;
+                var prefabObjectId = restored.PrefabObjectID;
+                Script.Internal_LinkPrefab(restored.unmanagedPtr, ref prefabId, ref prefabObjectId);
+                string data = JsonSerializer.Serialize(removed.PrefabObject);
+                JsonSerializer.Deserialize(restored, data);
+
+                var action = AddRemoveScript.Added(restored);
+                Presenter.Undo?.AddAction(action);
+
+                return;
+            }
+
+            // Special case for new Script added to actor
+            if (editor.Values[0] is Script script && !script.HasPrefabLink)
+            {
+                Editor.Log("Reverting added script changes to prefab (removing it)");
+
+                var action = AddRemoveScript.Remove(script);
+                action.Do();
+                Presenter.Undo?.AddAction(action);
+
+                return;
+            }
+
+            editor.RevertToReferenceValue();
         }
     }
 }

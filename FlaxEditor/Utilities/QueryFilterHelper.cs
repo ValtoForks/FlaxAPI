@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -24,7 +22,7 @@ namespace FlaxEditor.Utilities
             Range[] matches;
             return Match(filter, text, out matches);
         }
-        
+
         /// <summary>
         /// Matches the specified text with the filter.
         /// </summary>
@@ -63,7 +61,7 @@ namespace FlaxEditor.Utilities
                 {
                     var filterChar = char.ToLower(filter[filterPos]);
                     var textChar = char.ToLower(text[i]);
-                    
+
                     if (filterChar == textChar)
                     {
                         // Check if start the matching sequence
@@ -110,7 +108,7 @@ namespace FlaxEditor.Utilities
         }
 
         /// <summary>
-        /// Describies subrange of the text.
+        /// Describes sub range of the text.
         /// </summary>
         public struct Range
         {
@@ -139,7 +137,7 @@ namespace FlaxEditor.Utilities
                 StartIndex = start;
                 Length = length;
             }
-            
+
             /// <summary>
             /// Tests for equality between two objects.
             /// </summary>
@@ -150,7 +148,7 @@ namespace FlaxEditor.Utilities
             {
                 return left.Equals(right);
             }
-            
+
             /// <summary>
             /// Tests for equality between two objects.
             /// </summary>

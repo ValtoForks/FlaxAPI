@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -16,7 +14,7 @@ namespace FlaxEditor.Content
         /// The binary asset files extension.
         /// </summary>
         public static readonly string Extension = "flax";
-        
+
         /// <inheritdoc />
         public override bool IsProxyFor(ContentItem item)
         {
@@ -25,6 +23,20 @@ namespace FlaxEditor.Content
 
         /// <inheritdoc />
         public override string FileExtension => Extension;
+
+        /// <inheritdoc />
+        public override string TypeName => AssetType.FullName;
+
+        /// <inheritdoc />
+        public override bool IsProxyFor<T>()
+        {
+            return typeof(T) == AssetType;
+        }
+
+        /// <summary>
+        /// Gets the type of the asset.
+        /// </summary>
+        public abstract Type AssetType { get; }
 
         /// <inheritdoc />
         public override AssetItem ConstructItem(string path, string typeName, ref Guid id)

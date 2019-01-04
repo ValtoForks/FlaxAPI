@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -30,7 +28,7 @@ namespace FlaxEditor.Content.Settings
         /// </summary>
         /// <param name="name">The target name.</param>
         /// <returns>Found target or null if is missing.</returns>
-        public BuildTarget GeTarget(string name)
+        public BuildTarget GetTarget(string name)
         {
             if (Targets != null)
             {

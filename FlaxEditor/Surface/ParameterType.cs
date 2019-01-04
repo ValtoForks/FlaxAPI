@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.Surface
 {
@@ -15,9 +13,9 @@ namespace FlaxEditor.Surface
         Bool = 0,
 
         /// <summary>
-        /// The inteager value.
+        /// The integer value.
         /// </summary>
-        Inteager = 1,
+        Integer = 1,
 
         /// <summary>
         /// The floating point value.
@@ -103,5 +101,25 @@ namespace FlaxEditor.Surface
         /// The render target (created from code).
         /// </summary>
         RenderTarget = 18,
+
+        /// <summary>
+        /// The matrix.
+        /// </summary>
+        Matrix = 19,
+
+        /// <summary>
+        /// The render target array (created from code).
+        /// </summary>
+        RenderTargetArray = 20,
+
+        /// <summary>
+        /// The volume render target (created from code).
+        /// </summary>
+        RenderTargetVolume = 21,
+
+        /// <summary>
+        /// The cube render target (created from code).
+        /// </summary>
+        RenderTargetCube = 22,
     }
 }

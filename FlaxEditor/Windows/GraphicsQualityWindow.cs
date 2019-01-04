@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.CustomEditors;
 using FlaxEngine;
@@ -10,7 +8,7 @@ using FlaxEngine.Rendering;
 namespace FlaxEditor.Windows
 {
     /// <summary>
-    /// Window used to show and edit current gaephics rendering settings via <see cref="GraphicsQuality"/>.
+    /// Window used to show and edit current graphics rendering settings via <see cref="GraphicsQuality"/>.
     /// </summary>
     /// <seealso cref="FlaxEditor.Windows.EditorWindow" />
     public class GraphicsQualityWindow : EditorWindow
@@ -22,6 +20,16 @@ namespace FlaxEditor.Windows
         /// </summary>
         private class ViewModel
         {
+            /// <summary>
+            /// Enables rendering synchronization with the refresh rate of the display device to avoid "tearing" artifacts.
+            /// </summary>
+            [EditorOrder(0), EditorDisplay("Rendering", "Use V-Sync"), Tooltip("Enables rendering synchronization with the refresh rate of the display device to avoid \"tearing\" artifacts.")]
+            public bool UseVSync
+            {
+                get => GraphicsQuality.UseVSync;
+                set => GraphicsQuality.UseVSync = value;
+            }
+
             /// <summary>
             /// Anti Aliasing quality setting.
             /// </summary>
@@ -52,20 +60,20 @@ namespace FlaxEditor.Windows
                 set => GraphicsQuality.SSAOQuality = value;
             }
 
-	        /// <summary>
-	        /// Volumetric Fog quality setting.
-	        /// </summary>
-	        [EditorOrder(1250), EditorDisplay("Quality", "Volumetric Fog Quality"), Tooltip("Volumetric Fog quality setting.")]
-	        public Quality VolumetricFogQuality
-	        {
-		        get => GraphicsQuality.VolumetricFogQuality;
-		        set => GraphicsQuality.VolumetricFogQuality = value;
-	        }
+            /// <summary>
+            /// Volumetric Fog quality setting.
+            /// </summary>
+            [EditorOrder(1250), EditorDisplay("Quality", "Volumetric Fog Quality"), Tooltip("Volumetric Fog quality setting.")]
+            public Quality VolumetricFogQuality
+            {
+                get => GraphicsQuality.VolumetricFogQuality;
+                set => GraphicsQuality.VolumetricFogQuality = value;
+            }
 
-			/// <summary>
-			/// The shadows quality.
-			/// </summary>
-			[EditorOrder(1300), EditorDisplay("Quality", "Shadows Quality"), Tooltip("The shadows quality.")]
+            /// <summary>
+            /// The shadows quality.
+            /// </summary>
+            [EditorOrder(1300), EditorDisplay("Quality", "Shadows Quality"), Tooltip("The shadows quality.")]
             public Quality ShadowsQuality
             {
                 get => GraphicsQuality.ShadowsQuality;
@@ -98,7 +106,7 @@ namespace FlaxEditor.Windows
         /// </summary>
         /// <param name="editor">The editor.</param>
         public GraphicsQualityWindow(Editor editor)
-            : base(editor, true, ScrollBars.Vertical)
+        : base(editor, true, ScrollBars.Vertical)
         {
             Title = "Graphics Quality";
 

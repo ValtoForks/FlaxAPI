@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -21,9 +19,38 @@ namespace FlaxEditor.Content
         /// <param name="typeName">The asset type name identifier.</param>
         /// <param name="domain">The asset domain.</param>
         public BinaryAssetItem(string path, Guid id, string typeName, ContentDomain domain)
-            : base(path, typeName, ref id)
+        : base(path, typeName, ref id)
         {
             ItemDomain = domain;
+
+            switch (domain)
+            {
+            case ContentDomain.Texture:
+            case ContentDomain.CubeTexture:
+                SearchFilter = ContentItemSearchFilter.Texture;
+                break;
+            case ContentDomain.Material:
+                SearchFilter = ContentItemSearchFilter.Material;
+                break;
+            case ContentDomain.Model:
+                SearchFilter = ContentItemSearchFilter.Model;
+                break;
+            case ContentDomain.Prefab:
+                SearchFilter = ContentItemSearchFilter.Prefab;
+                break;
+            case ContentDomain.Scene:
+                SearchFilter = ContentItemSearchFilter.Scene;
+                break;
+            case ContentDomain.Audio:
+                SearchFilter = ContentItemSearchFilter.Audio;
+                break;
+            case ContentDomain.Animation:
+                SearchFilter = ContentItemSearchFilter.Animation;
+                break;
+            default:
+                SearchFilter = ContentItemSearchFilter.Other;
+                break;
+            }
         }
 
         /// <summary>
@@ -57,5 +84,8 @@ namespace FlaxEditor.Content
 
         /// <inheritdoc />
         public override ContentDomain ItemDomain { get; }
+
+        /// <inheritdoc />
+        public override ContentItemSearchFilter SearchFilter { get; }
     }
 }

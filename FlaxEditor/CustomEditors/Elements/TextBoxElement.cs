@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.GUI;
 
@@ -32,9 +30,9 @@ namespace FlaxEditor.CustomEditors.Elements
         /// <param name="isMultiline">Enable/disable multiline text input support</param>
         public TextBoxElement(bool isMultiline = false)
         {
-			TextBox = new TextBox(isMultiline, 0, 0);
-	        if (isMultiline)
-		        TextBox.Height = TextBox.DefaultHeight * 4;
+            TextBox = new TextBox(isMultiline, 0, 0);
+            if (isMultiline)
+                TextBox.Height = TextBox.DefaultHeight * 4;
         }
 
         /// <inheritdoc />

@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+﻿// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -15,7 +13,7 @@ namespace FlaxEditor.Surface.Elements
     {
         /// <inheritdoc />
         public TextView(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(parentNode, archetype, 100, 16, false)
+        : base(parentNode, archetype, 100, 16, false)
         {
         }
 

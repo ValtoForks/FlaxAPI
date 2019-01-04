@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Linq;
 using FlaxEditor.CustomEditors.Elements;
@@ -36,7 +34,11 @@ namespace FlaxEditor.CustomEditors.Editors
             masterPanelControl.ClipChildren = false;
             masterPanelControl.SlotPadding = new Margin(0, 0, margin, margin);
             masterPanelControl.Height = trackBallSize + margin + margin;
-            masterPanelControl.ColumnFill = new[] { -trackBallSize, 1.0f };
+            masterPanelControl.ColumnFill = new[]
+            {
+                -trackBallSize,
+                1.0f
+            };
             masterPanelControl.RowFill = new[] { 1.0f };
 
             // Trackball
@@ -53,9 +55,9 @@ namespace FlaxEditor.CustomEditors.Editors
                 gridControl.SlotsVertically = 4;
 
                 LimitAttribute limit = null;
-                if (Values.Info != null)
+                var attributes = Values.GetAttributes();
+                if (attributes != null)
                 {
-                    var attributes = Values.Info.GetCustomAttributes(true);
                     limit = (LimitAttribute)attributes.FirstOrDefault(x => x is LimitAttribute);
                 }
 
@@ -101,7 +103,9 @@ namespace FlaxEditor.CustomEditors.Editors
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (!HasDiffrentValues)
+            base.Refresh();
+
+            if (!HasDifferentValues)
             {
                 var value = (Vector4)Values[0];
                 var color = new Vector3(value);

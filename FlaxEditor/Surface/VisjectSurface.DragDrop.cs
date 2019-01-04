@@ -1,8 +1,7 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
-using System.Threading;
+using System.Collections.Generic;
+using System.IO;
 using FlaxEditor.Content;
 using FlaxEditor.GUI.Drag;
 using FlaxEngine;
@@ -12,41 +11,50 @@ namespace FlaxEditor.Surface
 {
     public partial class VisjectSurface
     {
-        private DragAssets _dragOverItems = new DragAssets();
+        private readonly DragAssets<DragDropEventArgs> _dragAssets;
+        private readonly DragSurfaceParameters<DragDropEventArgs> _dragParameters;
+
+        /// <summary>
+        /// The custom drag drop event arguments.
+        /// </summary>
+        /// <seealso cref="FlaxEditor.GUI.Drag.DragEventArgs" />
+        public class DragDropEventArgs : DragEventArgs
+        {
+            /// <summary>
+            /// The surface location.
+            /// </summary>
+            public Vector2 SurfaceLocation;
+        }
+
+        /// <summary>
+        /// Drag and drop handlers.
+        /// </summary>
+        public readonly DragHandlers DragHandlers = new DragHandlers();
 
         /// <inheritdoc />
         public override DragDropEffect OnDragEnter(ref Vector2 location, DragData data)
         {
             var result = base.OnDragEnter(ref location, data);
+            if (result != DragDropEffect.None)
+                return result;
 
-            if (result == DragDropEffect.None)
-            {
-                if (_dragOverItems.OnDragEnter(data, ValidateDragItemFunc))
-                {
-                    result = _dragOverItems.Effect;
-                }
-            }
-
-            return result;
+            return DragHandlers.OnDragEnter(data);
         }
 
         /// <inheritdoc />
         public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
         {
             var result = base.OnDragMove(ref location, data);
+            if (result != DragDropEffect.None)
+                return result;
 
-            if (result == DragDropEffect.None && _dragOverItems.HasValidDrag)
-            {
-                result = _dragOverItems.Effect;
-            }
-
-            return result;
+            return DragHandlers.Effect;
         }
 
         /// <inheritdoc />
         public override void OnDragLeave()
         {
-            _dragOverItems.OnDragLeave();
+            DragHandlers.OnDragLeave();
 
             base.OnDragLeave();
         }
@@ -55,78 +63,85 @@ namespace FlaxEditor.Surface
         public override DragDropEffect OnDragDrop(ref Vector2 location, DragData data)
         {
             var result = base.OnDragDrop(ref location, data);
+            if (result != DragDropEffect.None)
+                return result;
 
-            if (result == DragDropEffect.None && _dragOverItems.HasValidDrag)
+            var args = new DragDropEventArgs
             {
-                var surfaceLocation = _surface.PointFromParent(location);
+                SurfaceLocation = _rootControl.PointFromParent(ref location)
+            };
 
-                switch (Type)
-                {
-                    case SurfaceType.Material:
-                    {
-                        for (int i = 0; i < _dragOverItems.Objects.Count; i++)
-                        {
-                            var item = _dragOverItems.Objects[i];
+            // Drag assets
+            if (_dragAssets.HasValidDrag)
+            {
+                result = _dragAssets.Effect;
 
-                            switch (item.ItemDomain)
-                            {
-                                case ContentDomain.Texture:
-                                {
-                                    // Check if it's a normal map
-                                    bool isNormalMap = false;
-                                    var obj = FlaxEngine.Content.LoadAsync<Texture>(item.ID);
-                                    if (obj)
-                                    {
-                                        Thread.Sleep(50);
-
-                                        if (!obj.WaitForLoaded())
-                                        {
-                                            isNormalMap = obj.IsNormalMap;
-                                        }
-                                    }
-
-                                    SpawnNode(5, (ushort)(isNormalMap ? 4 : 1), surfaceLocation, new object[] { item.ID });
-                                    break;
-                                }
-
-                                case ContentDomain.CubeTexture:
-                                {
-                                    SpawnNode(5, 3, surfaceLocation, new object[] { item.ID });
-                                    break;
-                                }
-
-                                case ContentDomain.Material:
-                                {
-                                    SpawnNode(8, 1, surfaceLocation, new object[] { item.ID });
-                                    break;
-                                }
-                            }
-                        }
-
-                        break;
-                    }
-                }
+                // Process items
+                HandleDragDropAssets(_dragAssets.Objects, args);
             }
+            // Drag parameters
+            else if (_dragParameters.HasValidDrag)
+            {
+                result = _dragParameters.Effect;
+
+                // Process items
+                HandleDragDropParameters(_dragParameters.Objects, args);
+            }
+
+            DragHandlers.OnDragDrop(args);
 
             return result;
         }
 
-        private bool ValidateDragItemFunc(AssetItem assetItem)
+        /// <summary>
+        /// Validates the asset items drag operation.
+        /// </summary>
+        /// <param name="assetItem">The asset item.</param>
+        /// <returns>True if can drag that item, otherwise false.</returns>
+        protected virtual bool ValidateDragItem(AssetItem assetItem)
         {
-            switch (Type)
-            {
-                case SurfaceType.Material:
-                {
-                    switch (assetItem.ItemDomain)
-                    {
-                        case ContentDomain.Texture:
-                        case ContentDomain.CubeTexture:
-                        case ContentDomain.Material: return true;
-                    }
-                    break;
-                }
-            }
             return false;
+        }
+
+        /// <summary>
+        /// Validates the parameter drag operation.
+        /// </summary>
+        /// <param name="parameterName">Name of the parameter.</param>
+        /// <returns>Tre if can drag that parameter, otherwise false.</returns>
+        protected virtual bool ValidateDragParameter(string parameterName)
+        {
+            return GetParameter(parameterName) != null;
+        }
+
+        /// <summary>
+        /// Handles the drag drop assets action.
+        /// </summary>
+        /// <param name="objects">The objects.</param>
+        /// <param name="args">The drag drop arguments data.</param>
+        protected virtual void HandleDragDropAssets(List<AssetItem> objects, DragDropEventArgs args)
+        {
+        }
+
+        /// <summary>
+        /// Handles the drag drop surface parameters action.
+        /// </summary>
+        /// <param name="objects">The objects.</param>
+        /// <param name="args">The drag drop arguments data.</param>
+        protected virtual void HandleDragDropParameters(List<string> objects, DragDropEventArgs args)
+        {
+            for (int i = 0; i < objects.Count; i++)
+            {
+                var parameter = GetParameter(objects[i]);
+                if (parameter == null)
+                    throw new InvalidDataException();
+
+                var node = Context.SpawnNode(6, 1, args.SurfaceLocation, new object[]
+                {
+                    parameter.ID
+                });
+
+                args.SurfaceLocation.X += node.Width + 10;
+            }
         }
     }
 }

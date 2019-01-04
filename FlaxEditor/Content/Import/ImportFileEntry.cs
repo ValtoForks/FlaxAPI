@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,10 +9,9 @@ namespace FlaxEditor.Content.Import
     /// <summary>
     /// Creates new <see cref="ImportFileEntry"/> for the given source file.
     /// </summary>
-    /// <param name="url">The source file url.</param>
-    /// <param name="resultUrl">The result file url.</param>
+    /// <param name="request">The import request.</param>
     /// <returns>The file entry.</returns>
-    public delegate ImportFileEntry ImportFileEntryHandler(string url, string resultUrl);
+    public delegate ImportFileEntry ImportFileEntryHandler(ref Request request);
 
     /// <summary>
     /// File import entry.
@@ -25,7 +22,7 @@ namespace FlaxEditor.Content.Import
         public string SourceUrl { get; }
 
         /// <inheritdoc />
-        public string ResultUrl { get; }
+        public string ResultUrl { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether this entry has settings to modify.
@@ -50,12 +47,22 @@ namespace FlaxEditor.Content.Import
         /// <summary>
         /// Initializes a new instance of the <see cref="ImportFileEntry"/> class.
         /// </summary>
-        /// <param name="url">The source file url.</param>
-        /// <param name="resultUrl">The result file url.</param>
-        public ImportFileEntry(string url, string resultUrl)
+        /// <param name="request">The import request.</param>
+        public ImportFileEntry(ref Request request)
         {
-            SourceUrl = url;
-            ResultUrl = resultUrl;
+            SourceUrl = request.InputPath;
+            ResultUrl = request.OutputPath;
+        }
+
+        /// <summary>
+        /// Modifies the result URL filename (keeps destination folder and extension).
+        /// </summary>
+        /// <param name="filename">The new filename.</param>
+        public void ModifyResultFilename(string filename)
+        {
+            var directory = Path.GetDirectoryName(ResultUrl) ?? string.Empty;
+            var extension = Path.GetExtension(ResultUrl);
+            ResultUrl = Path.Combine(directory, filename + extension);
         }
 
         /// <summary>
@@ -76,23 +83,21 @@ namespace FlaxEditor.Content.Import
 
         /// <summary>
         /// The file types registered for importing. Key is a file extension (without a leading dot).
-        /// Allows to plug custom importing options gather for diffrent input file types.
+        /// Allows to plug custom importing options gather for different input file types.
         /// </summary>
         public static readonly Dictionary<string, ImportFileEntryHandler> FileTypes = new Dictionary<string, ImportFileEntryHandler>(32);
 
         /// <summary>
         /// Creates the entry.
         /// </summary>
-        /// <param name="url">The source file url.</param>
-        /// <param name="resultUrl">The result file url.</param>
-        /// <param name="isBinaryAsset">True if result file is binary asset.</param>
+        /// <param name="request">The import request.</param>
         /// <returns>Created file entry.</returns>
-        public static ImportFileEntry CreateEntry(string url, string resultUrl, bool isBinaryAsset)
+        public static ImportFileEntry CreateEntry(ref Request request)
         {
             // Get extension (without a dot)
-            var extension = Path.GetExtension(url);
+            var extension = Path.GetExtension(request.InputPath);
             if (string.IsNullOrEmpty(extension))
-                throw new ArgumentException();
+                return new FolderImportEntry(ref request);
             if (extension[0] == '.')
                 extension = extension.Remove(0, 1);
             extension = extension.ToLower();
@@ -100,10 +105,10 @@ namespace FlaxEditor.Content.Import
             // Check if use overriden type
             ImportFileEntryHandler createDelegate;
             if (FileTypes.TryGetValue(extension, out createDelegate))
-                return createDelegate(url, resultUrl);
+                return createDelegate(ref request);
 
             // Use default type
-            return isBinaryAsset ? new AssetImportEntry(url, resultUrl) : new ImportFileEntry(url, resultUrl);
+            return request.IsBinaryAsset ? new AssetImportEntry(ref request) : new ImportFileEntry(ref request);
         }
 
         internal static void RegisterDefaultTypes()
@@ -114,14 +119,20 @@ namespace FlaxEditor.Content.Import
             FileTypes["bmp"] = ImportTexture;
             FileTypes["gif"] = ImportTexture;
             FileTypes["tiff"] = ImportTexture;
+            FileTypes["tif"] = ImportTexture;
             FileTypes["jpeg"] = ImportTexture;
             FileTypes["jpg"] = ImportTexture;
+            FileTypes["dds"] = ImportTexture;
+            FileTypes["hdr"] = ImportTexture;
+            FileTypes["raw"] = ImportTexture;
 
             // Models
             FileTypes["obj"] = ImportModel;
             FileTypes["fbx"] = ImportModel;
             FileTypes["x"] = ImportModel;
             FileTypes["dae"] = ImportModel;
+            FileTypes["gltf"] = ImportModel;
+            FileTypes["glb"] = ImportModel;
             //
             FileTypes["blend"] = ImportModel;
             FileTypes["bvh"] = ImportModel;
@@ -144,25 +155,25 @@ namespace FlaxEditor.Content.Import
             FileTypes["lws"] = ImportModel;
             FileTypes["lxo"] = ImportModel;
 
-			// Audio
-	        FileTypes["wav"] = ImportAudio;
-	        FileTypes["mp3"] = ImportAudio;
-	        FileTypes["ogg"] = ImportAudio;
-		}
-
-        private static ImportFileEntry ImportModel(string url, string resultUrl)
-        {
-            return new ModelImportEntry(url, resultUrl);
+            // Audio
+            FileTypes["wav"] = ImportAudio;
+            FileTypes["mp3"] = ImportAudio;
+            FileTypes["ogg"] = ImportAudio;
         }
 
-	    private static ImportFileEntry ImportAudio(string url, string resultUrl)
-	    {
-		    return new AudioImportEntry(url, resultUrl);
-	    }
-
-		private static ImportFileEntry ImportTexture(string url, string resultUrl)
+        private static ImportFileEntry ImportModel(ref Request request)
         {
-            return new TextureImportEntry(url, resultUrl);
+            return new ModelImportEntry(ref request);
+        }
+
+        private static ImportFileEntry ImportAudio(ref Request request)
+        {
+            return new AudioImportEntry(ref request);
+        }
+
+        private static ImportFileEntry ImportTexture(ref Request request)
+        {
+            return new TextureImportEntry(ref request);
         }
 
         /// <inheritdoc />

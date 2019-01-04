@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -39,7 +37,7 @@ namespace FlaxEditor.Windows.Profiler
                 {
                     _selectedSampleIndex = value;
                     _sample = _samples.Count == 0 ? string.Empty : FormatSample(_samples.Get(_selectedSampleIndex));
-                    
+
                     SelectedSampleChanged?.Invoke(_selectedSampleIndex);
                 }
             }
@@ -56,7 +54,7 @@ namespace FlaxEditor.Windows.Profiler
         public event Action<int> SelectedSampleChanged;
 
         /// <summary>
-        /// The handler funtion to format sample value for label text.
+        /// The handler function to format sample value for label text.
         /// </summary>
         public Func<float, string> FormatSample = (v) => v.ToString();
 
@@ -65,7 +63,7 @@ namespace FlaxEditor.Windows.Profiler
         /// </summary>
         /// <param name="maxSamples">The maximum samples to collect.</param>
         public SingleChart(int maxSamples = ProfilerMode.MaxSamples)
-            : base(0, 0, 100, 60 + TitleHeight)
+        : base(0, 0, 100, 60 + TitleHeight)
         {
             _samples = new SamplesBuffer<float>(maxSamples);
             _sample = string.Empty;
@@ -97,7 +95,7 @@ namespace FlaxEditor.Windows.Profiler
 
             var style = Style.Current;
             float chartHeight = Height - TitleHeight;
-            
+
             // Draw chart
             if (_samples.Count > 0)
             {

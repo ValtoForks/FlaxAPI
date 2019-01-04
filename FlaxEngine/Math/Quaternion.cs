@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -50,6 +50,7 @@
 */
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -60,6 +61,7 @@ namespace FlaxEngine
     /// Represents a four dimensional mathematical quaternion.
     /// </summary>
     [Serializable]
+    [TypeConverter(typeof(TypeConverters.QuaternionConverter))]
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct Quaternion : IEquatable<Quaternion>, IFormattable
     {
@@ -230,7 +232,7 @@ namespace FlaxEngine
                 {
                     // singularity at north pole
 
-                    // yaw picth roll
+                    // yaw pitch roll
                     result.Y = 2.0f * Mathf.Atan2(Y, X);
                     result.X = Mathf.PiOverTwo;
                     result.Z = 0;
@@ -239,16 +241,16 @@ namespace FlaxEngine
                 {
                     // singularity at south pole
 
-                    // yaw picth roll
+                    // yaw pitch roll
                     result.Y = -2.0f * Mathf.Atan2(Y, X);
                     result.X = -Mathf.PiOverTwo;
                     result.Z = 0;
                 }
                 else
                 {
-                    Quaternion q = new Quaternion(W, Z, X, Y);// TOOD: optimize this (remove additional allocation)
+                    Quaternion q = new Quaternion(W, Z, X, Y); // TOOD: optimize this (remove additional allocation)
 
-                    // yaw picth roll
+                    // yaw pitch roll
                     result.Y = Mathf.Atan2(2.0f * q.X * q.W + 2.0f * q.Y * q.Z, 1 - 2.0f * (q.Z * q.Z + q.W * q.W));
                     result.X = Mathf.Asin(2.0f * (q.X * q.Z - q.W * q.Y));
                     result.Z = Mathf.Atan2(2.0f * q.X * q.Y + 2.0f * q.Z * q.W, 1 - 2.0f * (q.Y * q.Y + q.Z * q.Z));
@@ -311,14 +313,14 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        return X;
-                    case 1:
-                        return Y;
-                    case 2:
-                        return Z;
-                    case 3:
-                        return W;
+                case 0:
+                    return X;
+                case 1:
+                    return Y;
+                case 2:
+                    return Z;
+                case 3:
+                    return W;
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(index), "Indices for Quaternion run from 0 to 3, inclusive.");
@@ -328,20 +330,20 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        X = value;
-                        break;
-                    case 1:
-                        Y = value;
-                        break;
-                    case 2:
-                        Z = value;
-                        break;
-                    case 3:
-                        W = value;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(index), "Indices for Quaternion run from 0 to 3, inclusive.");
+                case 0:
+                    X = value;
+                    break;
+                case 1:
+                    Y = value;
+                    break;
+                case 2:
+                    Z = value;
+                    break;
+                case 3:
+                    W = value;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index), "Indices for Quaternion run from 0 to 3, inclusive.");
                 }
             }
         }
@@ -415,7 +417,13 @@ namespace FlaxEngine
         /// <returns>A four-element array containing the components of the quaternion.</returns>
         public float[] ToArray()
         {
-            return new[] {X, Y, Z, W};
+            return new[]
+            {
+                X,
+                Y,
+                Z,
+                W
+            };
         }
 
         /// <summary>
@@ -507,14 +515,14 @@ namespace FlaxEngine
         /// <param name="result">When the method completes, contains the multiplied quaternion.</param>
         public static void Multiply(ref Quaternion left, ref Quaternion right, out Quaternion result)
         {
-	        float a = (left.Y * right.Z - left.Z * right.Y);
-	        float b = (left.Z * right.X - left.X * right.Z);
-	        float c = (left.X * right.Y - left.Y * right.X);
-	        float d = (left.X * right.X + left.Y * right.Y + left.Z * right.Z);
-	        result.X = (left.X * right.W + right.X * left.W) + a;
-	        result.Y = (left.Y * right.W + right.Y * left.W) + b;
-	        result.Z = (left.Z * right.W + right.Z * left.W) + c;
-	        result.W = left.W * right.W - d;
+            float a = (left.Y * right.Z - left.Z * right.Y);
+            float b = (left.Z * right.X - left.X * right.Z);
+            float c = (left.X * right.Y - left.Y * right.X);
+            float d = (left.X * right.X + left.Y * right.Y + left.Z * right.Z);
+            result.X = (left.X * right.W + right.X * left.W) + a;
+            result.Y = (left.Y * right.W + right.Y * left.W) + b;
+            result.Z = (left.Z * right.W + right.Z * left.W) + c;
+            result.W = left.W * right.W - d;
         }
 
         /// <summary>
@@ -529,7 +537,7 @@ namespace FlaxEngine
             Multiply(ref left, ref right, out result);
             return result;
         }
-		
+
         /// <summary>
         /// Reverses the direction of a given quaternion.
         /// </summary>
@@ -630,46 +638,46 @@ namespace FlaxEngine
             return result;
         }
 
-		/// <summary>
-		/// Calculates the dot product of two quaternions.
-		/// </summary>
-		/// <param name="left">First source quaternion.</param>
-		/// <param name="right">Second source quaternion.</param>
-		/// <returns>The dot product of the two quaternions.</returns>
-		public static float Dot(ref Quaternion left, ref Quaternion right)
+        /// <summary>
+        /// Calculates the dot product of two quaternions.
+        /// </summary>
+        /// <param name="left">First source quaternion.</param>
+        /// <param name="right">Second source quaternion.</param>
+        /// <returns>The dot product of the two quaternions.</returns>
+        public static float Dot(ref Quaternion left, ref Quaternion right)
         {
             return left.X * right.X + left.Y * right.Y + left.Z * right.Z + left.W * right.W;
         }
 
-	    /// <summary>
-	    /// Calculates the dot product of two quaternions.
-	    /// </summary>
-	    /// <param name="left">First source quaternion.</param>
-	    /// <param name="right">Second source quaternion.</param>
-	    /// <returns>The dot product of the two quaternions.</returns>
-	    public static float Dot(Quaternion left, Quaternion right)
-	    {
-		    return left.X * right.X + left.Y * right.Y + left.Z * right.Z + left.W * right.W;
-	    }
+        /// <summary>
+        /// Calculates the dot product of two quaternions.
+        /// </summary>
+        /// <param name="left">First source quaternion.</param>
+        /// <param name="right">Second source quaternion.</param>
+        /// <returns>The dot product of the two quaternions.</returns>
+        public static float Dot(Quaternion left, Quaternion right)
+        {
+            return left.X * right.X + left.Y * right.Y + left.Z * right.Z + left.W * right.W;
+        }
 
-	    /// <summary>
-	    /// Calculates the angle between two quaternions.
-	    /// </summary>
-	    /// <param name="a">First source quaternion.</param>
-	    /// <param name="b">Second source quaternion.</param>
-	    /// <returns>Returns the angle in degrees between two rotations a and b.</returns>
-	    public static float AngleBetween(Quaternion a, Quaternion b)
-	    {
-		    float num = Dot(a, b);
-		    return (num > 0.999999f) ? 0 : (Mathf.Acos(Mathf.Min(Mathf.Abs(num), 1f)) * 2f * 57.29578f);
-	    }
+        /// <summary>
+        /// Calculates the angle between two quaternions.
+        /// </summary>
+        /// <param name="a">First source quaternion.</param>
+        /// <param name="b">Second source quaternion.</param>
+        /// <returns>Returns the angle in degrees between two rotations a and b.</returns>
+        public static float AngleBetween(Quaternion a, Quaternion b)
+        {
+            float num = Dot(a, b);
+            return (num > 0.999999f) ? 0 : (Mathf.Acos(Mathf.Min(Mathf.Abs(num), 1f)) * 2f * 57.29578f);
+        }
 
-	    /// <summary>
-		/// Exponentiates a quaternion.
-		/// </summary>
-		/// <param name="value">The quaternion to exponentiate.</param>
-		/// <param name="result">When the method completes, contains the exponentiated quaternion.</param>
-		public static void Exponential(ref Quaternion value, out Quaternion result)
+        /// <summary>
+        /// Exponentiates a quaternion.
+        /// </summary>
+        /// <param name="value">The quaternion to exponentiate.</param>
+        /// <param name="result">When the method completes, contains the exponentiated quaternion.</param>
+        public static void Exponential(ref Quaternion value, out Quaternion result)
         {
             var angle = (float)Math.Sqrt(value.X * value.X + value.Y * value.Y + value.Z * value.Z);
             var sin = (float)Math.Sin(angle);
@@ -719,9 +727,9 @@ namespace FlaxEngine
         /// <returns>The conjugated and renormalized quaternion.</returns>
         public static Quaternion Invert(Quaternion value)
         {
-	        var result = value;
-	        result.Invert();
-			return result;
+            var result = value;
+            result.Invert();
+            return result;
         }
 
         /// <summary>
@@ -993,10 +1001,10 @@ namespace FlaxEngine
         /// <param name="target">The camera look-at target.</param>
         /// <param name="up">The camera's up vector.</param>
         /// <param name="result">When the method completes, contains the created look-at quaternion.</param>
-        public static void LookAtLH(ref Vector3 eye, ref Vector3 target, ref Vector3 up, out Quaternion result)
+        public static void LookAt(ref Vector3 eye, ref Vector3 target, ref Vector3 up, out Quaternion result)
         {
             Matrix3x3 matrix;
-            Matrix3x3.LookAtLH(ref eye, ref target, ref up, out matrix);
+            Matrix3x3.LookAt(ref eye, ref target, ref up, out matrix);
             RotationMatrix(ref matrix, out result);
         }
 
@@ -1007,10 +1015,10 @@ namespace FlaxEngine
         /// <param name="target">The camera look-at target.</param>
         /// <param name="up">The camera's up vector.</param>
         /// <returns>The created look-at quaternion.</returns>
-        public static Quaternion LookAtLH(Vector3 eye, Vector3 target, Vector3 up)
+        public static Quaternion LookAt(Vector3 eye, Vector3 target, Vector3 up)
         {
             Quaternion result;
-            LookAtLH(ref eye, ref target, ref up, out result);
+            LookAt(ref eye, ref target, ref up, out result);
             return result;
         }
 
@@ -1020,10 +1028,10 @@ namespace FlaxEngine
         /// <param name="forward">The camera's forward direction.</param>
         /// <param name="up">The camera's up vector.</param>
         /// <param name="result">When the method completes, contains the created look-at quaternion.</param>
-        public static void RotationLookAtLH(ref Vector3 forward, ref Vector3 up, out Quaternion result)
+        public static void RotationLookAt(ref Vector3 forward, ref Vector3 up, out Quaternion result)
         {
             Vector3 eye = Vector3.Zero;
-            LookAtLH(ref eye, ref forward, ref up, out result);
+            LookAt(ref eye, ref forward, ref up, out result);
         }
 
         /// <summary>
@@ -1032,13 +1040,13 @@ namespace FlaxEngine
         /// <param name="forward">The camera's forward direction.</param>
         /// <param name="up">The camera's up vector.</param>
         /// <returns>The created look-at quaternion.</returns>
-        public static Quaternion RotationLookAtLH(Vector3 forward, Vector3 up)
+        public static Quaternion RotationLookAt(Vector3 forward, Vector3 up)
         {
             Quaternion result;
-            RotationLookAtLH(ref forward, ref up, out result);
+            RotationLookAt(ref forward, ref up, out result);
             return result;
         }
-        
+
         /// <summary>
         /// Creates a rotation with the specified forward and upwards directions
         /// </summary>
@@ -1057,7 +1065,7 @@ namespace FlaxEngine
             result.X = (up.Z - forward.Y) * w4_recip;
             result.Y = (forward.X - right.Z) * w4_recip;
             result.Z = (right.Y - up.X) * w4_recip;
-            
+
             return result;
         }
 
@@ -1069,10 +1077,10 @@ namespace FlaxEngine
         /// <param name="cameraUpVector">The up vector of the camera.</param>
         /// <param name="cameraForwardVector">The forward vector of the camera.</param>
         /// <param name="result">When the method completes, contains the created billboard quaternion.</param>
-        public static void BillboardLH(ref Vector3 objectPosition, ref Vector3 cameraPosition, ref Vector3 cameraUpVector, ref Vector3 cameraForwardVector, out Quaternion result)
+        public static void Billboard(ref Vector3 objectPosition, ref Vector3 cameraPosition, ref Vector3 cameraUpVector, ref Vector3 cameraForwardVector, out Quaternion result)
         {
             Matrix3x3 matrix;
-            Matrix3x3.BillboardLH(ref objectPosition, ref cameraPosition, ref cameraUpVector, ref cameraForwardVector, out matrix);
+            Matrix3x3.Billboard(ref objectPosition, ref cameraPosition, ref cameraUpVector, ref cameraForwardVector, out matrix);
             RotationMatrix(ref matrix, out result);
         }
 
@@ -1084,13 +1092,13 @@ namespace FlaxEngine
         /// <param name="cameraUpVector">The up vector of the camera.</param>
         /// <param name="cameraForwardVector">The forward vector of the camera.</param>
         /// <returns>The created billboard quaternion.</returns>
-        public static Quaternion BillboardLH(Vector3 objectPosition, Vector3 cameraPosition, Vector3 cameraUpVector, Vector3 cameraForwardVector)
+        public static Quaternion Billboard(Vector3 objectPosition, Vector3 cameraPosition, Vector3 cameraUpVector, Vector3 cameraForwardVector)
         {
             Quaternion result;
-            BillboardLH(ref objectPosition, ref cameraPosition, ref cameraUpVector, ref cameraForwardVector, out result);
+            Billboard(ref objectPosition, ref cameraPosition, ref cameraUpVector, ref cameraForwardVector, out result);
             return result;
         }
-        
+
         /// <summary>
         /// Creates a quaternion given a rotation matrix.
         /// </summary>
@@ -1478,33 +1486,33 @@ namespace FlaxEngine
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Quaternion left, Quaternion right)
         {
-	        return Dot(ref left, ref right) > 0.999999f;
-			//return left.Equals(ref right);
-		}
+            return Dot(ref left, ref right) > 0.999999f;
+            //return left.Equals(ref right);
+        }
 
-		/// <summary>
-		/// Tests for inequality between two objects.
-		/// </summary>
-		/// <param name="left">The first value to compare.</param>
-		/// <param name="right">The second value to compare.</param>
-		/// <returns>
-		/// <c>true</c> if <paramref name="left" /> has a different value than <paramref name="right" />; otherwise,
-		/// <c>false</c>.
-		/// </returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <summary>
+        /// Tests for inequality between two objects.
+        /// </summary>
+        /// <param name="left">The first value to compare.</param>
+        /// <param name="right">The second value to compare.</param>
+        /// <returns>
+        /// <c>true</c> if <paramref name="left" /> has a different value than <paramref name="right" />; otherwise,
+        /// <c>false</c>.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Quaternion left, Quaternion right)
         {
-	        return Dot(ref left, ref right) <= 0.999999f;
-			//return !left.Equals(ref right);
-		}
+            return Dot(ref left, ref right) <= 0.999999f;
+            //return !left.Equals(ref right);
+        }
 
-		/// <summary>
-		/// Returns a <see cref="System.String" /> that represents this instance.
-		/// </summary>
-		/// <returns>
-		/// A <see cref="System.String" /> that represents this instance.
-		/// </returns>
-		public override string ToString()
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
         {
             return string.Format(CultureInfo.CurrentCulture, _formatString, X, Y, Z, W);
         }
@@ -1522,7 +1530,7 @@ namespace FlaxEngine
                 return ToString();
 
             return string.Format(CultureInfo.CurrentCulture, _formatString, X.ToString(format, CultureInfo.CurrentCulture),
-                Y.ToString(format, CultureInfo.CurrentCulture), Z.ToString(format, CultureInfo.CurrentCulture), W.ToString(format, CultureInfo.CurrentCulture));
+                                 Y.ToString(format, CultureInfo.CurrentCulture), Z.ToString(format, CultureInfo.CurrentCulture), W.ToString(format, CultureInfo.CurrentCulture));
         }
 
         /// <summary>
@@ -1551,7 +1559,7 @@ namespace FlaxEngine
                 return ToString(formatProvider);
 
             return string.Format(formatProvider, _formatString, X.ToString(format, formatProvider),
-                Y.ToString(format, formatProvider), Z.ToString(format, formatProvider), W.ToString(format, formatProvider));
+                                 Y.ToString(format, formatProvider), Z.ToString(format, formatProvider), W.ToString(format, formatProvider));
         }
 
         /// <summary>
@@ -1572,21 +1580,21 @@ namespace FlaxEngine
             }
         }
 
-	    /// <summary>
-	    /// Determines whether the specified <see cref="Quaternion" /> is equal to this instance.
-	    /// </summary>
-	    /// <param name="other">The <see cref="Quaternion" /> to compare with this instance.</param>
-	    /// <returns>
-	    /// <c>true</c> if the specified <see cref="Quaternion" /> is equal to this instance; otherwise, <c>false</c>.
-	    /// </returns>
-	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-	    public bool Equals(ref Quaternion other)
-	    {
-		    //return Dot(ref this, ref other) > 0.999999f;
-		    return Mathf.NearEqual(other.X, X) && Mathf.NearEqual(other.Y, Y) && Mathf.NearEqual(other.Z, Z) && Mathf.NearEqual(other.W, W);
-	    }
+        /// <summary>
+        /// Determines whether the specified <see cref="Quaternion" /> is equal to this instance.
+        /// </summary>
+        /// <param name="other">The <see cref="Quaternion" /> to compare with this instance.</param>
+        /// <returns>
+        /// <c>true</c> if the specified <see cref="Quaternion" /> is equal to this instance; otherwise, <c>false</c>.
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(ref Quaternion other)
+        {
+            //return Dot(ref this, ref other) > 0.999999f;
+            return Mathf.NearEqual(other.X, X) && Mathf.NearEqual(other.Y, Y) && Mathf.NearEqual(other.Z, Z) && Mathf.NearEqual(other.W, W);
+        }
 
-	    /// <summary>
+        /// <summary>
         /// Determines whether the specified <see cref="Quaternion" /> is equal to this instance.
         /// </summary>
         /// <param name="other">The <see cref="Quaternion" /> to compare with this instance.</param>

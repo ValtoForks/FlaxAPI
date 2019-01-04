@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.GUI;
 using FlaxEditor.Profiling;
@@ -21,7 +19,7 @@ namespace FlaxEditor.Windows.Profiler
         private readonly SamplesBuffer<EventGPU[]> _events = new SamplesBuffer<EventGPU[]>();
 
         public GPU()
-            : base("GPU")
+        : base("GPU")
         {
             // Layout
             var panel = new Panel(ScrollBars.Vertical)
@@ -114,14 +112,14 @@ namespace FlaxEditor.Windows.Profiler
         }
 
         /// <inheritdoc />
-        public override void Update()
+        public override void Update(ref SharedUpdateData sharedData)
         {
             // Gather GPU events
-            var data = ProfilingTools.GetEventsGPU();
+            var data = sharedData.GetEventsGPU();
             _events.Add(data);
 
             // Peek draw time
-            float drawTime = ProfilingTools.Stats.DrawTimeMs;
+            float drawTime = sharedData.Stats.DrawTimeMs;
             if (data != null && data.Length > 0)
                 drawTime = data[0].Time;
             _mainChart.AddSample(drawTime);
@@ -204,7 +202,7 @@ namespace FlaxEditor.Windows.Profiler
             container.DisposeChildren();
 
             container.LockChildrenRecursive();
-            
+
             _timeline.Height = UpdateTimelineInner();
 
             container.UnlockChildrenRecursive();
@@ -265,7 +263,7 @@ namespace FlaxEditor.Windows.Profiler
             float totalTimeMs = _mainChart.SelectedSample;
 
             // Add rows
-            var rowColor2 = Style.Current.Background * 1.02f;
+            var rowColor2 = Style.Current.Background * 1.4f;
             for (int i = 0; i < data.Length; i++)
             {
                 var e = data[i];

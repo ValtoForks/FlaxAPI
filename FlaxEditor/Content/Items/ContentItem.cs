@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -44,6 +42,67 @@ namespace FlaxEditor.Content
     }
 
     /// <summary>
+    /// Content item filter types used for searching.
+    /// </summary>
+    public enum ContentItemSearchFilter
+    {
+        /// <summary>
+        /// The model.
+        /// </summary>
+        Model,
+
+        /// <summary>
+        /// The skinned model.
+        /// </summary>
+        SkinnedModel,
+
+        /// <summary>
+        /// The material.
+        /// </summary>
+        Material,
+
+        /// <summary>
+        /// The texture.
+        /// </summary>
+        Texture,
+
+        /// <summary>
+        /// The scene.
+        /// </summary>
+        Scene,
+
+        /// <summary>
+        /// The prefab.
+        /// </summary>
+        Prefab,
+
+        /// <summary>
+        /// The script.
+        /// </summary>
+        Script,
+
+        /// <summary>
+        /// The audio.
+        /// </summary>
+        Audio,
+
+        /// <summary>
+        /// The animation.
+        /// </summary>
+        Animation,
+
+        /// <summary>
+        /// The json.
+        /// </summary>
+        Json,
+
+        /// <summary>
+        /// The other.
+        /// </summary>
+        Other,
+    }
+
+    /// <summary>
     /// Interface for objects that can reference the content items in order to receive events from them.
     /// </summary>
     public interface IContentItemOwner
@@ -68,7 +127,7 @@ namespace FlaxEditor.Content
         void OnItemReimported(ContentItem item);
 
         /// <summary>
-        /// Called when referenced item gets disposed (editor closing, database inetrnal changes, etc.).
+        /// Called when referenced item gets disposed (editor closing, database internal changes, etc.).
         /// Item should not be used after that.
         /// </summary>
         /// <param name="item">The item.</param>
@@ -127,6 +186,11 @@ namespace FlaxEditor.Content
         public abstract ContentItemType ItemType { get; }
 
         /// <summary>
+        /// Gets the type of the item searching filter to use.
+        /// </summary>
+        public abstract ContentItemSearchFilter SearchFilter { get; }
+
+        /// <summary>
         /// Gets a value indicating whether this instance is asset.
         /// </summary>
         public bool IsAsset => ItemType == ContentItemType.Asset;
@@ -147,7 +211,7 @@ namespace FlaxEditor.Content
         public virtual bool CanRename => true;
 
         /// <summary>
-        /// Gets a value indicating whether this item can be dragged and droped.
+        /// Gets a value indicating whether this item can be dragged and dropped.
         /// </summary>
         public virtual bool CanDrag => true;
 
@@ -210,12 +274,12 @@ namespace FlaxEditor.Content
         /// Gets the default name of the content item thumbnail.
         /// Returns null if not used.
         /// </summary>
-        public virtual string DefaultThumbnailName => null;
+        public virtual Sprite DefaultThumbnail => Sprite.Invalid;
 
         /// <summary>
         /// Gets a value indicating whether this item has default thumbnail.
         /// </summary>
-        public bool HasDefaultThumbnail => DefaultThumbnailName != null;
+        public bool HasDefaultThumbnail => DefaultThumbnail.IsValid;
 
         /// <summary>
         /// Gets or sets the item thumbnail. Warning, thumbnail may not be available if item has no references (<see cref="ReferencesCount"/>).
@@ -231,7 +295,7 @@ namespace FlaxEditor.Content
         /// </summary>
         /// <param name="path">The path to the item.</param>
         protected ContentItem(string path)
-            : base(0, 0, DefaultWidth, DefaultHeight)
+        : base(0, 0, DefaultWidth, DefaultHeight)
         {
             // Set path
             Path = path;
@@ -245,7 +309,7 @@ namespace FlaxEditor.Content
         internal virtual void UpdatePath(string value)
         {
             Assert.AreNotEqual(Path, value);
-            
+
             // Set path
             Path = StringUtils.NormalizePath(value);
             ShortName = System.IO.Path.GetFileNameWithoutExtension(value);
@@ -336,8 +400,9 @@ namespace FlaxEditor.Content
         {
             get
             {
-                float textRectHeight = DefaultTextHeight * Width / DefaultWidth;
-                return new Rectangle(2, Height - textRectHeight, Width - 4, textRectHeight);
+                float width = Width;
+                float textRectHeight = DefaultTextHeight * width / DefaultWidth;
+                return new Rectangle(0, Height - textRectHeight, width, textRectHeight);
             }
         }
 
@@ -353,7 +418,7 @@ namespace FlaxEditor.Content
                 const float thumbnailInShadowSize = 50.0f;
                 var shadowRect = rectangle.MakeExpanded((DefaultThumbnailSize - thumbnailInShadowSize) * rectangle.Width / DefaultThumbnailSize * 1.3f);
                 if (!_shadowIcon.IsValid)
-                    _shadowIcon = Editor.Instance.UI.GetIcon("AssetShadow");
+                    _shadowIcon = Editor.Instance.Icons.AssetShadow;
                 Render2D.DrawSprite(_shadowIcon, shadowRect);
             }
 
@@ -510,7 +575,9 @@ namespace FlaxEditor.Content
             DrawThumbnail(ref thumbnailRect);
 
             // Draw short name
+            Render2D.PushClip(ref textRect);
             Render2D.DrawText(style.FontMedium, ShortName, textRect, style.Foreground, TextAlignment.Center, TextAlignment.Center, TextWrapping.WrapWords, 0.75f, 0.95f);
+            Render2D.PopClip();
         }
 
         /// <inheritdoc />
@@ -589,7 +656,7 @@ namespace FlaxEditor.Content
                 // Start drag drop
                 DoDrag();
             }
-            
+
             base.OnMouseLeave();
         }
 

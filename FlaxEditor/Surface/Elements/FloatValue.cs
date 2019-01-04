@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -27,7 +25,7 @@ namespace FlaxEditor.Surface.Elements
 
         /// <inheritdoc />
         public FloatValue(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(Get(parentNode, archetype), archetype.Position.X, archetype.Position.Y, 50, -100000, 100000, 0.05f)
+        : base(Get(parentNode, archetype), archetype.Position.X, archetype.Position.Y, 50, -1000000, 1000000, 0.01f)
         {
             ParentNode = parentNode;
             Archetype = archetype;
@@ -48,10 +46,15 @@ namespace FlaxEditor.Surface.Elements
         {
             base.OnValueChanged();
             Set(ParentNode, Archetype, Value);
-            ParentNode.Surface.MarkAsEdited();
         }
 
-        private static float Get(SurfaceNode parentNode, NodeElementArchetype arch)
+        /// <summary>
+        /// Gets the floating point value from the specified parent node. Handles type casting and components gather.
+        /// </summary>
+        /// <param name="parentNode">The parent node.</param>
+        /// <param name="arch">The node element archetype.</param>
+        /// <returns>The result value.</returns>
+        public static float Get(SurfaceNode parentNode, NodeElementArchetype arch)
         {
             if (arch.ValueIndex < 0)
                 return 0;
@@ -89,7 +92,13 @@ namespace FlaxEditor.Surface.Elements
             return result;
         }
 
-        private static void Set(SurfaceNode parentNode, NodeElementArchetype arch, float toSet)
+        /// <summary>
+        /// Sets the floating point value of the specified parent node. Handles type casting and components assignment.
+        /// </summary>
+        /// <param name="parentNode">The parent node.</param>
+        /// <param name="arch">The node element archetype.</param>
+        /// <param name="toSet">The value to set.</param>
+        public static void Set(SurfaceNode parentNode, NodeElementArchetype arch, float toSet)
         {
             if (arch.ValueIndex < 0)
                 return;
@@ -139,7 +148,48 @@ namespace FlaxEditor.Surface.Elements
                 value = 0;
             }
 
-            parentNode.Values[arch.ValueIndex] = value;
+            parentNode.SetValue(arch.ValueIndex, value);
+        }
+
+        /// <summary>
+        /// Sets all the values to the given value (eg. all components of the vector).
+        /// </summary>
+        /// <param name="parentNode">The parent node.</param>
+        /// <param name="arch">The node element archetype.</param>
+        /// <param name="toSet">The value to assign.</param>
+        public static void SetAllValues(SurfaceNode parentNode, NodeElementArchetype arch, float toSet)
+        {
+            if (arch.ValueIndex < 0)
+                return;
+
+            var value = parentNode.Values[arch.ValueIndex];
+
+            if (value is int)
+            {
+                value = (int)toSet;
+            }
+            else if (value is float)
+            {
+                value = toSet;
+            }
+            else if (value is Vector2)
+            {
+                value = new Vector2(toSet);
+            }
+            else if (value is Vector3)
+            {
+                value = new Vector3(toSet);
+            }
+            else if (value is Vector4)
+            {
+                value = new Vector4(toSet);
+            }
+            else
+            {
+                value = 0;
+            }
+
+            parentNode.SetValue(arch.ValueIndex, value);
         }
     }
 }

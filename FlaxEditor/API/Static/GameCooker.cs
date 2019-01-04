@@ -1,8 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using FlaxEngine;
 
@@ -159,7 +159,7 @@ namespace FlaxEditor
         public delegate void BuildEventDelegate(EventType type, ref Options options);
 
         /// <summary>
-        /// Game building progress reporitng delegate type.
+        /// Game building progress reporting delegate type.
         /// </summary>
         /// <param name="info">The information text.</param>
         /// <param name="totalProgress">The total progress percentage (normalized to 0-1).</param>
@@ -171,9 +171,27 @@ namespace FlaxEditor
         public static event BuildEventDelegate Event;
 
         /// <summary>
-        /// Occurs when building gane progress fires.
+        /// Occurs when building game progress fires.
         /// </summary>
         public static event BuildProgressDelegate Progress;
+
+        /// <summary>
+        /// Gets the type of the platform from the game build platform type.
+        /// </summary>
+        /// <param name="buildPlatform">The build platform.</param>
+        /// <returns>The run-type platform type.</returns>
+        public static PlatformType GetPlatformType(BuildPlatform buildPlatform)
+        {
+            switch (buildPlatform)
+            {
+            case BuildPlatform.Windows32:
+            case BuildPlatform.Windows64: return PlatformType.Windows;
+            case BuildPlatform.WindowsStoreX86:
+            case BuildPlatform.WindowsStoreX64: return PlatformType.WindowsStore;
+            case BuildPlatform.XboxOne: return PlatformType.XboxOne;
+            default: throw new ArgumentOutOfRangeException(nameof(buildPlatform), buildPlatform, null);
+            }
+        }
 
         internal static void Internal_OnEvent(EventType type)
         {
@@ -183,6 +201,31 @@ namespace FlaxEditor
         internal static void Internal_OnProgress(string info, float totalProgress)
         {
             Progress?.Invoke(info, totalProgress);
+        }
+
+        internal static void Internal_CanDeployPlugin(BuildPlatform buildPlatform, Assembly assembly, out bool result)
+        {
+            // Find plugin (game only plugins are used to deploy)
+            var plugin = PluginManager.GamePlugins.FirstOrDefault(x => x.GetType().Assembly == assembly);
+            if (plugin == null)
+            {
+                Debug.Write(LogType.Log, "No loaded game plugins from assembly " + assembly.FullName);
+                result = true;
+                return;
+            }
+            var desc = plugin.Description;
+
+            // Check if plugins supports the given platform
+            var platform = GetPlatformType(buildPlatform);
+            if (desc.SupportedPlatforms != null && !desc.SupportedPlatforms.Contains(platform))
+            {
+                Debug.Write(LogType.Log, "Skip game plugin from assembly " + assembly.FullName);
+                result = false;
+                return;
+            }
+
+            Debug.Write(LogType.Log, "Use game plugin from assembly " + assembly.FullName);
+            result = true;
         }
 
         #region Internal Calls

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +18,7 @@ namespace FlaxEditor.Content.Thumbnails
     public sealed class ThumbnailsModule : EditorModule, IContentItemOwner
     {
         /// <summary>
-        /// The minimum requried quality (in range [0;1]) for content streaming resources to be loaded in order to generate thumbnail for them.
+        /// The minimum required quality (in range [0;1]) for content streaming resources to be loaded in order to generate thumbnail for them.
         /// </summary>
         public const float MinimumRequriedResourcesQuality = 0.8f;
 
@@ -37,7 +35,7 @@ namespace FlaxEditor.Content.Thumbnails
         private RenderTarget _output;
 
         internal ThumbnailsModule(Editor editor)
-            : base(editor)
+        : base(editor)
         {
             _cacheFolder = StringUtils.CombinePaths(Globals.ProjectCacheFolder, "Thumbnails");
             _lastFlushTime = DateTime.UtcNow;
@@ -54,10 +52,10 @@ namespace FlaxEditor.Content.Thumbnails
                 throw new ArgumentNullException();
 
             // Check if use default icon
-            var defaultThumbnail = item.DefaultThumbnailName;
-            if (!string.IsNullOrEmpty(defaultThumbnail))
+            var defaultThumbnail = item.DefaultThumbnail;
+            if (defaultThumbnail.IsValid)
             {
-                item.Thumbnail = Editor.Instance.UI.GetIcon(defaultThumbnail);
+                item.Thumbnail = defaultThumbnail;
                 return;
             }
 
@@ -71,7 +69,7 @@ namespace FlaxEditor.Content.Thumbnails
             if (proxy == null)
             {
                 // Error
-                Debug.LogWarning($"Cannot generate preview for item {item.Path}. Cannot find proxy for it.");
+                Editor.LogWarning($"Cannot generate preview for item {item.Path}. Cannot find proxy for it.");
                 return;
             }
 
@@ -211,7 +209,7 @@ namespace FlaxEditor.Content.Thumbnails
             _output = RenderTarget.New();
             _output.Init(PreviewsCache.AssetIconsAtlasFormat, PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize);
             _task = RenderTask.Create<CustomRenderTask>();
-            _task.Order = 50;// Render this task later
+            _task.Order = 50; // Render this task later
             _task.Enabled = false;
             _task.OnRender += OnRender;
         }
@@ -237,7 +235,7 @@ namespace FlaxEditor.Content.Thumbnails
                     // Error
                     _task.Enabled = false;
                     _requests.Clear();
-                    Debug.LogError("Failed to get atlas.");
+                    Editor.LogError("Failed to get atlas.");
                     return;
                 }
 
@@ -268,7 +266,7 @@ namespace FlaxEditor.Content.Thumbnails
                     // Error
                     _task.Enabled = false;
                     _requests.Clear();
-                    Debug.LogError("Failed to occupy previews cache atlas slot.");
+                    Editor.LogError("Failed to occupy previews cache atlas slot.");
                     return;
                 }
 
@@ -337,8 +335,8 @@ namespace FlaxEditor.Content.Thumbnails
                 catch (Exception ex)
                 {
                     // Error
-                    Debug.LogException(ex);
-                    Debug.LogWarning($"Failed to prepare thumbnail rendering for {request.Item.ShortName}.");
+                    Editor.LogWarning(ex);
+                    Editor.LogWarning($"Failed to prepare thumbnail rendering for {request.Item.ShortName}.");
                 }
             }
 
@@ -358,7 +356,7 @@ namespace FlaxEditor.Content.Thumbnails
             if (PreviewsCache.Create(path))
             {
                 // Error
-                Debug.LogError("Failed to create thumbnails atlas.");
+                Editor.LogError("Failed to create thumbnails atlas.");
                 return null;
             }
 
@@ -367,7 +365,7 @@ namespace FlaxEditor.Content.Thumbnails
             if (atlas == null)
             {
                 // Error
-                Debug.LogError("Failed to load thumbnails atlas.");
+                Editor.LogError("Failed to load thumbnails atlas.");
                 return null;
             }
 
@@ -453,8 +451,8 @@ namespace FlaxEditor.Content.Thumbnails
                         catch (Exception ex)
                         {
                             // Error
-                            Debug.LogException(ex);
-                            Debug.LogWarning($"Failed to prepare thumbnail rendering for {request.Item.ShortName}.");
+                            Editor.LogWarning(ex);
+                            Editor.LogWarning($"Failed to prepare thumbnail rendering for {request.Item.ShortName}.");
                         }
                     }
 
@@ -478,8 +476,7 @@ namespace FlaxEditor.Content.Thumbnails
         /// <inheritdoc />
         public override void OnExit()
         {
-            if (_task != null)
-                _task.Enabled = false;
+            _task?.Dispose();
 
             lock (_requests)
             {
@@ -490,7 +487,7 @@ namespace FlaxEditor.Content.Thumbnails
             }
 
             _guiRoot.Dispose();
-            _task?.Dispose();
+            Object.Destroy(ref _task);
             Object.Destroy(ref _output);
         }
 
@@ -507,7 +504,7 @@ namespace FlaxEditor.Content.Thumbnails
 
             /// <inheritdoc />
             public PreviewRoot()
-                : base(0, 0, PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize)
+            : base(0, 0, PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize)
             {
                 CanFocus = false;
                 AccentColor = Color.Pink;
@@ -525,7 +522,7 @@ namespace FlaxEditor.Content.Thumbnails
             }
 
             /// <inheritdoc />
-            protected override void SetSizeInternal(Vector2 size)
+            protected override void SetSizeInternal(ref Vector2 size)
             {
                 // Cannot change default preview size
             }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content.Settings;
@@ -24,15 +22,15 @@ namespace FlaxEditor.Content.Create
             /// </summary>
             GameSettings,
 
-			/// <summary>
-			/// The audio settings.
-			/// </summary>
-			AudioSettings,
+            /// <summary>
+            /// The audio settings.
+            /// </summary>
+            AudioSettings,
 
-			/// <summary>
-			/// The time settings.
-			/// </summary>
-			TimeSettings,
+            /// <summary>
+            /// The time settings.
+            /// </summary>
+            TimeSettings,
 
             /// <summary>
             /// The layers and tags settings.
@@ -106,7 +104,7 @@ namespace FlaxEditor.Content.Create
         /// </summary>
         /// <param name="resultUrl">The result file url.</param>
         public SettingsCreateEntry(string resultUrl)
-            : base("Settings", resultUrl)
+        : base("Settings", resultUrl)
         {
         }
 

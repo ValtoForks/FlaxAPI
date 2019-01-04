@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -25,6 +23,11 @@ namespace FlaxEditor.Surface
         /// Primary color for the group nodes.
         /// </summary>
         public Color Color;
+
+        /// <summary>
+        /// The custom tag.
+        /// </summary>
+        public object Tag;
 
         /// <summary>
         /// All nodes descriptions.

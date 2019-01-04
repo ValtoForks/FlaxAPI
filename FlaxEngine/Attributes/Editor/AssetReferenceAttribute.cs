@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -11,7 +9,7 @@ namespace FlaxEngine
     /// </summary>
     /// <seealso cref="System.Attribute" />
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public sealed class AssetReferenceAttribute : Attribute
+    public class AssetReferenceAttribute : Attribute
     {
         /// <summary>
         /// The full name of the asset type to link. Use null or empty to skip it.
@@ -29,11 +27,11 @@ namespace FlaxEngine
         /// <param name="useSmallPicker">True if use asset picker with a smaller height (single line), otherwise will use with full icon.</param>
         public AssetReferenceAttribute(bool useSmallPicker)
         {
-	        TypeName = null;
+            TypeName = null;
             UseSmallPicker = useSmallPicker;
         }
-	    
-	    /// <summary>
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AssetReferenceAttribute"/> class.
         /// </summary>
         /// <param name="typeName">The full name of the asset type to link. Use null or empty to skip it.</param>

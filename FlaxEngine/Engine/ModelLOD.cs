@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -37,9 +35,9 @@ namespace FlaxEngine
             get => Internal_GetScreenSize(_model.unmanagedPtr, _lodIndex);
             set => Internal_SetScreenSize(_model.unmanagedPtr, _lodIndex, value);
         }
-        
+
         /// <summary>
-        /// Gets the bounding box combined for all mshes in this model LOD.
+        /// Gets the bounding box combined for all meshes in this model LOD.
         /// </summary>
         public BoundingBox Bounds
         {

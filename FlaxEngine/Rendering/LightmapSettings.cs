@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // ReSharper disable InconsistentNaming
 
@@ -55,6 +53,12 @@ namespace FlaxEngine.Rendering
         }
 
         /// <summary>
+        /// Controls how much all lights will contribute indirect lighting.
+        /// </summary>
+        [EditorOrder(0), Limit(0, 100.0f, 0.1f), Tooltip("Controls how much all lights will contribute indirect lighting.")]
+        public float IndirectLightingIntensity;
+
+        /// <summary>
         /// Global scale for objects in lightmap to increase quality
         /// </summary>
         [EditorOrder(10), Limit(0, 100.0f, 0.1f), Tooltip("Global scale for objects in lightmap to increase quality")]
@@ -89,15 +93,16 @@ namespace FlaxEngine.Rendering
         /// </summary>
         [EditorOrder(60), Limit(0, 100, 0.1f), Tooltip("GI quality (range  [0;100])")]
         public int Quality;
-        
+
         [StructLayout(LayoutKind.Sequential)]
         internal struct Internal
         {
+            public float IndirectLightingIntensity;
             public float GlobalObjectsScale;
             public int ChartsPadding;
             public int AtlasSize;
             public int BounceCount;
-            public bool UseGeometryWithNoMaterials;
+            public byte UseGeometryWithNoMaterials;
             public int Quality;
         }
 
@@ -105,11 +110,12 @@ namespace FlaxEngine.Rendering
         {
             return new LightmapSettings
             {
+                IndirectLightingIntensity = data.IndirectLightingIntensity,
                 GlobalObjectsScale = data.GlobalObjectsScale,
                 ChartsPadding = data.ChartsPadding,
                 AtlasSize = (AtlasSizes)data.AtlasSize,
                 BounceCount = data.BounceCount,
-                UseGeometryWithNoMaterials = data.UseGeometryWithNoMaterials,
+                UseGeometryWithNoMaterials = data.UseGeometryWithNoMaterials != 0,
                 Quality = data.Quality,
             };
         }
@@ -118,11 +124,12 @@ namespace FlaxEngine.Rendering
         {
             return new Internal
             {
+                IndirectLightingIntensity = data.IndirectLightingIntensity,
                 GlobalObjectsScale = data.GlobalObjectsScale,
                 ChartsPadding = data.ChartsPadding,
                 AtlasSize = (int)data.AtlasSize,
                 BounceCount = data.BounceCount,
-                UseGeometryWithNoMaterials = data.UseGeometryWithNoMaterials,
+                UseGeometryWithNoMaterials = (byte)(data.UseGeometryWithNoMaterials ? 1 : 0),
                 Quality = data.Quality,
             };
         }

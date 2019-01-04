@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -14,17 +12,12 @@ namespace FlaxEditor.Content
     public sealed class SceneItem : JsonAssetItem
     {
         /// <summary>
-        /// The scene asset typename.
-        /// </summary>
-        public const string SceneAssetTypename = "FlaxEngine.SceneAsset";
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="SceneItem"/> class.
         /// </summary>
         /// <param name="path">The asset path.</param>
         /// <param name="id">The asset identifier.</param>
         public SceneItem(string path, Guid id)
-            : base(path, id, SceneAssetTypename)
+        : base(path, id, Scene.EditorPickerTypename)
         {
         }
 
@@ -35,6 +28,9 @@ namespace FlaxEditor.Content
         public override ContentItemType ItemType => ContentItemType.Scene;
 
         /// <inheritdoc />
-        public override string DefaultThumbnailName => "Scene64";
+        public override ContentItemSearchFilter SearchFilter => ContentItemSearchFilter.Scene;
+
+        /// <inheritdoc />
+        public override Sprite DefaultThumbnail => Editor.Instance.Icons.Scene64;
     }
 }

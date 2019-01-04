@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
 using FlaxEngine.GUI;
 using NUnit.Framework;
 using Assert = FlaxEngine.Assertions.Assert;
@@ -15,19 +12,19 @@ namespace FlaxEngine.Tests
         public class SimpleControl : Control
         {
             public SimpleControl(bool canFocus, float x, float y, float width, float height)
-                : base(x, y, width, height)
+            : base(x, y, width, height)
             {
                 CanFocus = canFocus;
             }
 
-            public SimpleControl(bool canFocus, Vector2 location, Vector2 size) 
-                : base(location, size)
+            public SimpleControl(bool canFocus, Vector2 location, Vector2 size)
+            : base(location, size)
             {
                 CanFocus = canFocus;
             }
 
-            public SimpleControl(bool canFocus, Rectangle bounds) 
-                : base(bounds)
+            public SimpleControl(bool canFocus, Rectangle bounds)
+            : base(bounds)
             {
                 CanFocus = canFocus;
             }

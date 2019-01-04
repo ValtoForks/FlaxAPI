@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -15,14 +13,14 @@ namespace FlaxEngine
     public abstract class MaterialBase : BinaryAsset
     {
         /// <summary>
-        /// Helper value used to keep material paramaters collection in sync with actual backend data.
+        /// Helper value used to keep material parameters collection in sync with actual backend data.
         /// </summary>
         internal int _parametersHash;
 
         private MaterialParameter[] _parameters;
 
         /// <summary>
-        /// Gets the material info, structure which describies material surface.
+        /// Gets the material info, structure which describes material surface.
         /// </summary>
         [UnmanagedCall]
         public MaterialInfo Info
@@ -40,12 +38,44 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Gets a value indicating whether this material is a surface shader (can be used with a normal meshes).
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this material is a surface shader; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsSurface => Info.Domain == MaterialDomain.Surface;
+
+        /// <summary>
         /// Gets a value indicating whether this material is post fx (cannot be used with a normal meshes).
         /// </summary>
         /// <value>
         ///   <c>true</c> if this material is post fx; otherwise, <c>false</c>.
         /// </value>
         public bool IsPostFx => Info.Domain == MaterialDomain.PostProcess;
+
+        /// <summary>
+        /// Gets a value indicating whether this material is decal (cannot be used with a normal meshes).
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this material is decal; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsDecal => Info.Domain == MaterialDomain.Decal;
+
+        /// <summary>
+        /// Gets a value indicating whether this material is a GUI shader (cannot be used with a normal meshes).
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this material is a GUI shader; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsGUI => Info.Domain == MaterialDomain.GUI;
+
+        /// <summary>
+        /// Gets a value indicating whether this material is a terrain shader (cannot be used with a normal meshes).
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this material is a terrain shader; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsTerrain => Info.Domain == MaterialDomain.Terrain;
 
         /// <summary>
         /// Gets or sets the material parameters collection.

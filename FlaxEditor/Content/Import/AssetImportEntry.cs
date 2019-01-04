@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.Content.Import
 {
@@ -10,8 +8,8 @@ namespace FlaxEditor.Content.Import
     public class AssetImportEntry : ImportFileEntry
     {
         /// <inheritdoc />
-        public AssetImportEntry(string url, string resultUrl)
-            : base(url, resultUrl)
+        public AssetImportEntry(ref Request request)
+        : base(ref request)
         {
         }
 

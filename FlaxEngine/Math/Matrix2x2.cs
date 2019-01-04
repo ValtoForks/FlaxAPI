@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Globalization;
@@ -32,7 +30,11 @@ namespace FlaxEngine
         /// <summary>
         /// The identity <see cref="Matrix2x2"/>.
         /// </summary>
-        public static readonly Matrix2x2 Identity = new Matrix2x2 {M11 = 1.0f, M22 = 1.0f};
+        public static readonly Matrix2x2 Identity = new Matrix2x2
+        {
+            M11 = 1.0f,
+            M22 = 1.0f
+        };
 
         /// <summary>
         /// Value at row 1 column 1 of the Matrix2x2.
@@ -185,14 +187,14 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        return M11;
-                    case 1:
-                        return M12;
-                    case 2:
-                        return M21;
-                    case 3:
-                        return M22;
+                case 0:
+                    return M11;
+                case 1:
+                    return M12;
+                case 2:
+                    return M21;
+                case 3:
+                    return M22;
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(index), "Indices for Matrix2x2 run from 0 to 3, inclusive.");
@@ -201,20 +203,20 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        M11 = value;
-                        break;
-                    case 1:
-                        M12 = value;
-                        break;
-                    case 2:
-                        M21 = value;
-                        break;
-                    case 3:
-                        M22 = value;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(index), "Indices for Matrix2x2 run from 0 to 3, inclusive.");
+                case 0:
+                    M11 = value;
+                    break;
+                case 1:
+                    M12 = value;
+                    break;
+                case 2:
+                    M21 = value;
+                    break;
+                case 3:
+                    M22 = value;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index), "Indices for Matrix2x2 run from 0 to 3, inclusive.");
                 }
             }
         }
@@ -275,11 +277,17 @@ namespace FlaxEngine
         /// <returns>A 4-element array containing the components of the Matrix2x2.</returns>
         public float[] ToArray()
         {
-            return new[] {M11, M12, M21, M22};
+            return new[]
+            {
+                M11,
+                M12,
+                M21,
+                M22
+            };
         }
 
         /// <summary>
-        /// Creates the uniform scale metrix.
+        /// Creates the uniform scale matrix.
         /// </summary>
         /// <param name="scale">The scale.</param>
         /// <param name="result">The result.</param>
@@ -289,7 +297,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Creates the scale metrix.
+        /// Creates the scale matrix.
         /// </summary>
         /// <param name="scaleX">The scale x.</param>
         /// <param name="scaleY">The scale y.</param>
@@ -300,7 +308,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Creates the scale metrix.
+        /// Creates the scale matrix.
         /// </summary>
         /// <param name="scale">The scale vector.</param>
         /// <param name="result">The result.</param>
@@ -324,7 +332,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Creates the rotation metrix.
+        /// Creates the rotation matrix.
         /// </summary>
         /// <param name="rotationRadians">The rotation angle (in radians).</param>
         /// <param name="result">The result.</param>
@@ -461,7 +469,7 @@ namespace FlaxEngine
         public override string ToString()
         {
             return string.Format(CultureInfo.CurrentCulture, FormatString,
-                M11, M12, M21, M22);
+                                 M11, M12, M21, M22);
         }
 
         /// <summary>
@@ -477,8 +485,8 @@ namespace FlaxEngine
                 return ToString();
 
             return string.Format(format, CultureInfo.CurrentCulture, FormatString,
-                M11.ToString(format, CultureInfo.CurrentCulture), M12.ToString(format, CultureInfo.CurrentCulture),
-                M21.ToString(format, CultureInfo.CurrentCulture), M22.ToString(format, CultureInfo.CurrentCulture));
+                                 M11.ToString(format, CultureInfo.CurrentCulture), M12.ToString(format, CultureInfo.CurrentCulture),
+                                 M21.ToString(format, CultureInfo.CurrentCulture), M22.ToString(format, CultureInfo.CurrentCulture));
         }
 
         /// <summary>
@@ -491,8 +499,8 @@ namespace FlaxEngine
         public string ToString(IFormatProvider formatProvider)
         {
             return string.Format(formatProvider, FormatString,
-                M11.ToString(formatProvider), M12.ToString(formatProvider),
-                M21.ToString(formatProvider), M22.ToString(formatProvider));
+                                 M11.ToString(formatProvider), M12.ToString(formatProvider),
+                                 M21.ToString(formatProvider), M22.ToString(formatProvider));
         }
 
         /// <summary>
@@ -509,8 +517,8 @@ namespace FlaxEngine
                 return ToString(formatProvider);
 
             return string.Format(format, formatProvider, FormatString,
-                M11.ToString(format, formatProvider), M12.ToString(format, formatProvider),
-                M21.ToString(format, formatProvider), M22.ToString(format, formatProvider));
+                                 M11.ToString(format, formatProvider), M12.ToString(format, formatProvider),
+                                 M21.ToString(format, formatProvider), M22.ToString(format, formatProvider));
         }
 
         /// <summary>
@@ -565,10 +573,10 @@ namespace FlaxEngine
         public static bool Equals(ref Matrix2x2 a, ref Matrix2x2 b)
         {
             return
-                Mathf.NearEqual(a.M11, b.M11) &&
-                Mathf.NearEqual(a.M12, b.M12) &&
-                Mathf.NearEqual(a.M21, b.M21) &&
-                Mathf.NearEqual(a.M22, b.M22);
+            Mathf.NearEqual(a.M11, b.M11) &&
+            Mathf.NearEqual(a.M12, b.M12) &&
+            Mathf.NearEqual(a.M21, b.M21) &&
+            Mathf.NearEqual(a.M22, b.M22);
         }
 
         /// <summary>

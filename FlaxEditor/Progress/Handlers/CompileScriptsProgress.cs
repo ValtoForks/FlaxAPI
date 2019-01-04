@@ -1,9 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
-using System;
 using FlaxEditor.Scripting;
+using FlaxEditor.Utilities;
 
 namespace FlaxEditor.Progress.Handlers
 {
@@ -13,6 +11,8 @@ namespace FlaxEditor.Progress.Handlers
     /// <seealso cref="FlaxEditor.Progress.ProgressHandler" />
     public sealed class CompileScriptsProgress : ProgressHandler
     {
+        private SelectionCache _selectionCache;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CompileScriptsProgress"/> class.
         /// </summary>
@@ -25,18 +25,32 @@ namespace FlaxEditor.Progress.Handlers
             ScriptsBuilder.CompilationStarted += () => OnUpdate(0.2f, "Compiling scripts...");
             ScriptsBuilder.ScriptsReloadCalled += () => OnUpdate(0.8f, "Reloading scripts...");
             ScriptsBuilder.ScriptsReloadBegin += OnScriptsReloadBegin;
+            ScriptsBuilder.ScriptsReloadEnd += OnScriptsReloadEnd;
+            ScriptsBuilder.ScriptsReload += OnScriptsReload;
         }
-		
-	    private void OnScriptsReloadBegin()
-	    {
-		    // Clear references to the user scripts (we gonna reload an assembly)
-		    Editor.Instance.Scene.ClearRefsToSceneObjects();
 
-		    // Clear types cache
-		    Newtonsoft.Json.JsonSerializer.ClearCache();
-	    }
+        private void OnScriptsReloadBegin()
+        {
+            if (_selectionCache == null)
+                _selectionCache = new SelectionCache();
+            _selectionCache.Cache();
 
-	    /// <inheritdoc />
+            // Clear references to the user scripts (we gonna reload an assembly)
+            Editor.Instance.Scene.ClearRefsToSceneObjects();
+        }
+
+        private void OnScriptsReload()
+        {
+            // Clear types cache
+            Newtonsoft.Json.JsonSerializer.ClearCache();
+        }
+
+        private void OnScriptsReloadEnd()
+        {
+            _selectionCache.Restore();
+        }
+
+        /// <inheritdoc />
         protected override void OnStart()
         {
             base.OnStart();

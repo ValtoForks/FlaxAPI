@@ -1,11 +1,11 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
+using FlaxEditor.GUI;
+using FlaxEditor.Tools.Terrain;
+using FlaxEditor.Viewport.Modes;
 using FlaxEngine;
 using FlaxEngine.GUI;
-using FlaxEngine.GUI.Tabs;
 
 namespace FlaxEditor.Windows
 {
@@ -15,17 +15,27 @@ namespace FlaxEditor.Windows
     /// <seealso cref="FlaxEditor.Windows.EditorWindow" />
     public class ToolboxWindow : EditorWindow
     {
-		/// <summary>
-		/// Gets the tabs control used by this window. Can be used to add custom toolbox modes.
-		/// </summary>
-		public Tabs TabsControl { get; private set; }
+        /// <summary>
+        /// Gets the tabs control used by this window. Can be used to add custom toolbox modes.
+        /// </summary>
+        public Tabs TabsControl { get; private set; }
 
-	    /// <summary>
+        /// <summary>
+        /// The items spawning tab.
+        /// </summary>
+        public Tab Spawn;
+
+        /// <summary>
+        /// The terrain carving tab.
+        /// </summary>
+        public CarveTab Carve;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ToolboxWindow"/> class.
         /// </summary>
         /// <param name="editor">The editor.</param>
         public ToolboxWindow(Editor editor)
-            : base(editor, true, ScrollBars.None)
+        : base(editor, true, ScrollBars.None)
         {
             Title = "Toolbox";
         }
@@ -33,7 +43,7 @@ namespace FlaxEditor.Windows
         /// <inheritdoc />
         public override void OnInit()
         {
-	        TabsControl = new Tabs
+            TabsControl = new Tabs
             {
                 DockStyle = DockStyle.Fill,
                 TabsSize = new Vector2(48, 48),
@@ -45,48 +55,46 @@ namespace FlaxEditor.Windows
             InitFoliageTab(TabsControl);
             InitCarveTab(TabsControl);
 
-	        TabsControl.SelectedTabIndex = 0;
-	        TabsControl.SelectedTabChanged += OnSelectedTabChanged;
-		}
+            TabsControl.SelectedTabIndex = 0;
+        }
 
-	    private void OnSelectedTabChanged(Tabs tabs)
-	    {
-		    // TODO: send proper event and adapt the editor to the current mode (hide gizmos, etc.)
-	    }
-
-	    private void InitSpawnTab(Tabs tabs)
+        private void InitSpawnTab(Tabs tabs)
         {
-            var spawnTab = tabs.AddTab(new Tab(string.Empty, Editor.UI.GetIcon("Add48")));
+            Spawn = tabs.AddTab(new Tab(string.Empty, Editor.Icons.Add48));
+            Spawn.Selected += (tab) => Editor.Windows.EditWin.Viewport.SetActiveMode<TransformGizmoMode>();
             var actorGroups = new Tabs
             {
                 Orientation = Orientation.Vertical,
+                UseScroll = true,
                 DockStyle = DockStyle.Fill,
                 TabsSize = new Vector2(120, 32),
-                Parent = spawnTab
+                Parent = Spawn
             };
 
-            var groupBasicModels = createGroupWithList(actorGroups, "Basic Models");
+            var groupBasicModels = CreateGroupWithList(actorGroups, "Basic Models");
             groupBasicModels.AddChild(CreateEditorAssetItem("Cube", "Primitives/Cube.flax"));
             groupBasicModels.AddChild(CreateEditorAssetItem("Sphere", "Primitives/Sphere.flax"));
             groupBasicModels.AddChild(CreateEditorAssetItem("Plane", "Primitives/Plane.flax"));
             groupBasicModels.AddChild(CreateEditorAssetItem("Cylinder", "Primitives/Cylinder.flax"));
             groupBasicModels.AddChild(CreateEditorAssetItem("Cone", "Primitives/Cone.flax"));
+            groupBasicModels.AddChild(CreateEditorAssetItem("Capsule", "Primitives/Capsule.flax"));
 
-            var groupLights = createGroupWithList(actorGroups, "Lights");
+            var groupLights = CreateGroupWithList(actorGroups, "Lights");
             groupLights.AddChild(CreateActorItem("Directional Light", typeof(DirectionalLight)));
             groupLights.AddChild(CreateActorItem("Point Light", typeof(PointLight)));
             groupLights.AddChild(CreateActorItem("Spot Light", typeof(SpotLight)));
             groupLights.AddChild(CreateActorItem("Sky Light", typeof(SkyLight)));
 
-            var groupVisuals = createGroupWithList(actorGroups, "Visuals");
+            var groupVisuals = CreateGroupWithList(actorGroups, "Visuals");
             groupVisuals.AddChild(CreateActorItem("Camera", typeof(Camera)));
             groupVisuals.AddChild(CreateActorItem("Environment Probe", typeof(EnvironmentProbe)));
             groupVisuals.AddChild(CreateActorItem("Skybox", typeof(Skybox)));
             groupVisuals.AddChild(CreateActorItem("Sky", typeof(Sky)));
             groupVisuals.AddChild(CreateActorItem("Exponential Height Fog", typeof(ExponentialHeightFog)));
             groupVisuals.AddChild(CreateActorItem("PostFx Volume", typeof(PostFxVolume)));
+            groupVisuals.AddChild(CreateActorItem("Decal", typeof(Decal)));
 
-            var groupPhysics = createGroupWithList(actorGroups, "Physics");
+            var groupPhysics = CreateGroupWithList(actorGroups, "Physics");
             groupPhysics.AddChild(CreateActorItem("Rigid Body", typeof(RigidBody)));
             groupPhysics.AddChild(CreateActorItem("Character Controller", typeof(CharacterController)));
             groupPhysics.AddChild(CreateActorItem("Box Collider", typeof(BoxCollider)));
@@ -100,33 +108,43 @@ namespace FlaxEditor.Windows
             groupPhysics.AddChild(CreateActorItem("Hinge Joint", typeof(HingeJoint)));
             groupPhysics.AddChild(CreateActorItem("D6 Joint", typeof(D6Joint)));
 
-            var groupOther = createGroupWithList(actorGroups, "Other");
+            var groupOther = CreateGroupWithList(actorGroups, "Other");
+            groupOther.AddChild(CreateActorItem("Animated Model", typeof(AnimatedModel)));
+            groupOther.AddChild(CreateActorItem("Bone Socket", typeof(BoneSocket)));
             groupOther.AddChild(CreateActorItem("CSG Box Brush", typeof(BoxBrush)));
             groupOther.AddChild(CreateActorItem("Audio Source", typeof(AudioSource)));
-            groupOther.AddChild(CreateActorItem("Audio Listner", typeof(AudioListener)));
-            
-            var groupGui = createGroupWithList(actorGroups, "GUI");
-	        groupGui.AddChild(CreateActorItem("Text Render", typeof(TextRender)));
+            groupOther.AddChild(CreateActorItem("Audio Listener", typeof(AudioListener)));
+            groupOther.AddChild(CreateActorItem("Empty Actor", typeof(EmptyActor)));
+
+            var groupGui = CreateGroupWithList(actorGroups, "GUI");
+            groupGui.AddChild(CreateActorItem("UI Control", typeof(UIControl)));
+            groupGui.AddChild(CreateActorItem("UI Canvas", typeof(UICanvas)));
+            groupGui.AddChild(CreateActorItem("Text Render", typeof(TextRender)));
 
             actorGroups.SelectedTabIndex = 0;
         }
 
         private void InitPaintTab(Tabs tabs)
         {
-            var paintTab = tabs.AddTab(new Tab(string.Empty, Editor.UI.GetIcon("Paint48")));
-            //paintTab.LinkTooltip("Vertex painint tool"));
+            var paintTab = tabs.AddTab(new Tab(string.Empty, Editor.Icons.Paint48));
+
+            var info = paintTab.AddChild<Label>();
+            info.Text = "Vertex painting coming soon...";
+            info.DockStyle = DockStyle.Fill;
         }
 
         private void InitFoliageTab(Tabs tabs)
         {
-            var foliageTab = tabs.AddTab(new Tab(string.Empty, Editor.UI.GetIcon("Foliage48")));
-            //foliageTab.LinkTooltip("Foliage spawning tool"));
+            var foliageTab = tabs.AddTab(new Tab(string.Empty, Editor.Icons.Foliage48));
+
+            var info = foliageTab.AddChild<Label>();
+            info.Text = "Foliage spawning coming soon...";
+            info.DockStyle = DockStyle.Fill;
         }
 
         private void InitCarveTab(Tabs tabs)
         {
-            var carveTab = tabs.AddTab(new Tab(string.Empty, Editor.UI.GetIcon("Mountain48")));
-            //carveTab.LinkTooltip("Terrain carving tool"));
+            Carve = tabs.AddTab(new CarveTab(Editor.Icons.Mountain48, Editor));
         }
 
         private Item CreateEditorAssetItem(string name, string path)
@@ -145,16 +163,17 @@ namespace FlaxEditor.Windows
             private DragData _dragData;
 
             public Item(string text, DragData dragData = null)
-                : this(text, dragData, Sprite.Invalid)
+            : this(text, dragData, Sprite.Invalid)
             {
             }
 
             public Item(string text, DragData dragData, Sprite icon)
-                : base(false, icon, icon)
+            : base(false, icon, icon)
             {
                 Text = text;
                 _dragData = dragData;
                 Height = 20;
+                TextMargin = new Margin(-5.0f, 2.0f, 2.0f, 2.0f);
             }
 
             /// <inheritdoc />
@@ -165,7 +184,7 @@ namespace FlaxEditor.Windows
             }
         }
 
-        ContainerControl createGroupWithList(Tabs parentTabs, string title)
+        private ContainerControl CreateGroupWithList(Tabs parentTabs, string title)
         {
             var tab = parentTabs.AddTab(new Tab(title));
             var panel = new Panel(ScrollBars.Both)
@@ -177,15 +196,9 @@ namespace FlaxEditor.Windows
             {
                 DockStyle = DockStyle.Top,
                 IsScrollable = true,
-                RootNodesOffset = -8,
                 Parent = panel
             };
-            var root = new TreeNode(false)
-            {
-                Parent = tree
-            };
-            root.Expand();
-            return root;
+            return tree;
         }
     }
 }

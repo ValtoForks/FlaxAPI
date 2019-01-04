@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Globalization;
@@ -45,7 +45,7 @@ namespace FlaxEngine
         {
             this.value = Pack(value.X, value.Y, value.Z, value.W);
         }
-        
+
         /// <summary>
         /// Gets or sets the raw 32 bit value used to back this vector.
         /// </summary>
@@ -54,6 +54,26 @@ namespace FlaxEngine
             get => value;
             set => this.value = value;
         }
+
+        /// <summary>
+        /// Gets the R component.
+        /// </summary>
+        public float R => (value & 0x3FF) / 1023.0f;
+
+        /// <summary>
+        /// Gets the G component.
+        /// </summary>
+        public float G => ((value >> 10) & 0x3FF) / 1023.0f;
+
+        /// <summary>
+        /// Gets the B component.
+        /// </summary>
+        public float B => ((value >> 20) & 0x3FF) / 1023.0f;
+
+        /// <summary>
+        /// Gets the A component.
+        /// </summary>
+        public float A => (value >> 30) / 3.0f;
 
         /// <summary>
         /// Performs an explicit conversion from <see cref = "T:FlaxEngine.Vector4" /> to <see cref = "T:FlaxEngine.FloatR10G10B10A2" />.

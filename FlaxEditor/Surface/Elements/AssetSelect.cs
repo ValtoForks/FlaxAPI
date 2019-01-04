@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.GUI;
@@ -27,7 +25,7 @@ namespace FlaxEditor.Surface.Elements
         /// <param name="parentNode">The parent node.</param>
         /// <param name="archetype">The archetype.</param>
         public AssetSelect(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base((ContentDomain)archetype.BoxID, archetype.ActualPosition)
+        : base(Utilities.Utils.GetType((ContentDomain)archetype.BoxID), archetype.ActualPosition)
         {
             SelectedID = (Guid)parentNode.Values[archetype.ValueIndex];
 
@@ -40,12 +38,10 @@ namespace FlaxEditor.Surface.Elements
         {
             if (ParentNode != null)
             {
-                ParentNode.Values[Archetype.ValueIndex] = SelectedID;
-                ParentNode.Surface.MarkAsEdited();
+                ParentNode.SetValue(Archetype.ValueIndex, SelectedID);
             }
 
             base.OnSelectedItemChanged();
-
         }
     }
 }

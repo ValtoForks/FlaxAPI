@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -30,18 +28,17 @@ namespace FlaxEditor.Surface.Elements
 
         /// <inheritdoc />
         public ColorValue(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(Get(parentNode, archetype), archetype.Position.X, archetype.Position.Y)
+        : base(Get(parentNode, archetype), archetype.Position.X, archetype.Position.Y)
         {
             ParentNode = parentNode;
             Archetype = archetype;
         }
-        
+
         /// <inheritdoc />
         protected override void OnValueChanged()
         {
             base.OnValueChanged();
             Set(ParentNode, Archetype, ref _value);
-            ParentNode.Surface.MarkAsEdited();
         }
 
         private static Color Get(SurfaceNode parentNode, NodeElementArchetype arch)
@@ -51,7 +48,7 @@ namespace FlaxEditor.Surface.Elements
 
             Color result;
             var value = parentNode.Values[arch.ValueIndex];
-            
+
             if (value is Color valueColor)
             {
                 result = valueColor;
@@ -92,7 +89,7 @@ namespace FlaxEditor.Surface.Elements
                 value = (Vector4)toSet;
             }
 
-            parentNode.Values[arch.ValueIndex] = value;
+            parentNode.SetValue(arch.ValueIndex, value);
         }
     }
 }

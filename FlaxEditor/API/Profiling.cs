@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Runtime.InteropServices;
 
@@ -58,17 +56,17 @@ namespace FlaxEditor.Profiling
         public int FPS;
 
         /// <summary>
-        /// The update time on CPU (in miliseconds).
+        /// The update time on CPU (in milliseconds).
         /// </summary>
         public float UpdateTimeMs;
 
         /// <summary>
-        /// The fixed update time on CPU (in miliseconds).
+        /// The fixed update time on CPU (in milliseconds).
         /// </summary>
         public float PhysicsTimeMs;
 
         /// <summary>
-        /// The draw time on CPU (in miliseconds).
+        /// The draw time on CPU (in milliseconds).
         /// </summary>
         public float DrawTimeMs;
     }
@@ -80,12 +78,12 @@ namespace FlaxEditor.Profiling
     public struct EventCPU
     {
         /// <summary>
-        /// The start time (in miliseconds).
+        /// The start time (in milliseconds).
         /// </summary>
         public double Start;
 
         /// <summary>
-        /// The end time (in miliseconds).
+        /// The end time (in milliseconds).
         /// </summary>
         public double End;
 
@@ -93,6 +91,11 @@ namespace FlaxEditor.Profiling
         /// The event depth (0 for root events).
         /// </summary>
         public int Depth;
+
+        /// <summary>
+        /// The dynamic memory allocation size during this event (excluding the child events). Given value is in bytes.
+        /// </summary>
+        public int MemoryAllocation;
 
         /// <summary>
         /// The event name.
@@ -124,7 +127,7 @@ namespace FlaxEditor.Profiling
     public struct EventGPU
     {
         /// <summary>
-        /// The event execution time on a GPU (in miliseconds).
+        /// The event execution time on a GPU (in milliseconds).
         /// </summary>
         public float Time;
 

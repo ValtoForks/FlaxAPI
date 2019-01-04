@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -69,10 +67,20 @@ namespace FlaxEngine
         /// </summary>
         Scene,
 
-		/// <summary>
-		/// The audio.
-		/// </summary>
-		Audio,
+        /// <summary>
+        /// The audio.
+        /// </summary>
+        Audio,
+
+        /// <summary>
+        /// The animation.
+        /// </summary>
+        Animation,
+
+        /// <summary>
+        /// The skeleton bones masking.
+        /// </summary>
+        SkeletonMask,
     }
 
     /// <summary>

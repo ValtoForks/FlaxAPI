@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -35,7 +33,7 @@ namespace FlaxEngine.GUI
         /// The right edge
         /// </summary>
         Right = 4,
-        
+
         /// <summary>
         /// The whole area.
         /// </summary>
@@ -112,7 +110,7 @@ namespace FlaxEngine.GUI
         /// </summary>
         Right,
     }
-    
+
     /// <summary>
     /// Specifies which scroll bars will be visible on a control
     /// </summary>
@@ -125,17 +123,17 @@ namespace FlaxEngine.GUI
         None = 0,
 
         /// <summary>
-        /// Use horizontal scrolllbar.
+        /// Use horizontal scrollbar.
         /// </summary>
         Horizontal = 1,
 
         /// <summary>
-        /// Use vertical scrolllbar.
+        /// Use vertical scrollbar.
         /// </summary>
         Vertical = 2,
 
         /// <summary>
-        /// Use horizontal and vertical scrolllbar.
+        /// Use horizontal and vertical scrollbar.
         /// </summary>
         Both = Horizontal | Vertical
     }

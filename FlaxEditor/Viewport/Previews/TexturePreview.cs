@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Viewport.Widgets;
@@ -189,9 +187,9 @@ namespace FlaxEditor.Viewport.Previews
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
-            base.SetSizeInternal(size);
+            base.SetSizeInternal(ref size);
 
             // Update texture rectangle and move view to the center
             UpdateTextureRect();
@@ -200,49 +198,54 @@ namespace FlaxEditor.Viewport.Previews
     }
 
     /// <summary>
+    /// Texture channel flags.
+    /// </summary>
+    [Flags]
+    public enum ChannelFlags
+    {
+        /// <summary>
+        /// The none.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// The red channel.
+        /// </summary>
+        Red = 1,
+
+        /// <summary>
+        /// The green channel.
+        /// </summary>
+        Green = 2,
+
+        /// <summary>
+        /// The blue channel.
+        /// </summary>
+        Blue = 4,
+
+        /// <summary>
+        /// The alpha channel.
+        /// </summary>
+        Alpha = 8,
+
+        /// <summary>
+        /// All texture channels.
+        /// </summary>
+        All = Red | Green | Blue | Alpha
+    }
+
+    /// <summary>
     /// Base class for texture previews with custom drawing features. Uses in-build postFx material to render a texture.
     /// </summary>
     /// <seealso cref="TexturePreviewBase" />
     public abstract class TexturePreviewCustomBase : TexturePreviewBase
     {
-        /// <summary>
-        /// Texture channel flags.
-        /// </summary>
-        [Flags]
-        public enum ChannelFlags
-        {
-            /// <summary>
-            /// The none.
-            /// </summary>
-            None = 0,
-
-            /// <summary>
-            /// The red channel.
-            /// </summary>
-            Red = 1,
-
-            /// <summary>
-            /// The green channel.
-            /// </summary>
-            Green = 2,
-
-            /// <summary>
-            /// The blue channel.
-            /// </summary>
-            Blue = 4,
-
-            /// <summary>
-            /// The alpha channel.
-            /// </summary>
-            Alpha = 8,
-
-            /// <summary>
-            /// All texture channels.
-            /// </summary>
-            All = Red | Green | Blue | Alpha
-        }
-
         private ChannelFlags _channelFlags = ChannelFlags.All;
+        private bool _usePointSampler = false;
+        private float _mipLevel = -1;
+        private ContextMenu _mipWidgetMenu;
+        private ContextMenuButton _filterWidgetPointButton;
+        private ContextMenuButton _filterWidgetLinearButton;
 
         /// <summary>
         /// The preview material instance used to draw texture.
@@ -265,6 +268,38 @@ namespace FlaxEditor.Viewport.Previews
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether use point sampler when drawing the texture. The default value is false.
+        /// </summary>
+        public bool UsePointSampler
+        {
+            get => _usePointSampler;
+            set
+            {
+                if (_usePointSampler != value)
+                {
+                    _usePointSampler = value;
+                    _previewMaterial.GetParam("PointSampler").Value = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the mip level to show. The default value is -1.
+        /// </summary>
+        public float MipLevel
+        {
+            get => _mipLevel;
+            set
+            {
+                if (!Mathf.NearEqual(_mipLevel, value))
+                {
+                    _mipLevel = value;
+                    _previewMaterial.GetParam("Mip").Value = value;
+                }
+            }
+        }
+
         /// <inheritdoc />
         /// <param name="useWidgets">True if show viewport widgets.</param>
         protected TexturePreviewCustomBase(bool useWidgets)
@@ -274,6 +309,8 @@ namespace FlaxEditor.Viewport.Previews
             if (baseMaterial == null)
                 throw new FlaxException("Cannot load texture preview material.");
             _previewMaterial = baseMaterial.CreateVirtualInstance();
+            if (_previewMaterial == null)
+                throw new FlaxException("Failed to create virtual material instance for preview material.");
 
             // Add widgets
             if (useWidgets)
@@ -311,10 +348,45 @@ namespace FlaxEditor.Viewport.Previews
                 channelA.OnToggle += button => ViewChannels = button.Checked ? ViewChannels | ChannelFlags.Alpha : (ViewChannels & ~ChannelFlags.Alpha);
                 //
                 channelsWidget.Parent = this;
+
+                // Mip widget
+                var mipWidget = new ViewportWidgetsContainer(ViewportWidgetLocation.UpperLeft);
+                _mipWidgetMenu = new ContextMenu();
+                _mipWidgetMenu.VisibleChanged += OnMipWidgetMenuOnVisibleChanged;
+                var mipWidgetButton = new ViewportWidgetButton("Mip", Sprite.Invalid, _mipWidgetMenu)
+                {
+                    TooltipText = "The mip level to show. The default is -1.",
+                    Parent = mipWidget
+                };
+                //
+                mipWidget.Parent = this;
+
+                // Filter widget
+                var filterWidget = new ViewportWidgetsContainer(ViewportWidgetLocation.UpperLeft);
+                var filterWidgetMenu = new ContextMenu();
+                filterWidgetMenu.VisibleChanged += OnFilterWidgetMenuVisibleChanged;
+                _filterWidgetPointButton = filterWidgetMenu.AddButton("Point", () => UsePointSampler = true);
+                _filterWidgetLinearButton = filterWidgetMenu.AddButton("Linear", () => UsePointSampler = false);
+                var filterWidgetButton = new ViewportWidgetButton("Filter", Sprite.Invalid, filterWidgetMenu)
+                {
+                    TooltipText = "The texture preview filtering mode. The default is Linear.",
+                    Parent = filterWidget
+                };
+                //
+                filterWidget.Parent = this;
             }
 
             // Wait for base (don't want to async material parameters set due to async loading)
             baseMaterial.WaitForLoaded();
+        }
+
+        private void OnFilterWidgetMenuVisibleChanged(Control control)
+        {
+            if (!control.Visible)
+                return;
+
+            _filterWidgetPointButton.Checked = UsePointSampler;
+            _filterWidgetLinearButton.Checked = !UsePointSampler;
         }
 
         /// <summary>
@@ -325,6 +397,31 @@ namespace FlaxEditor.Viewport.Previews
         {
             _previewMaterial.GetParam("Texture").Value = value;
             UpdateTextureRect();
+        }
+
+        private void OnMipWidgetMenuOnVisibleChanged(Control control)
+        {
+            if (!control.Visible)
+                return;
+
+            var textureObj = _previewMaterial.GetParam("Texture").Value;
+
+            if (textureObj is TextureBase texture && !texture.WaitForLoaded())
+            {
+                _mipWidgetMenu.ItemsContainer.DisposeChildren();
+                var mipLevels = texture.MipLevels;
+                for (int i = -1; i < mipLevels; i++)
+                {
+                    var button = _mipWidgetMenu.AddButton(i.ToString(), OnMipWidgetClicked);
+                    button.Tag = i;
+                    button.Checked = Mathf.Abs(MipLevel - i) < 0.9f;
+                }
+            }
+        }
+
+        private void OnMipWidgetClicked(ContextMenuButton button)
+        {
+            MipLevel = (int)button.Tag;
         }
 
         private void UpdateMask()
@@ -345,6 +442,7 @@ namespace FlaxEditor.Viewport.Previews
         protected override void PerformLayoutSelf()
         {
             base.PerformLayoutSelf();
+
             ViewportWidgetsContainer.ArrangeWidgets(this);
         }
 
@@ -401,7 +499,7 @@ namespace FlaxEditor.Viewport.Previews
             // Check if has loaded asset
             if (_asset && _asset.IsLoaded)
             {
-                Render2D.DrawTexture(_asset, rect, Color, true);
+                Render2D.DrawTexture(_asset, rect, Color);
             }
         }
     }
@@ -450,7 +548,7 @@ namespace FlaxEditor.Viewport.Previews
             // Check if has loaded asset
             if (_asset && _asset.IsLoaded)
             {
-                Render2D.DrawTexture(_asset, rect, Color, true);
+                Render2D.DrawTexture(_asset, rect, Color);
             }
         }
     }
@@ -486,7 +584,7 @@ namespace FlaxEditor.Viewport.Previews
         /// <param name="useWidgets">True if show viewport widgets.</param>
         /// <inheritdoc />
         public TexturePreview(bool useWidgets)
-            : base(useWidgets)
+        : base(useWidgets)
         {
         }
 
@@ -541,7 +639,7 @@ namespace FlaxEditor.Viewport.Previews
         /// <param name="useWidgets">True if show viewport widgets.</param>
         /// <inheritdoc />
         public SpriteAtlasPreview(bool useWidgets)
-            : base(useWidgets)
+        : base(useWidgets)
         {
         }
 

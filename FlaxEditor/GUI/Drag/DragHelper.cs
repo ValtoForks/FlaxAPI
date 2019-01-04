@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,10 +8,50 @@ using FlaxEngine.GUI;
 namespace FlaxEditor.GUI.Drag
 {
     /// <summary>
+    /// The drag events helper object.
+    /// </summary>
+    public abstract class DragHelper
+    {
+        /// <summary>
+        /// Gets a value indicating whether this instance has valid drag.
+        /// </summary>
+        public abstract bool HasValidDrag { get; }
+
+        /// <summary>
+        /// Gets the drag effect.
+        /// </summary>
+        public abstract DragDropEffect Effect { get; }
+
+        /// <summary>
+        /// Called when drag enters.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns>True if handled.</returns>
+        public abstract bool OnDragEnter(DragData data);
+
+        /// <summary>
+        /// Called when drag leaves.
+        /// </summary>
+        public abstract void OnDragLeave();
+
+        /// <summary>
+        /// Called when drag drops.
+        /// </summary>
+        public abstract void OnDragDrop();
+
+        /// <summary>
+        /// Called when drag drops.
+        /// </summary>
+        /// <param name="dragEventArgs">The <see cref="DragEventArgs"/> instance containing the event data.</param>
+        public abstract void OnDragDrop(DragEventArgs dragEventArgs);
+    }
+
+    /// <summary>
     /// Base class for drag and drop operation helpers.
     /// </summary>
     /// <typeparam name="T">Type of the objects to collect from drag data.</typeparam>
-    public abstract class DragHelper<T>
+    /// <typeparam name="U">Type of the drag-drop event.</typeparam>
+    public abstract class DragHelper<T, U> : DragHelper where U : DragEventArgs
     {
         /// <summary>
         /// The objects gathered.
@@ -26,7 +64,7 @@ namespace FlaxEditor.GUI.Drag
         /// <value>
         ///   <c>true</c> if this instance has valid drag data; otherwise, <c>false</c>.
         /// </value>
-        public bool HasValidDrag => Objects.Count > 0;
+        public sealed override bool HasValidDrag => Objects.Count > 0;
 
         /// <summary>
         /// Gets the current drag effect.
@@ -34,7 +72,51 @@ namespace FlaxEditor.GUI.Drag
         /// <value>
         /// The effect.
         /// </value>
-        public DragDropEffect Effect => HasValidDrag ? DragDropEffect.Move : DragDropEffect.None;
+        public override DragDropEffect Effect => HasValidDrag ? DragDropEffect.Move : DragDropEffect.None;
+
+        /// <summary>
+        /// The validation function
+        /// </summary>
+        protected Func<T, bool> ValidateFunction { get; set; }
+
+        /// <summary>
+        /// Creates a new DragHelper
+        /// </summary>
+        /// <param name="validateFunction">The validation function</param>
+        protected DragHelper(Func<T, bool> validateFunction)
+        {
+            ValidateFunction = validateFunction;
+        }
+
+        /// <summary>
+        /// Gets the drag data.
+        /// </summary>
+        /// <param name="item">An item.</param>
+        /// <returns>The data.</returns>
+        public abstract DragData ToDragData(T item);
+
+        /// <summary>
+        /// Gets the drag data.
+        /// </summary>
+        /// <param name="items">The items.</param>
+        /// <returns>The data.</returns>
+        public abstract DragData ToDragData(IEnumerable<T> items);
+
+        /// <summary>
+        /// Tries to parse the drag data.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <returns>Gathered objects or empty IEnumerable if cannot get any valid.</returns>
+        public abstract IEnumerable<T> FromDragData(DragData data);
+
+        /// <summary>
+        /// Handler drag drop event.
+        /// </summary>
+        /// <param name="dragEventArgs">The drag event arguments.</param>
+        /// <param name="item">The item.</param>
+        public virtual void DragDrop(U dragEventArgs, IEnumerable<T> item)
+        {
+        }
 
         /// <summary>
         /// Invalids the drag data.
@@ -48,19 +130,20 @@ namespace FlaxEditor.GUI.Drag
         /// Called when drag enters.
         /// </summary>
         /// <param name="data">The data.</param>
-        /// <param name="validateFunc">The validate function. Check if gathered object is valid to drop it.</param>
         /// <returns>True if drag event is valid and can be performed, otherwise false.</returns>
-        public bool OnDragEnter(DragData data, Func<T, bool> validateFunc)
+        public sealed override bool OnDragEnter(DragData data)
         {
-            if(data == null || validateFunc == null)
+            if (data == null || ValidateFunction == null)
                 throw new ArgumentNullException();
 
             Objects.Clear();
 
-            if(data is DragDataText text)
-                GetherObjects(text, validateFunc);
-            else if(data is DragDataFiles files)
-                GetherObjects(files, validateFunc);
+            var items = FromDragData(data);
+            foreach (var item in items)
+            {
+                if (ValidateFunction(item))
+                    Objects.Add(item);
+            }
 
             return HasValidDrag;
         }
@@ -68,7 +151,7 @@ namespace FlaxEditor.GUI.Drag
         /// <summary>
         /// Called when drag leaves.
         /// </summary>
-        public void OnDragLeave()
+        public override void OnDragLeave()
         {
             Objects.Clear();
         }
@@ -76,27 +159,22 @@ namespace FlaxEditor.GUI.Drag
         /// <summary>
         /// Called when drag drops.
         /// </summary>
-        public void OnDragDrop()
+        public sealed override void OnDragDrop()
         {
+            if (HasValidDrag)
+                DragDrop(null, Objects);
             Objects.Clear();
         }
 
         /// <summary>
-        /// Gethers the objects from the drag data (text).
+        /// Called when drag drops.
         /// </summary>
-        /// <param name="data">The data.</param>
-        /// <param name="validateFunc">The validate function.</param>
-        protected virtual void GetherObjects(DragDataText data, Func<T, bool> validateFunc)
+        /// <param name="dragEventArgs">Arguments</param>
+        public sealed override void OnDragDrop(DragEventArgs dragEventArgs)
         {
-        }
-
-        /// <summary>
-        /// Gethers the objects from the drag data (files).
-        /// </summary>
-        /// <param name="data">The data.</param>
-        /// <param name="validateFunc">The validate function.</param>
-        protected virtual void GetherObjects(DragDataFiles data, Func<T, bool> validateFunc)
-        {
+            if (HasValidDrag)
+                DragDrop(dragEventArgs as U, Objects);
+            Objects.Clear();
         }
     }
 }

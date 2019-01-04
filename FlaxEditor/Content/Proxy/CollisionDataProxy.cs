@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content.Thumbnails;
@@ -32,10 +30,10 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x2c3e50);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => CollisionData.Domain;
+        public override ContentDomain Domain => ContentDomain.Other;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(CollisionData).FullName;
+        public override Type AssetType => typeof(CollisionData);
 
         /// <inheritdoc />
         public override bool CanCreate(ContentFolder targetLocation)
@@ -44,7 +42,7 @@ namespace FlaxEditor.Content
         }
 
         /// <inheritdoc />
-        public override void Create(string outputPath)
+        public override void Create(string outputPath, object arg)
         {
             if (Editor.CreateAsset(Editor.NewAssetType.CollisionData, outputPath))
                 throw new Exception("Failed to create new asset.");

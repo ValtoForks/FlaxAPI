@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -27,13 +25,16 @@ namespace FlaxEditor.Windows
         private ContentView _view;
 
         private readonly ToolStrip _toolStrip;
-	    private readonly ToolStripButton _importButton;
-	    private readonly ToolStripButton _navigateBackwardButton;
-	    private readonly ToolStripButton _navigateForwardButton;
-	    private readonly ToolStripButton _nnavigateUpButton;
+        private readonly ToolStripButton _importButton;
+        private readonly ToolStripButton _navigateBackwardButton;
+        private readonly ToolStripButton _navigateForwardButton;
+        private readonly ToolStripButton _nnavigateUpButton;
 
         private NavigationBar _navigationBar;
         private Tree _tree;
+        private TextBox _foldersSearchBox;
+        private TextBox _itemsSearchBox;
+        private SearchFilterComboBox _itemsFilterBox;
 
         private RootContentTreeNode _root;
 
@@ -43,22 +44,22 @@ namespace FlaxEditor.Windows
 
         private NewItem _newElement;
 
-		/// <summary>
-		/// Gets the toolstrip.
-		/// </summary>
-		public ToolStrip Toolstrip => _toolStrip;
+        /// <summary>
+        /// Gets the toolstrip.
+        /// </summary>
+        public ToolStrip Toolstrip => _toolStrip;
 
-		/// <summary>
-		/// Gets the assets view.
-		/// </summary>
-		public ContentView View => _view;
+        /// <summary>
+        /// Gets the assets view.
+        /// </summary>
+        public ContentView View => _view;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="ContentWindow"/> class.
-		/// </summary>
-		/// <param name="editor">The editor.</param>
-		public ContentWindow(Editor editor)
-            : base(editor, true, ScrollBars.None)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContentWindow"/> class.
+        /// </summary>
+        /// <param name="editor">The editor.</param>
+        public ContentWindow(Editor editor)
+        : base(editor, true, ScrollBars.None)
         {
             Title = "Content";
 
@@ -68,17 +69,16 @@ namespace FlaxEditor.Windows
 
             // Tool strip
             _toolStrip = new ToolStrip();
-	        _importButton = (ToolStripButton)_toolStrip.AddButton(Editor.UI.GetIcon("Import32"), () => Editor.ContentImporting.ShowImportFileDialog(CurrentViewFolder)).LinkTooltip("Import content");
+            _importButton = (ToolStripButton)_toolStrip.AddButton(Editor.Icons.Import32, () => Editor.ContentImporting.ShowImportFileDialog(CurrentViewFolder)).LinkTooltip("Import content");
             _toolStrip.AddSeparator();
-	        _navigateBackwardButton = (ToolStripButton)_toolStrip.AddButton(Editor.UI.GetIcon("ArrowLeft32"), NavigateBackward).LinkTooltip("Navigate backward");
-	        _navigateForwardButton = (ToolStripButton)_toolStrip.AddButton(Editor.UI.GetIcon("ArrowRight32"), NavigateForward).LinkTooltip("Navigate forward");
-	        _nnavigateUpButton = (ToolStripButton)_toolStrip.AddButton(Editor.UI.GetIcon("ArrowUp32"), NavigateUp).LinkTooltip("Navigate up");
+            _navigateBackwardButton = (ToolStripButton)_toolStrip.AddButton(Editor.Icons.ArrowLeft32, NavigateBackward).LinkTooltip("Navigate backward");
+            _navigateForwardButton = (ToolStripButton)_toolStrip.AddButton(Editor.Icons.ArrowRight32, NavigateForward).LinkTooltip("Navigate forward");
+            _nnavigateUpButton = (ToolStripButton)_toolStrip.AddButton(Editor.Icons.ArrowUp32, NavigateUp).LinkTooltip("Navigate up");
             _toolStrip.Parent = this;
 
             // Navigation bar
             _navigationBar = new NavigationBar
             {
-                Height = 32,
                 Parent = this
             };
 
@@ -90,10 +90,47 @@ namespace FlaxEditor.Windows
                 Parent = this
             };
 
+            // Content structure tree searching query input box
+            var headerPanel = new ContainerControl();
+            headerPanel.DockStyle = DockStyle.Top;
+            headerPanel.IsScrollable = true;
+            headerPanel.Parent = _split.Panel1;
+            //
+            _foldersSearchBox = new TextBox(false, 4, 4, headerPanel.Width - 8);
+            _foldersSearchBox.AnchorStyle = AnchorStyle.Upper;
+            _foldersSearchBox.WatermarkText = "Search...";
+            _foldersSearchBox.Parent = headerPanel;
+            _foldersSearchBox.TextChanged += OnFoldersSearchBoxTextChanged;
+            //
+            headerPanel.Height = _foldersSearchBox.Bottom + 6;
+
             // Content structure tree
             _tree = new Tree(false);
-            _tree.SelectedChanged += treeOnSelectedChanged;
+            _tree.Y = headerPanel.Bottom;
+            _tree.SelectedChanged += OnTreeSelectionChanged;
             _tree.Parent = _split.Panel1;
+
+            // Content items searching query input box and filters selector
+            var contentItemsSearchPanel = new ContainerControl();
+            contentItemsSearchPanel.DockStyle = DockStyle.Top;
+            contentItemsSearchPanel.IsScrollable = true;
+            contentItemsSearchPanel.Parent = _split.Panel2;
+            //
+            const float filterBoxWidth = 56.0f;
+            _itemsSearchBox = new TextBox(false, filterBoxWidth + 8, 4, contentItemsSearchPanel.Width - 8 - filterBoxWidth);
+            _itemsSearchBox.AnchorStyle = AnchorStyle.Upper;
+            _itemsSearchBox.WatermarkText = "Search...";
+            _itemsSearchBox.Parent = contentItemsSearchPanel;
+            _itemsSearchBox.TextChanged += UpdateItemsSearch;
+            //
+            contentItemsSearchPanel.Height = _itemsSearchBox.Bottom + 4;
+            //
+            _itemsFilterBox = new SearchFilterComboBox(4, (contentItemsSearchPanel.Height - ComboBox.DefaultHeight) * 0.5f, filterBoxWidth);
+            _itemsFilterBox.Parent = contentItemsSearchPanel;
+            _itemsFilterBox.SelectedIndexChanged += e => UpdateItemsSearch();
+            _itemsFilterBox.SupportMultiSelect = true;
+            for (int i = 0; i <= (int)ContentItemSearchFilter.Other; i++)
+                _itemsFilterBox.Items.Add(((ContentItemSearchFilter)i).ToString());
 
             // Content View
             _view = new ContentView();
@@ -102,6 +139,7 @@ namespace FlaxEditor.Windows
             _view.OnRename += Rename;
             _view.OnDelete += Delete;
             _view.OnDuplicate += Clone;
+            _view.OnPaste += Paste;
             _view.Parent = _split.Panel2;
         }
 
@@ -109,7 +147,7 @@ namespace FlaxEditor.Windows
         /// Shows popup dialog with UI to rename content item.
         /// </summary>
         /// <param name="item">The item to rename.</param>
-        private void Rename(ContentItem item)
+        public void Rename(ContentItem item)
         {
             // Show element in view
             Select(item);
@@ -119,16 +157,16 @@ namespace FlaxEditor.Windows
             popup.Tag = item;
             popup.Renamed += renamePopup => Rename((ContentItem)renamePopup.Tag, renamePopup.Text);
             popup.Closed += renamePopup =>
-                            {
-                                // Check if was creating new element
-                                if (_newElement != null)
-                                {
-                                    // Destroy mock control
-                                    _newElement.ParentFolder = null;
-                                    _newElement.Dispose();
-                                    _newElement = null;
-                                }
-                            };
+            {
+                // Check if was creating new element
+                if (_newElement != null)
+                {
+                    // Destroy mock control
+                    _newElement.ParentFolder = null;
+                    _newElement.Dispose();
+                    _newElement = null;
+                }
+            };
 
             // For new asset we want to mock the initial value so user can press just Enter to use default name
             if (_newElement != null)
@@ -137,7 +175,12 @@ namespace FlaxEditor.Windows
             }
         }
 
-        internal void Rename(ContentItem item, string newShortName)
+        /// <summary>
+        /// Renames the specified item.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <param name="newShortName">New name (without extension, just the filename).</param>
+        public void Rename(ContentItem item, string newShortName)
         {
             if (item == null)
                 throw new ArgumentNullException();
@@ -156,9 +199,9 @@ namespace FlaxEditor.Windows
             {
                 // Invalid name
                 MessageBox.Show("Given asset name is invalid. " + hint,
-                    "Invalid name",
-                    MessageBox.Buttons.OK,
-                    MessageBox.Icon.Error);
+                                "Invalid name",
+                                MessageBox.Buttons.OK,
+                                MessageBox.Icon.Error);
                 return;
             }
 
@@ -177,14 +220,17 @@ namespace FlaxEditor.Windows
             // Check if was renaming mock element
             // Note: we create `_newElement` and then rename it to create new asset
             var itemFolder = item.ParentFolder;
+            Action<ContentItem> endEvent = null;
             if (_newElement == item)
             {
                 try
                 {
+                    endEvent = (Action<ContentItem>)_newElement.Tag;
+
                     // Create new asset
                     var proxy = _newElement.Proxy;
                     Editor.Log(string.Format("Creating asset {0} in {1}", proxy.Name, newPath));
-                    proxy.Create(newPath);
+                    proxy.Create(newPath, _newElement.Argument);
                 }
                 catch (Exception ex)
                 {
@@ -213,16 +259,38 @@ namespace FlaxEditor.Windows
             // Refresh database and view now
             Editor.ContentDatabase.RefreshFolder(itemFolder, true);
             RefreshView();
+
+            if (endEvent != null)
+            {
+                var newItem = itemFolder.FindChild(newPath);
+                if (newItem != null)
+                {
+                    endEvent(newItem);
+                }
+                else
+                {
+                    Editor.LogWarning("Failed to find the created new item.");
+                }
+            }
         }
 
-        private void Delete(ContentItem item)
+
+        /// <summary>
+        /// Deletes the specified item. Asks user first and uses some GUI.
+        /// </summary>
+        /// <param name="item">The item to delete.</param>
+        public void Delete(ContentItem item)
         {
             Delete(new List<ContentItem> { item });
         }
 
-        private void Delete(List<ContentItem> items)
+        /// <summary>
+        /// Deletes the specified items. Asks user first and uses some GUI.
+        /// </summary>
+        /// <param name="items">The items to delete.</param>
+        public void Delete(List<ContentItem> items)
         {
-            // TODO: remove items that depend on diffrent items in the list: use wants to remove `folderA` and `folderA/asset.x`, we should just remove `folderA`
+            // TODO: remove items that depend on different items in the list: use wants to remove `folderA` and `folderA/asset.x`, we should just remove `folderA`
             var toDelete = new List<ContentItem>(items);
 
             // Ask user
@@ -230,9 +298,9 @@ namespace FlaxEditor.Windows
             {
                 // Single item
                 if (MessageBox.Show(string.Format("Are you sure to delete \'{0}\'?\nThis action cannot be undone. Files will be deleted permanently.", items[0].Path),
-                        "Delete asset(s)",
-                        MessageBox.Buttons.OKCancel,
-                        MessageBox.Icon.Question)
+                                    "Delete asset(s)",
+                                    MessageBox.Buttons.OKCancel,
+                                    MessageBox.Icon.Question)
                     != DialogResult.OK)
                 {
                     // Break
@@ -243,9 +311,9 @@ namespace FlaxEditor.Windows
             {
                 // Many items
                 if (MessageBox.Show(string.Format("Are you sure to delete {0} selected items?\nThis action cannot be undone. Files will be deleted permanently.", items.Count),
-                        "Delete asset(s)",
-                        MessageBox.Buttons.OKCancel,
-                        MessageBox.Icon.Question)
+                                    "Delete asset(s)",
+                                    MessageBox.Buttons.OKCancel,
+                                    MessageBox.Icon.Question)
                     != DialogResult.OK)
                 {
                     // Break
@@ -292,20 +360,23 @@ namespace FlaxEditor.Windows
                     _tmpList = nullptr;*/
 
                     destinationPath = StringUtils.CombinePaths(sourceFolder, string.Format("{0} Copy ({1}){2}", item.ShortName, i++, extension));
-
                 } while (File.Exists(destinationPath));
             }
 
             return destinationPath;
         }
 
-        private void Clone(ContentItem item)
+        /// <summary>
+        /// Clones the specified item.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        public void Clone(ContentItem item)
         {
             // Skip null
             if (item == null)
                 return;
 
-            // TODO: don't allow to duplicate items without ParentFolder - like root items (Content, Source, Engien and Editor dirs)
+            // TODO: don't allow to duplicate items without ParentFolder - like root items (Content, Source, Engine and Editor dirs)
 
             // Clone item
             var targetPath = GetClonedAssetPath(item);
@@ -323,13 +394,17 @@ namespace FlaxEditor.Windows
             }
         }
 
-        private void Clone(List<ContentItem> items)
+        /// <summary>
+        /// Clones the specified items.
+        /// </summary>
+        /// <param name="items">The items.</param>
+        public void Clone(List<ContentItem> items)
         {
             // Skip empty or null case
             if (items == null || items.Count == 0)
                 return;
 
-            // TODO: don't allow to duplicate items without ParentFolder - like root items (Content, Source, Engien and Editor dirs)
+            // TODO: don't allow to duplicate items without ParentFolder - like root items (Content, Source, Engine and Editor dirs)
 
             // Check if it's just a single item
             if (items.Count == 1)
@@ -338,7 +413,7 @@ namespace FlaxEditor.Windows
             }
             else
             {
-                // TODO: remove items that depend on diffrent items in the list: use wants to remove `folderA` and `folderA/asset.x`, we should just remove `folderA`
+                // TODO: remove items that depend on different items in the list: use wants to remove `folderA` and `folderA/asset.x`, we should just remove `folderA`
                 var toDuplicate = new List<ContentItem>(items);
 
                 // Duplicate every item
@@ -351,9 +426,18 @@ namespace FlaxEditor.Windows
         }
 
         /// <summary>
+        /// Pastes the specified files.
+        /// </summary>
+        /// <param name="files">The files paths to import.</param>
+        public void Paste(string[] files)
+        {
+            Editor.ContentImporting.Import(files, CurrentViewFolder);
+        }
+
+        /// <summary>
         /// Stars creating the folder.
         /// </summary>
-        private void NewFolder()
+        public void NewFolder()
         {
             // Construct path
             var parentFolder = SelectedNode.Folder;
@@ -384,9 +468,13 @@ namespace FlaxEditor.Windows
         /// Starts creating new item.
         /// </summary>
         /// <param name="proxy">The new item proxy.</param>
-        private void NewItem(ContentProxy proxy)
+        /// <param name="argument">The argument passed to the proxy for the item creation. In most cases it is null.</param>
+        /// <param name="created">The event called when the item is crated by the user. The argument is the new item.</param>
+        public void NewItem(ContentProxy proxy, object argument = null, Action<ContentItem> created = null)
         {
             Assert.IsNull(_newElement);
+            if (proxy == null)
+                throw new ArgumentNullException(nameof(proxy));
 
             string proxyName = proxy.Name;
             ContentFolder parentFolder = CurrentViewFolder;
@@ -402,8 +490,9 @@ namespace FlaxEditor.Windows
             } while (parentFolder.FindChild(path) != null);
 
             // Create new asset proxy, add to view and rename it
-            _newElement = new NewItem(path, proxy);
+            _newElement = new NewItem(path, proxy, argument);
             _newElement.ParentFolder = parentFolder;
+            _newElement.Tag = created;
             RefreshView();
             Rename(_newElement);
         }
@@ -493,14 +582,22 @@ namespace FlaxEditor.Windows
             // Focus
             _view.Focus();
         }
-		
-        private void RefreshView()
+
+        /// <summary>
+        /// Refreshes the current view items collection.
+        /// </summary>
+        public void RefreshView()
         {
             RefreshView(SelectedNode);
         }
 
-        private void RefreshView(ContentTreeNode target)
+        /// <summary>
+        /// Refreshes the view.
+        /// </summary>
+        /// <param name="target">The target location.</param>
+        public void RefreshView(ContentTreeNode target)
         {
+            _view.IsSearching = false;
             if (target == _root)
             {
                 // Special case for root folder
@@ -527,26 +624,26 @@ namespace FlaxEditor.Windows
             UpdateNavigationBar();
         }
 
-	    private void UpdateToolstrip()
-	    {
-		    if (_toolStrip == null)
-			    return;
+        private void UpdateToolstrip()
+        {
+            if (_toolStrip == null)
+                return;
 
-		    // Update buttons
-		    var folder = CurrentViewFolder;
-		    _importButton.Enabled = folder != null && folder.CanHaveAssets;
-		    _navigateBackwardButton.Enabled = _navigationUndo.Count > 0;
-		    _navigateForwardButton.Enabled = _navigationRedo.Count > 0;
-		    _nnavigateUpButton.Enabled = folder != null && _tree.SelectedNode != _root;
-	    }
+            // Update buttons
+            var folder = CurrentViewFolder;
+            _importButton.Enabled = folder != null && folder.CanHaveAssets;
+            _navigateBackwardButton.Enabled = _navigationUndo.Count > 0;
+            _navigateForwardButton.Enabled = _navigationRedo.Count > 0;
+            _nnavigateUpButton.Enabled = folder != null && _tree.SelectedNode != _root;
+        }
 
-	    private void addFolder2Root(MainContentTreeNode node)
+        private void AddFolder2Root(MainContentTreeNode node)
         {
             // Add to the root
             _root.AddChild(node);
         }
 
-        private void removeFolder2Root(MainContentTreeNode node)
+        private void RemoveFolder2Root(MainContentTreeNode node)
         {
             // Remove from the root
             _root.RemoveChild(node);
@@ -557,15 +654,17 @@ namespace FlaxEditor.Windows
         {
             // Setup content root node
             _root = new RootContentTreeNode();
+            _root.ChildrenIndent = 0;
             _root.Expand();
-            addFolder2Root(Editor.ContentDatabase.ProjectContent);
-            addFolder2Root(Editor.ContentDatabase.ProjectSource);
+            AddFolder2Root(Editor.ContentDatabase.ProjectContent);
+            AddFolder2Root(Editor.ContentDatabase.ProjectSource);
             if (Editor.IsDevInstance())
             {
                 // Flax internal assets locations
-                addFolder2Root(Editor.ContentDatabase.EnginePrivate);
-                addFolder2Root(Editor.ContentDatabase.EditorPrivate);
+                AddFolder2Root(Editor.ContentDatabase.EnginePrivate);
+                AddFolder2Root(Editor.ContentDatabase.EditorPrivate);
             }
+            _tree.Margin = new Margin(0.0f, 0.0f, -16.0f, 2.0f); // Hide root node
             _tree.AddChild(_root);
             _root.SortChildrenRecursive();
 
@@ -577,7 +676,7 @@ namespace FlaxEditor.Windows
             // Update UI layout
             UnlockChildrenRecursive();
             PerformLayout();
-            
+
             // TODO: load last viewed folder
         }
 
@@ -607,7 +706,7 @@ namespace FlaxEditor.Windows
             {
                 while (_root.HasChildren)
                 {
-                    removeFolder2Root((MainContentTreeNode)_root.GetChild(0));
+                    RemoveFolder2Root((MainContentTreeNode)_root.GetChild(0));
                 }
             }
         }
@@ -620,21 +719,21 @@ namespace FlaxEditor.Windows
             {
                 // Find control that is under the mouse
                 var c = GetChildAtRecursive(location);
-                
+
                 if (c is ContentItem item)
                 {
                     if (_view.IsSelected(item) == false)
                         _view.Select(item);
-                    ShowContextMenuForItem(item, ref location);
+                    ShowContextMenuForItem(item, ref location, false);
                 }
                 else if (c is ContentView)
                 {
-                    ShowContextMenuForItem(null, ref location);
+                    ShowContextMenuForItem(null, ref location, false);
                 }
                 else if (c is ContentTreeNode node)
                 {
                     _tree.Select(node);
-                    ShowContextMenuForItem(node.Folder, ref location);
+                    ShowContextMenuForItem(node.Folder, ref location, true);
                 }
 
                 return true;
@@ -648,44 +747,45 @@ namespace FlaxEditor.Windows
         {
             base.PerformLayoutSelf();
 
-            // Update navigation panel
-            if (_toolStrip != null && _navigationBar != null)
-            {
-                var lastTiilstripButton = _toolStrip.LastButton;
-                var bounds = new Rectangle(
-                    new Vector2(lastTiilstripButton.Right + 8.0f, 0),
-                    new Vector2(Width - _navigationBar.X - 8.0f, _navigationBar.Height)
-                );
-                _navigationBar.Bounds = bounds;
-            }
+            _navigationBar?.UpdateBounds(_toolStrip);
         }
 
-	    /// <inheritdoc />
-	    public override bool UseLayoutData => true;
-		
-	    /// <inheritdoc />
-	    public override void OnLayoutSerialize(XmlWriter writer)
-	    {
-		    writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
-		    writer.WriteAttributeString("Scale", _view.Scale.ToString());
-	    }
+        /// <inheritdoc />
+        public override bool UseLayoutData => true;
 
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize(XmlElement node)
-	    {
-		    float value1;
+        /// <inheritdoc />
+        public override void OnLayoutSerialize(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
+            writer.WriteAttributeString("Scale", _view.ViewScale.ToString());
+        }
 
-			if (float.TryParse(node.GetAttribute("Split"), out value1))
-			    _split.SplitterValue = value1;
-		    if (float.TryParse(node.GetAttribute("Scale"), out value1))
-			    _view.Scale = value1;
-	    }
-	    
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize()
-	    {
-		    _split.SplitterValue = 0.2f;
-		    _view.Scale = 1.0f;
-	    }
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize(XmlElement node)
+        {
+            float value1;
+
+            if (float.TryParse(node.GetAttribute("Split"), out value1))
+                _split.SplitterValue = value1;
+            if (float.TryParse(node.GetAttribute("Scale"), out value1))
+                _view.ViewScale = value1;
+        }
+
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize()
+        {
+            _split.SplitterValue = 0.2f;
+            _view.ViewScale = 1.0f;
+        }
+
+        /// <inheritdoc />
+        public override void Dispose()
+        {
+            _foldersSearchBox = null;
+            _itemsSearchBox = null;
+            _itemsFilterBox = null;
+
+            base.Dispose();
+        }
     }
 }

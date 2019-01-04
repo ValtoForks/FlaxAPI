@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Diagnostics;
@@ -127,6 +127,16 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Logs the raw message to the log.
+        /// </summary>
+        /// <param name="logType">Type of the log message. Not: fatal will stop the engine. Error may show a message popup.</param>
+        /// <param name="message">The message contents.</param>
+        public static void Write(LogType logType, string message)
+        {
+            Logger.LogHandler.LogWrite(logType, message);
+        }
+
+        /// <summary>
         /// Logs message to the Flax Console.
         /// </summary>
         /// <param name="message">String or object to be converted to string representation for display.</param>
@@ -236,6 +246,12 @@ namespace FlaxEngine
         public static void LogException(Exception exception)
         {
             Logger.LogException(exception, null);
+
+            if (exception.InnerException != null)
+            {
+                LogWarning("Inner exception:");
+                LogException(exception.InnerException);
+            }
         }
 
         /// <summary>
@@ -246,6 +262,12 @@ namespace FlaxEngine
         public static void LogException(Exception exception, Object context)
         {
             Logger.LogException(exception, context);
+
+            if (exception.InnerException != null)
+            {
+                LogWarning("Inner exception:");
+                LogException(exception.InnerException, context);
+            }
         }
 
         /// <summary>

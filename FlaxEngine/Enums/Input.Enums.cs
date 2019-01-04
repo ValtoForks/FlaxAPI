@@ -1,27 +1,27 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
-	/// <summary>
-	/// Hardware mouse cursor behaviour.
-	/// </summary>
-	public enum CursorLockMode
-	{
-		/// <summary>
-		/// The default mode.
-		/// </summary>
-		None = 0,
+    /// <summary>
+    /// Hardware mouse cursor behaviour.
+    /// </summary>
+    public enum CursorLockMode
+    {
+        /// <summary>
+        /// The default mode.
+        /// </summary>
+        None = 0,
 
-		/// <summary>
-		/// Cursor position is locked to the center of the game window.
-		/// </summary>
-		Locked = 1,
-	}
+        /// <summary>
+        /// Cursor position is locked to the center of the game window.
+        /// </summary>
+        Locked = 1,
+    }
 
-	/// <summary>
-	/// Mouse buttons types.
-	/// </summary>
-	public enum MouseButton
+    /// <summary>
+    /// Mouse buttons types.
+    /// </summary>
+    public enum MouseButton
     {
         /// <summary>
         /// No button.
@@ -232,7 +232,7 @@ namespace FlaxEngine
     public enum InputActionMode
     {
         /// <summary>
-        /// Uuser is pressing the key/button.
+        /// User is pressing the key/button.
         /// </summary>
         Pressing = 0,
 
@@ -242,7 +242,7 @@ namespace FlaxEngine
         Press = 1,
 
         /// <summary>
-        /// User released the key/button (was presssing it in the previous frame).
+        /// User released the key/button (was pressing it in the previous frame).
         /// </summary>
         Release = 2,
     }
@@ -294,17 +294,17 @@ namespace FlaxEngine
     public enum InputAxisType
     {
         /// <summary>
-        /// The mouse X-Axis (mouse delta position scaled by the sensitivty).
+        /// The mouse X-Axis (mouse delta position scaled by the sensitivity).
         /// </summary>
         MouseX = 0,
 
         /// <summary>
-        /// The mouse Y-Axis (mouse delta position scaled by the sensitivty).
+        /// The mouse Y-Axis (mouse delta position scaled by the sensitivity).
         /// </summary>
         MouseY = 1,
 
         /// <summary>
-        /// The mouse wheel (mouse wheel delta scaled by the sensitivty).
+        /// The mouse wheel (mouse wheel delta scaled by the sensitivity).
         /// </summary>
         MouseWheel = 2,
 

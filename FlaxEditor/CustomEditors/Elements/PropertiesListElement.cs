@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -52,6 +50,18 @@ namespace FlaxEditor.CustomEditors.Elements
             label.TooltipText = tooltip;
             label.FirstChildControlIndex = Properties.Children.Count;
             Labels.Add(label);
+        }
+
+        /// <inheritdoc />
+        protected override void OnAddEditor(CustomEditor editor)
+        {
+            // Link to the last label
+            if (Labels.Count > 0)
+            {
+                Labels[Labels.Count - 1].LinkEditor(editor);
+            }
+
+            base.OnAddEditor(editor);
         }
 
         /// <inheritdoc />

@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -212,9 +212,9 @@ namespace FlaxEngine
         Menu = 5,
 
         /// <summary>
-        /// The horizontal scrol.
+        /// The horizontal scroll.
         /// </summary>
-        HScrol = 6,
+        HScroll = 6,
 
         /// <summary>
         /// The vertical scroll.
@@ -303,7 +303,7 @@ namespace FlaxEngine
         CenterParent = 0,
 
         /// <summary>
-        /// The windows is centered on the current display, and has the dimensions specified in the windows's size.
+        /// The windows is centered on the current display, and has the dimensions specified in the window's size.
         /// </summary>
         CenterScreen = 1,
 

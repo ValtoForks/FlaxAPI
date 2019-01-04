@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -21,11 +19,7 @@ namespace FlaxEditor.Surface.Elements
         public bool Value
         {
             get => (bool)ParentNode.Values[Archetype.ValueIndex];
-            set
-            {
-                ParentNode.Values[Archetype.ValueIndex] = value;
-                ParentNode.Surface.MarkAsEdited();
-            }
+            set { ParentNode.SetValue(Archetype.ValueIndex, value); }
         }
 
         /// <summary>
@@ -38,7 +32,7 @@ namespace FlaxEditor.Surface.Elements
 
         /// <inheritdoc />
         public BoolValue(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(parentNode, archetype, 16, 16, true)
+        : base(parentNode, archetype, 16, 16, true)
         {
         }
 
@@ -53,12 +47,8 @@ namespace FlaxEditor.Surface.Elements
             bool value = Value;
 
             // Background
-            Color backgroundColor;
-            if (IsMouseOver)
-                backgroundColor = style.TextBoxBackgroundSelected;
-            else
-                backgroundColor = style.TextBoxBackground;
-            Render2D.FillRectangle(box, backgroundColor, true);
+            var backgroundColor = IsMouseOver ? style.TextBoxBackgroundSelected : style.TextBoxBackground;
+            Render2D.FillRectangle(box, backgroundColor);
 
             // Border
             Color borderColor = style.BorderNormal;
@@ -101,10 +91,114 @@ namespace FlaxEditor.Surface.Elements
         /// <inheritdoc />
         public override void OnMouseLeave()
         {
-            // Clar flag
+            // Clear flag
             _mouseDown = false;
 
             base.OnMouseLeave();
+        }
+
+        /// <summary>
+        /// Gets the boolean value from the specified parent node. Handles type casting and components gather.
+        /// </summary>
+        /// <param name="parentNode">The parent node.</param>
+        /// <param name="arch">The node element archetype.</param>
+        /// <returns>The result value.</returns>
+        public static bool Get(SurfaceNode parentNode, NodeElementArchetype arch)
+        {
+            if (arch.ValueIndex < 0)
+                return false;
+
+            bool result;
+            var value = parentNode.Values[arch.ValueIndex];
+
+            // Note: this value box may edit on component of the vector like Vector3.Y, BoxID from Archetype tells which component pick
+
+            if (value is int valueInt)
+            {
+                result = valueInt != 0;
+            }
+            else if (value is float valueFloat)
+            {
+                result = !Mathf.IsZero(valueFloat);
+            }
+            else if (value is Vector2 valueVec2)
+            {
+                result = !Mathf.IsZero(arch.BoxID == 0 ? valueVec2.X : valueVec2.Y);
+            }
+            else if (value is Vector3 valueVec3)
+            {
+                result = !Mathf.IsZero(arch.BoxID == 0 ? valueVec3.X : arch.BoxID == 1 ? valueVec3.Y : valueVec3.Z);
+            }
+            else if (value is Vector4 valueVec4)
+            {
+                result = !Mathf.IsZero(arch.BoxID == 0 ? valueVec4.X : arch.BoxID == 1 ? valueVec4.Y : arch.BoxID == 2 ? valueVec4.Z : valueVec4.W);
+            }
+            else
+            {
+                result = false;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Sets the boolean value of the specified parent node. Handles type casting and components assignment.
+        /// </summary>
+        /// <param name="parentNode">The parent node.</param>
+        /// <param name="arch">The node element archetype.</param>
+        /// <param name="toSet">The value to set.</param>
+        public static void Set(SurfaceNode parentNode, NodeElementArchetype arch, bool toSet)
+        {
+            if (arch.ValueIndex < 0)
+                return;
+
+            var value = parentNode.Values[arch.ValueIndex];
+            float toSetF = toSet ? 1.0f : 0.0f;
+
+            if (value is int)
+            {
+                value = toSet;
+            }
+            else if (value is float)
+            {
+                value = (bool)toSet;
+            }
+            else if (value is Vector2 valueVec2)
+            {
+                if (arch.BoxID == 0)
+                    valueVec2.X = toSetF;
+                else
+                    valueVec2.Y = toSetF;
+                value = valueVec2;
+            }
+            else if (value is Vector3 valueVec3)
+            {
+                if (arch.BoxID == 0)
+                    valueVec3.X = toSetF;
+                else if (arch.BoxID == 1)
+                    valueVec3.Y = toSetF;
+                else
+                    valueVec3.Z = toSetF;
+                value = valueVec3;
+            }
+            else if (value is Vector4 valueVec4)
+            {
+                if (arch.BoxID == 0)
+                    valueVec4.X = toSetF;
+                else if (arch.BoxID == 1)
+                    valueVec4.Y = toSetF;
+                else if (arch.BoxID == 2)
+                    valueVec4.Z = toSetF;
+                else
+                    valueVec4.W = toSetF;
+                value = valueVec4;
+            }
+            else
+            {
+                value = 0;
+            }
+
+            parentNode.SetValue(arch.ValueIndex, value);
         }
     }
 }

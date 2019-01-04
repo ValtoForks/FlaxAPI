@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.CustomEditors.Elements;
 using FlaxEngine;
@@ -44,16 +42,16 @@ namespace FlaxEditor.CustomEditors.Editors
 
             XElement = grid.FloatValue();
             XElement.FloatValue.ValueChanged += OnValueChanged;
-	        XElement.FloatValue.SlidingEnd += ClearToken;
+            XElement.FloatValue.SlidingEnd += ClearToken;
 
-			YElement = grid.FloatValue();
+            YElement = grid.FloatValue();
             YElement.FloatValue.ValueChanged += OnValueChanged;
-	        YElement.FloatValue.SlidingEnd += ClearToken;
+            YElement.FloatValue.SlidingEnd += ClearToken;
 
-			ZElement = grid.FloatValue();
+            ZElement = grid.FloatValue();
             ZElement.FloatValue.ValueChanged += OnValueChanged;
-	        ZElement.FloatValue.SlidingEnd += ClearToken;
-		}
+            ZElement.FloatValue.SlidingEnd += ClearToken;
+        }
 
         private void OnValueChanged()
         {
@@ -63,17 +61,19 @@ namespace FlaxEditor.CustomEditors.Editors
             float x = XElement.FloatValue.Value;
             float y = YElement.FloatValue.Value;
             float z = ZElement.FloatValue.Value;
-	        var isSliding = XElement.IsSliding || YElement.IsSliding || ZElement.IsSliding;
-	        var token = isSliding ? this : null;
-	        Quaternion value;
-	        Quaternion.Euler(x, y, z, out value);
-			SetValue(value, token);
-		}
+            var isSliding = XElement.IsSliding || YElement.IsSliding || ZElement.IsSliding;
+            var token = isSliding ? this : null;
+            Quaternion value;
+            Quaternion.Euler(x, y, z, out value);
+            SetValue(value, token);
+        }
 
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (HasDiffrentValues)
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 // TODO: support different values for ValueBox<T>
             }

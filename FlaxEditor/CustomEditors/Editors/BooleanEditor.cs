@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.CustomEditors.Elements;
 using FlaxEngine;
@@ -22,13 +20,15 @@ namespace FlaxEditor.CustomEditors.Editors
         public override void Initialize(LayoutElementsContainer layout)
         {
             element = layout.Checkbox();
-            element.CheckBox.CheckChanged += (box) => SetValue(box.Checked);
+            element.CheckBox.StateChanged += (box) => SetValue(box.Checked);
         }
 
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (HasDiffrentValues)
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 element.CheckBox.Intermediate = true;
             }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.Content
 {
@@ -13,7 +11,7 @@ namespace FlaxEditor.Content
         /// The source file path (may be empty or null).
         /// </summary>
         string SourceUrl { get; }
-        
+
         /// <summary>
         /// The result file path.
         /// </summary>

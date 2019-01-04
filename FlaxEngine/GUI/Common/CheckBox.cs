@@ -1,11 +1,30 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
 namespace FlaxEngine.GUI
 {
+    /// <summary>
+    /// The checkbox control states.
+    /// </summary>
+    public enum CheckBoxState
+    {
+        /// <summary>
+        /// The default state.
+        /// </summary>
+        Default,
+
+        /// <summary>
+        /// The checked state.
+        /// </summary>
+        Checked,
+
+        /// <summary>
+        /// The intermediate state.
+        /// </summary>
+        Intermediate,
+    }
+
     /// <summary>
     /// Check box control.
     /// </summary>
@@ -18,14 +37,9 @@ namespace FlaxEngine.GUI
         protected bool _mouseDown;
 
         /// <summary>
-        /// The checked state.
+        /// The current state.
         /// </summary>
-        protected bool _checked;
-
-        /// <summary>
-        /// The intermediate state.
-        /// </summary>
-        protected bool _intermediate;
+        protected CheckBoxState _state;
 
         /// <summary>
         /// The mouse over box state.
@@ -43,31 +57,41 @@ namespace FlaxEngine.GUI
         protected Rectangle _box;
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="CheckBox"/> is checked.
+        /// Gets or sets the state of the checkbox.
         /// </summary>
-        public bool Checked
+        [EditorOrder(10)]
+        public CheckBoxState State
         {
-            get => _checked;
+            get => _state;
             set
             {
-                if (_checked != value || _intermediate)
+                if (_state != value)
                 {
-                    // Disable intermidiate value
-                    _intermediate = false;
+                    _state = value;
 
-                    _checked = value;
-                    CheckChanged?.Invoke(this);
+                    StateChanged?.Invoke(this);
                 }
             }
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="CheckBox"/> is checked.
+        /// </summary>
+        [NoSerialize, HideInEditor]
+        public bool Checked
+        {
+            get => _state == CheckBoxState.Checked;
+            set => State = value ? CheckBoxState.Checked : CheckBoxState.Default;
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this <see cref="CheckBox"/> is in the intermediate state.
         /// </summary>
+        [NoSerialize, HideInEditor]
         public bool Intermediate
         {
-            get => _intermediate;
-            set => _intermediate = value;
+            get => _state == CheckBoxState.Intermediate;
+            set => State = value ? CheckBoxState.Intermediate : CheckBoxState.Default;
         }
 
         /// <summary>
@@ -84,9 +108,47 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
+        /// Gets or sets the color of the checkbox icon.
+        /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000)]
+        public Color ImageColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the border.
+        /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000)]
+        public Color BorderColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the border color when checkbox is hovered.
+        /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000)]
+        public Color BorderColorHighlighted { get; set; }
+
+        /// <summary>
+        /// Gets or sets the image used to render checkbox checked state.
+        /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000), Tooltip("The image used to render checkbox checked state.")]
+        public IBrush CheckedImage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the image used to render checkbox intermediate state.
+        /// </summary>
+        [EditorDisplay("Style"), EditorOrder(2000), Tooltip("The image used to render checkbox intermediate state.")]
+        public IBrush IntermediateImage { get; set; }
+
+        /// <summary>
         /// Event fired when 'checked' state gets changed.
         /// </summary>
-        public event Action<CheckBox> CheckChanged;
+        public event Action<CheckBox> StateChanged;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CheckBox"/> class.
+        /// </summary>
+        public CheckBox()
+        : this(0, 0)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckBox"/> class.
@@ -94,11 +156,19 @@ namespace FlaxEngine.GUI
         /// <param name="x">The x.</param>
         /// <param name="y">The y.</param>
         /// <param name="isChecked">if set to <c>true</c> set checked on start.</param>
-        public CheckBox(float x, float y, bool isChecked = false)
-            : base(x, y, 18, 18)
+        /// <param name="size">The checkbox size.</param>
+        public CheckBox(float x, float y, bool isChecked = false, float size = 18)
+        : base(x, y, size, size)
         {
-            _checked = isChecked;
+            _state = isChecked ? CheckBoxState.Checked : CheckBoxState.Default;
             _boxSize = 16.0f;
+
+            var style = Style.Current;
+            ImageColor = style.BorderSelected * 1.2f;
+            BorderColor = style.BorderNormal;
+            BorderColorHighlighted = style.BorderSelected;
+            CheckedImage = new SpriteBrush(style.CheckBoxTick);
+            IntermediateImage = new SpriteBrush(style.CheckBoxIntermediate);
 
             CacheBox();
         }
@@ -108,12 +178,12 @@ namespace FlaxEngine.GUI
         /// </summary>
         public void Toggle()
         {
-            Checked = !_intermediate && !_checked;
+            Checked = !Checked;
         }
 
         private void CacheBox()
         {
-            _box = new Rectangle(0, (Height - _boxSize) / 2, _boxSize, _boxSize);
+            _box = new Rectangle(0, (Height - _boxSize) * 0.5f, _boxSize, _boxSize);
         }
 
         /// <inheritdoc />
@@ -124,17 +194,25 @@ namespace FlaxEngine.GUI
             bool enabled = EnabledInHierarchy;
 
             // Border
-            var style = Style.Current;
-            Color borderColor = style.BorderNormal;
+            Color borderColor = BorderColor;
             if (!enabled)
                 borderColor *= 0.5f;
             else if (_mouseDown || _mouseOverBox)
-                borderColor = style.BorderSelected;
+                borderColor = BorderColorHighlighted;
             Render2D.DrawRectangle(_box, borderColor);
 
             // Icon
-            if (_intermediate || _checked)
-                Render2D.DrawSprite(_checked ? style.CheckBoxTick : style.CheckBoxIntermediate, _box, enabled ? style.BorderSelected * 1.2f : style.ForegroundDisabled);
+            if (_state != CheckBoxState.Default)
+            {
+                var color = ImageColor;
+                if (!enabled)
+                    color *= 0.6f;
+
+                if (_state == CheckBoxState.Checked)
+                    CheckedImage?.Draw(_box, color);
+                else
+                    IntermediateImage?.Draw(_box, color);
+            }
         }
 
         /// <inheritdoc />
@@ -152,8 +230,8 @@ namespace FlaxEngine.GUI
             {
                 // Set flag
                 _mouseDown = true;
-	            Focus();
-	            return true;
+                Focus();
+                return true;
             }
 
             return base.OnMouseDown(location, buttons);
@@ -171,9 +249,9 @@ namespace FlaxEngine.GUI
                 if (_mouseOverBox)
                 {
                     Toggle();
-	                Focus();
-	                return true;
-				}
+                    Focus();
+                    return true;
+                }
             }
 
             return base.OnMouseUp(location, buttons);
@@ -190,9 +268,9 @@ namespace FlaxEngine.GUI
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
-            base.SetSizeInternal(size);
+            base.SetSizeInternal(ref size);
 
             CacheBox();
         }

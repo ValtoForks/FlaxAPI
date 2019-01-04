@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -51,7 +49,7 @@ namespace FlaxEngine
         /// </summary>
         /// <param name="logType">The type of the log message.</param>
         /// <returns>
-        /// Retrun true in case logs of LogType will be logged otherwise returns false.
+        /// Return true in case logs of LogType will be logged otherwise returns false.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsLogTypeAllowed(LogType logType)

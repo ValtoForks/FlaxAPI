@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -14,7 +12,7 @@ namespace FlaxEditor.SceneGraph.Actors
     {
         /// <inheritdoc />
         public SkyLightNode(Actor actor)
-            : base(actor)
+        : base(actor)
         {
         }
     }

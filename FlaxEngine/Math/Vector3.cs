@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -50,6 +50,7 @@
 */
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -61,6 +62,7 @@ namespace FlaxEngine
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [TypeConverter(typeof(TypeConverters.Vector3Converter))]
     public struct Vector3 : IEquatable<Vector3>, IFormattable
     {
         private static readonly string _formatString = "X:{0:F2} Y:{1:F2} Z:{2:F2}";
@@ -96,6 +98,11 @@ namespace FlaxEngine
         public static readonly Vector3 One = new Vector3(1.0f, 1.0f, 1.0f);
 
         /// <summary>
+        /// A <see cref="Vector3" /> with all of its components set to half.
+        /// </summary>
+        public static readonly Vector3 Half = new Vector3(0.5f, 0.5f, 0.5f);
+
+        /// <summary>
         /// A unit <see cref="Vector3" /> designating up (0, 1, 0).
         /// </summary>
         public static readonly Vector3 Up = new Vector3(0.0f, 1.0f, 0.0f);
@@ -116,24 +123,14 @@ namespace FlaxEngine
         public static readonly Vector3 Right = new Vector3(1.0f, 0.0f, 0.0f);
 
         /// <summary>
-        /// A unit <see cref="Vector3" /> designating forward in a right-handed coordinate system (0, 0, -1).
-        /// </summary>
-        public static readonly Vector3 ForwardRH = new Vector3(0.0f, 0.0f, -1.0f);
-
-        /// <summary>
         /// A unit <see cref="Vector3" /> designating forward in a left-handed coordinate system (0, 0, 1).
         /// </summary>
-        public static readonly Vector3 ForwardLH = new Vector3(0.0f, 0.0f, 1.0f);
-
-        /// <summary>
-        /// A unit <see cref="Vector3" /> designating backward in a right-handed coordinate system (0, 0, 1).
-        /// </summary>
-        public static readonly Vector3 BackwardRH = new Vector3(0.0f, 0.0f, 1.0f);
+        public static readonly Vector3 Forward = new Vector3(0.0f, 0.0f, 1.0f);
 
         /// <summary>
         /// A unit <see cref="Vector3" /> designating backward in a left-handed coordinate system (0, 0, -1).
         /// </summary>
-        public static readonly Vector3 BackwardLH = new Vector3(0.0f, 0.0f, -1.0f);
+        public static readonly Vector3 Backward = new Vector3(0.0f, 0.0f, -1.0f);
 
         /// <summary>
         /// A <see cref="Vector3" /> with all components equal to <see cref="float.MinValue"/>.
@@ -298,9 +295,9 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0: return X;
-                    case 1: return Y;
-                    case 2: return Z;
+                case 0: return X;
+                case 1: return Y;
+                case 2: return Z;
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector3 run from 0 to 2, inclusive.");
@@ -310,16 +307,16 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                        X = value;
-                        break;
-                    case 1:
-                        Y = value;
-                        break;
-                    case 2:
-                        Z = value;
-                        break;
-                    default: throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector3 run from 0 to 2, inclusive.");
+                case 0:
+                    X = value;
+                    break;
+                case 1:
+                    Y = value;
+                    break;
+                case 2:
+                    Z = value;
+                    break;
+                default: throw new ArgumentOutOfRangeException(nameof(index), "Indices for Vector3 run from 0 to 2, inclusive.");
                 }
             }
         }
@@ -385,7 +382,12 @@ namespace FlaxEngine
         /// <returns>A three-element array containing the components of the vector.</returns>
         public float[] ToArray()
         {
-            return new[] { X, Y, Z };
+            return new[]
+            {
+                X,
+                Y,
+                Z
+            };
         }
 
         /// <summary>
@@ -458,7 +460,7 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="left">The input vector</param>
-        /// <param name="right">The scalar value to be subtraced from elements</param>
+        /// <param name="right">The scalar value to be subtracted from elements</param>
         /// <param name="result">The vector with subtracted scalar for each element.</param>
         public static void Subtract(ref Vector3 left, ref float right, out Vector3 result)
         {
@@ -469,7 +471,7 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="left">The input vector</param>
-        /// <param name="right">The scalar value to be subtraced from elements</param>
+        /// <param name="right">The scalar value to be subtracted from elements</param>
         /// <returns>The vector with subtracted scalar for each element.</returns>
         public static Vector3 Subtract(Vector3 left, float right)
         {
@@ -479,7 +481,7 @@ namespace FlaxEngine
         /// <summary>
         /// Perform a component-wise subtraction
         /// </summary>
-        /// <param name="left">The scalar value to be subtraced from elements</param>
+        /// <param name="left">The scalar value to be subtracted from elements</param>
         /// <param name="right">The input vector.</param>
         /// <param name="result">The vector with subtracted scalar for each element.</param>
         public static void Subtract(ref float left, ref Vector3 right, out Vector3 result)
@@ -490,7 +492,7 @@ namespace FlaxEngine
         /// <summary>
         /// Perform a component-wise subtraction
         /// </summary>
-        /// <param name="left">The scalar value to be subtraced from elements</param>
+        /// <param name="left">The scalar value to be subtracted from elements</param>
         /// <param name="right">The input vector.</param>
         /// <returns>The vector with subtracted scalar for each element.</returns>
         public static Vector3 Subtract(float left, Vector3 right)
@@ -825,6 +827,90 @@ namespace FlaxEngine
         }
 
         /// <summary>
+        /// Calculates the distance between two vectors on the XY plane (ignoring Z).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector.</param>
+        /// <param name="result">When the method completes, contains the distance between the two vectors in the XY plane.</param>
+        public static void DistanceXY(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float x = value1.X - value2.X;
+            float y = value1.Y - value2.Y;
+
+            result = (float)Math.Sqrt(x * x + y * y);
+        }
+
+        /// <summary>
+        /// Calculates the squared distance between two vectors on the XY plane (ignoring Z).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector</param>
+        /// <param name="result">When the method completes, contains the squared distance between the two vectors in the XY plane.</param>
+        public static void DistanceXYSquared(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float x = value1.X - value2.X;
+            float y = value1.Y - value2.Y;
+
+            result = x * x + y * y;
+        }
+
+        /// <summary>
+        /// Calculates the distance between two vectors on the XZ plane (ignoring Y).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector.</param>
+        /// <param name="result">When the method completes, contains the distance between the two vectors in the XY plane.</param>
+        public static void DistanceXZ(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float x = value1.X - value2.X;
+            float z = value1.Z - value2.Z;
+
+            result = (float)Math.Sqrt(x * x + z * z);
+        }
+
+        /// <summary>
+        /// Calculates the squared distance between two vectors on the XZ plane (ignoring Y).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector</param>
+        /// <param name="result">When the method completes, contains the squared distance between the two vectors in the XY plane.</param>
+        public static void DistanceXZSquared(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float x = value1.X - value2.X;
+            float z = value1.Z - value2.Z;
+
+            result = x * x + z * z;
+        }
+
+        /// <summary>
+        /// Calculates the distance between two vectors on the YZ plane (ignoring X).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector.</param>
+        /// <param name="result">When the method completes, contains the distance between the two vectors in the YZ plane.</param>
+        public static void DistanceYZ(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float y = value1.Y - value2.Y;
+            float z = value1.Z - value2.Z;
+
+            result = (float)Math.Sqrt(y * y + z * z);
+        }
+
+        /// <summary>
+        /// Calculates the squared distance between two vectors on the YZ plane (ignoring X).
+        /// </summary>
+        /// <param name="value1">The first vector.</param>
+        /// <param name="value2">The second vector</param>
+        /// <param name="result">When the method completes, contains the squared distance between the two vectors in the YZ plane.</param>
+        public static void DistanceYZSquared(ref Vector3 value1, ref Vector3 value2, out float result)
+        {
+            float y = value1.Y - value2.Y;
+            float z = value1.Z - value2.Z;
+
+            result = y * y + z * z;
+        }
+
+        /// <summary>
         /// Tests whether one 3D vector is near another 3D vector.
         /// </summary>
         /// <param name="left">The left vector.</param>
@@ -859,6 +945,17 @@ namespace FlaxEngine
         public static void Dot(ref Vector3 left, ref Vector3 right, out float result)
         {
             result = left.X * right.X + left.Y * right.Y + left.Z * right.Z;
+        }
+
+        /// <summary>
+        /// Calculates the dot product of two vectors.
+        /// </summary>
+        /// <param name="left">First source vector.</param>
+        /// <param name="right">Second source vector.</param>
+        /// <returns>The dot product of the two vectors.</returns>
+        public static float Dot(ref Vector3 left, ref Vector3 right)
+        {
+            return left.X * right.X + left.Y * right.Y + left.Z * right.Z;
         }
 
         /// <summary>
@@ -1105,6 +1202,45 @@ namespace FlaxEngine
         public static Vector3 Abs(Vector3 v)
         {
             return new Vector3(Math.Abs(v.X), Math.Abs(v.Y), Math.Abs(v.Z));
+        }
+
+        /// <summary>
+        /// Projects a vector onto another vector.
+        /// </summary>
+        /// <param name="vector">The vector to project.</param>
+        /// <param name="onNormal">The projection normal vector.</param>
+        /// <returns>The projected vector.</returns>
+        public static Vector3 Project(Vector3 vector, Vector3 onNormal)
+        {
+            float sqrMag = Dot(onNormal, onNormal);
+            if (sqrMag < Mathf.Epsilon)
+                return Zero;
+            return onNormal * Dot(vector, onNormal) / sqrMag;
+        }
+
+        /// <summary>
+        /// Projects a vector onto a plane defined by a normal orthogonal to the plane.
+        /// </summary>
+        /// <param name="vector">The vector to project.</param>
+        /// <param name="planeNormal">The plane normal vector.</param>
+        /// <returns>The projected vector.</returns>
+        public static Vector3 ProjectOnPlane(Vector3 vector, Vector3 planeNormal)
+        {
+            return vector - Project(vector, planeNormal);
+        }
+
+        /// <summary>
+        /// Calculates the angle (in degrees) between <paramref name="from"/> and <paramref name="to"/>. This is always the smallest value.
+        /// </summary>
+        /// <param name="from">The first vector.</param>
+        /// <param name="to">The second vector.</param>
+        /// <returns>The angle (in degrees).</returns>
+        public static float Angle(Vector3 from, Vector3 to)
+        {
+            float dot = Mathf.Clamp(Dot(from.Normalized, to.Normalized), -1F, 1F);
+            if (Mathf.Abs(dot) > (1F - Mathf.Epsilon))
+                return dot > 0F ? 0F : 180F;
+            return Mathf.Acos(dot) * Mathf.Rad2Deg;
         }
 
         /// <summary>
@@ -1849,7 +1985,7 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="value">The input vector.</param>
-        /// <param name="scalar">The scalar value to be subtraced from elements</param>
+        /// <param name="scalar">The scalar value to be subtracted from elements</param>
         /// <returns>The vector with added scalar from each element.</returns>
         public static Vector3 operator -(Vector3 value, float scalar)
         {
@@ -1860,8 +1996,8 @@ namespace FlaxEngine
         /// Perform a component-wise subtraction
         /// </summary>
         /// <param name="value">The input vector.</param>
-        /// <param name="scalar">The scalar value to be subtraced from elements</param>
-        /// <returns>The vector with subtraced scalar from each element.</returns>
+        /// <param name="scalar">The scalar value to be subtracted from elements</param>
+        /// <returns>The vector with subtracted scalar from each element.</returns>
         public static Vector3 operator -(float scalar, Vector3 value)
         {
             return new Vector3(scalar - value.X, scalar - value.Y, scalar - value.Z);

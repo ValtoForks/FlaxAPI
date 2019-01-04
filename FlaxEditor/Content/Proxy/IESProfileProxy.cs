@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEditor.Content.Thumbnails;
 using FlaxEditor.Viewport.Previews;
 using FlaxEditor.Windows;
@@ -39,10 +38,10 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x695C7F);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => IESProfile.Domain;
+        public override ContentDomain Domain => ContentDomain.IESProfile;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(IESProfile).FullName;
+        public override Type AssetType => typeof(IESProfile);
 
         /// <inheritdoc />
         public override void OnThumbnailDrawPrepare(ThumbnailRequest request)

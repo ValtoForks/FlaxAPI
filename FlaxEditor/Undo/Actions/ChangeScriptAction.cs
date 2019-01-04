@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Modules;
@@ -76,11 +74,16 @@ namespace FlaxEditor.Actions
         }
 
         /// <inheritdoc />
+        public void Dispose()
+        {
+        }
+
+        /// <inheritdoc />
         public void MarkSceneEdited(SceneModule sceneModule)
         {
             var script = FlaxEngine.Object.Find<Script>(ref _scriptId);
             if (script != null)
-                sceneModule.MarkSceneEdited(script.Actor.Scene);
+                sceneModule.MarkSceneEdited(script.Scene);
         }
     }
 }

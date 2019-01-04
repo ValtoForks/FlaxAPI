@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -10,36 +10,99 @@ namespace FlaxEngine.GUI
     /// <seealso cref="FlaxEngine.GUI.ScrollableControl" />
     public class Panel : ScrollableControl
     {
-	    private bool _layoutChanged;
+        private bool _layoutChanged;
+        private int _layoutUpdateLock;
+        private ScrollBars _scrollBars;
 
         /// <summary>
         /// The scroll right corner. Used to scroll contents of the panel control.
         /// </summary>
+        [NoSerialize]
         protected Vector2 _scrollRightCorner;
 
         /// <summary>
         /// The vertical scroll bar.
         /// </summary>
-        public readonly VScrollBar VScrollBar;
+        [HideInEditor, NoSerialize]
+        public VScrollBar VScrollBar;
 
         /// <summary>
         /// The horizontal scroll bar.
         /// </summary>
-        public readonly HScrollBar HScrollBar;
+        [HideInEditor, NoSerialize]
+        public HScrollBar HScrollBar;
 
         /// <summary>
         /// Gets the scrolling right corner.
         /// </summary>
+        [HideInEditor, NoSerialize]
         public Vector2 ScrollRightCorner
         {
             get => _scrollRightCorner;
             internal set => _scrollRightCorner = value;
         }
-        
+
         /// <summary>
         /// Gets the view bottom.
         /// </summary>
         public Vector2 ViewBottom => Size + _viewOffset;
+
+        /// <summary>
+        /// Gets or sets the scroll bars usage by this panel.
+        /// </summary>
+        [EditorOrder(0), Tooltip("The scroll bars usage.")]
+        public ScrollBars ScrollBars
+        {
+            get => _scrollBars;
+            set
+            {
+                if (_scrollBars == value)
+                    return;
+
+                _scrollBars = value;
+
+                if ((value & ScrollBars.Vertical) == ScrollBars.Vertical)
+                {
+                    // Create vertical scroll bar
+                    VScrollBar = new VScrollBar(Width - ScrollBar.DefaultSize, Height)
+                    {
+                        DockStyle = DockStyle.Right,
+                        Parent = this
+                    };
+                }
+                else if (VScrollBar != null)
+                {
+                    VScrollBar.Dispose();
+                    VScrollBar = null;
+                }
+
+                if ((value & ScrollBars.Horizontal) == ScrollBars.Horizontal)
+                {
+                    // Create vertical scroll bar
+                    HScrollBar = new HScrollBar(Height - ScrollBar.DefaultSize, Width)
+                    {
+                        DockStyle = DockStyle.Bottom,
+                        Parent = this
+                    };
+                }
+                else if (HScrollBar != null)
+                {
+                    HScrollBar.Dispose();
+                    HScrollBar = null;
+                }
+
+                PerformLayout();
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Panel"/> class.
+        /// </summary>
+        /// <inheritdoc />
+        public Panel()
+        : this(ScrollBars.None)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Panel"/> class.
@@ -50,24 +113,7 @@ namespace FlaxEngine.GUI
         {
             CanFocus = canFocus;
 
-            if ((scrollBars & ScrollBars.Vertical) == ScrollBars.Vertical)
-            {
-                // Create vertical sroll bar
-                VScrollBar = new VScrollBar(Width - ScrollBar.DefaultSize, Height)
-                {
-                    DockStyle = DockStyle.Right,
-                    Parent = this
-                };
-            }
-            if ((scrollBars & ScrollBars.Horizontal) == ScrollBars.Horizontal)
-            {
-                // Create vertical sroll bar
-                HScrollBar = new HScrollBar(Height - ScrollBar.DefaultSize, Width)
-                {
-                    DockStyle = DockStyle.Bottom,
-                    Parent = this
-                };
-            }
+            ScrollBars = scrollBars;
         }
 
         /// <summary>
@@ -84,7 +130,7 @@ namespace FlaxEngine.GUI
             while (c.HasParent && c.Parent != this)
             {
                 c = c.Parent;
-                location = c.PointToParent(location);
+                location = c.PointToParent(ref location);
             }
 
             if (c.HasParent)
@@ -120,7 +166,7 @@ namespace FlaxEngine.GUI
             PerformLayout();
         }
 
-        internal void setViewOffset(Orientation orientation, float value)
+        internal void SetViewOffset(Orientation orientation, float value)
         {
             if (orientation == Orientation.Vertical)
                 _viewOffset.Y = -value;
@@ -137,9 +183,9 @@ namespace FlaxEngine.GUI
                 return true;
 
             // Roll back to scroll bars
-            if (VScrollBar != null && VScrollBar.Visible && VScrollBar.OnMouseWheel(VScrollBar.PointFromParent(location), delta))
+            if (VScrollBar != null && VScrollBar.Visible && VScrollBar.OnMouseWheel(VScrollBar.PointFromParent(ref location), delta))
                 return true;
-            if (HScrollBar != null && HScrollBar.Visible && HScrollBar.OnMouseWheel(HScrollBar.PointFromParent(location), delta))
+            if (HScrollBar != null && HScrollBar.Visible && HScrollBar.OnMouseWheel(HScrollBar.PointFromParent(ref location), delta))
                 return true;
 
             // No event handled
@@ -168,7 +214,7 @@ namespace FlaxEngine.GUI
         /// <inheritdoc />
         public override void DisposeChildren()
         {
-            // Keep scroll bars alive
+            // Keep scrollbars alive
             if (VScrollBar != null)
                 _children.Remove(VScrollBar);
             if (HScrollBar != null)
@@ -200,7 +246,7 @@ namespace FlaxEngine.GUI
                 // Check if has v scroll bar to reject points on it
                 if (VScrollBar != null && VScrollBar.Visible)
                 {
-                    Vector2 pos = VScrollBar.PointFromParent(location);
+                    Vector2 pos = VScrollBar.PointFromParent(ref location);
                     if (VScrollBar.ContainsPoint(ref pos))
                     {
                         childSpaceLocation = Vector2.Zero;
@@ -211,7 +257,7 @@ namespace FlaxEngine.GUI
                 // Check if has h scroll bar to reject points on it
                 if (HScrollBar != null && HScrollBar.Visible)
                 {
-                    Vector2 pos = HScrollBar.PointFromParent(location);
+                    Vector2 pos = HScrollBar.PointFromParent(ref location);
                     if (HScrollBar.ContainsPoint(ref pos))
                     {
                         childSpaceLocation = Vector2.Zero;
@@ -229,31 +275,37 @@ namespace FlaxEngine.GUI
             base.AddChildInternal(child);
             PerformLayout();
         }
-		
-	    /// <inheritdoc />
-	    public override void PerformLayout(bool force = false)
-	    {
-		    if (!IsLayoutLocked)
-		    {
-			    _layoutChanged = false;
-		    }
 
-		    base.PerformLayout(force);
-			
-		    if (!IsLayoutLocked && _layoutChanged)
-		    {
-			    _layoutChanged = false;
-				PerformLayout(true);
-		    }
-	    }
+        /// <inheritdoc />
+        public override void PerformLayout(bool force = false)
+        {
+            if (_layoutUpdateLock > 2)
+                return;
+            _layoutUpdateLock++;
 
-	    /// <inheritdoc />
+            if (!IsLayoutLocked)
+            {
+                _layoutChanged = false;
+            }
+
+            base.PerformLayout(force);
+
+            if (!IsLayoutLocked && _layoutChanged)
+            {
+                _layoutChanged = false;
+                PerformLayout(true);
+            }
+
+            _layoutUpdateLock--;
+        }
+
+        /// <inheritdoc />
         protected override void PerformLayoutSelf()
         {
-            const float ScrollSpaceLeft = 0.1f;
+            const float scrollSpaceLeft = 0.1f;
 
             // Arrange controls and get scroll bounds
-            ArrageAndGetBounds();
+            ArrangeAndGetBounds();
 
             // Scroll bars
             if (VScrollBar != null)
@@ -265,19 +317,19 @@ namespace FlaxEngine.GUI
                 {
                     // Set scroll bar visibility 
                     VScrollBar.Visible = vScrollEnabled;
-	                _layoutChanged = true;
+                    _layoutChanged = true;
 
-					// Clear scroll state
-					VScrollBar.Reset();
+                    // Clear scroll state
+                    VScrollBar.Reset();
                     _viewOffset.Y = 0;
 
                     // Update
-                    ArrageAndGetBounds();
+                    ArrangeAndGetBounds();
                 }
 
                 if (vScrollEnabled)
                 {
-                    VScrollBar.Maximum = _scrollRightCorner.Y - height * (1 - ScrollSpaceLeft);
+                    VScrollBar.Maximum = _scrollRightCorner.Y - height * (1 - scrollSpaceLeft);
                 }
             }
             if (HScrollBar != null)
@@ -289,30 +341,30 @@ namespace FlaxEngine.GUI
                 {
                     // Set scroll bar visibility 
                     HScrollBar.Visible = hScrollEnabled;
-	                _layoutChanged = true;
+                    _layoutChanged = true;
 
-					// Clear scroll state
-					HScrollBar.Reset();
+                    // Clear scroll state
+                    HScrollBar.Reset();
 
                     _viewOffset.X = 0;
 
                     // Update
-                    ArrageAndGetBounds();
+                    ArrangeAndGetBounds();
                 }
 
                 if (hScrollEnabled)
                 {
-                    HScrollBar.Maximum = _scrollRightCorner.X - width * (1 - ScrollSpaceLeft);
+                    HScrollBar.Maximum = _scrollRightCorner.X - width * (1 - scrollSpaceLeft);
                 }
             }
         }
 
         /// <summary>
-        /// Arrages the child controls and gets their bounds.
+        /// Arranges the child controls and gets their bounds.
         /// </summary>
-        protected virtual void ArrageAndGetBounds()
+        protected virtual void ArrangeAndGetBounds()
         {
-            Arrage();
+            Arrange();
 
             // Calculate scroll area bounds
             Vector2 rigthBottom = Vector2.Zero;
@@ -330,68 +382,64 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
-        /// Arrages the child controls.
+        /// Arranges the child controls.
         /// </summary>
-        protected virtual void Arrage()
+        protected virtual void Arrange()
         {
             base.PerformLayoutSelf();
         }
 
-	    /// <inheritdoc />
-	    public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
-	    {
-		    var result = base.OnDragMove(ref location, data);
+        /// <inheritdoc />
+        public override DragDropEffect OnDragMove(ref Vector2 location, DragData data)
+        {
+            var result = base.OnDragMove(ref location, data);
 
-		    // Auto scroll when using drag and drop
-			//if (result == DragDropEffect.None)
-		    {
-			    float width = Width;
-			    float height = Height;
-			    float MinSize = 70;
-			    float AreaSize = 25;
-			    float MoveScale = 4.0f;
-			    Vector2 viewOffset = -_viewOffset;
+            float width = Width;
+            float height = Height;
+            float MinSize = 70;
+            float AreaSize = 25;
+            float MoveScale = 4.0f;
+            Vector2 viewOffset = -_viewOffset;
 
-			    if (VScrollBar != null && VScrollBar.Visible && height > MinSize)
-			    {
-				    if (new Rectangle(0, 0, width, AreaSize).Contains(ref location))
-				    {
-					    viewOffset.Y -= MoveScale;
-				    }
-				    else if (new Rectangle(0, height - AreaSize, width, AreaSize).Contains(ref location))
-				    {
-					    viewOffset.Y += MoveScale;
-				    }
+            if (VScrollBar != null && VScrollBar.Visible && height > MinSize)
+            {
+                if (new Rectangle(0, 0, width, AreaSize).Contains(ref location))
+                {
+                    viewOffset.Y -= MoveScale;
+                }
+                else if (new Rectangle(0, height - AreaSize, width, AreaSize).Contains(ref location))
+                {
+                    viewOffset.Y += MoveScale;
+                }
 
-				    viewOffset.Y = Mathf.Clamp(viewOffset.Y, VScrollBar.Minimum, VScrollBar.Maximum);
-				    VScrollBar.Value = viewOffset.Y;
-				}
+                viewOffset.Y = Mathf.Clamp(viewOffset.Y, VScrollBar.Minimum, VScrollBar.Maximum);
+                VScrollBar.Value = viewOffset.Y;
+            }
 
-			    if (HScrollBar != null && HScrollBar.Visible && width > MinSize)
-			    {
-				    if (new Rectangle(0, 0, AreaSize, height).Contains(ref location))
-				    {
-					    viewOffset.X -= MoveScale;
-				    }
-				    else if (new Rectangle(width - AreaSize, 0, AreaSize, height).Contains(ref location))
-				    {
-					    viewOffset.X += MoveScale;
-				    }
+            if (HScrollBar != null && HScrollBar.Visible && width > MinSize)
+            {
+                if (new Rectangle(0, 0, AreaSize, height).Contains(ref location))
+                {
+                    viewOffset.X -= MoveScale;
+                }
+                else if (new Rectangle(width - AreaSize, 0, AreaSize, height).Contains(ref location))
+                {
+                    viewOffset.X += MoveScale;
+                }
 
-				    viewOffset.X = Mathf.Clamp(viewOffset.X, HScrollBar.Minimum, HScrollBar.Maximum);
-				    HScrollBar.Value = viewOffset.X;
-			    }
+                viewOffset.X = Mathf.Clamp(viewOffset.X, HScrollBar.Minimum, HScrollBar.Maximum);
+                HScrollBar.Value = viewOffset.X;
+            }
 
-			    viewOffset *= -1;
+            viewOffset *= -1;
 
-				if (viewOffset != _viewOffset)
-			    {
-				    _viewOffset = viewOffset;
-				    PerformLayout();
-			    }
-		    }
+            if (viewOffset != _viewOffset)
+            {
+                _viewOffset = viewOffset;
+                PerformLayout();
+            }
 
-		    return result;
-	    }
+            return result;
+        }
     }
 }

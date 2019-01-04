@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Windows;
@@ -41,7 +39,7 @@ namespace FlaxEditor.Content
         }
 
         /// <inheritdoc />
-        public override void Create(string outputPath)
+        public override void Create(string outputPath, object arg)
         {
             Editor.Instance.Scene.CreateSceneFile(outputPath);
         }
@@ -59,7 +57,7 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0xbb37ef);
 
         /// <inheritdoc />
-        public override string TypeName => "FlaxEngine.SceneAsset";
+        public override string TypeName => Scene.AssetTypename;
 
         /// <inheritdoc />
         public override AssetItem ConstructItem(string path, string typeName, ref Guid id)

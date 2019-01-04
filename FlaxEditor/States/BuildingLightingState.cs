@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.Assertions;
 using FlaxEngine.Utilities;
@@ -16,12 +14,15 @@ namespace FlaxEditor.States
         private bool _wasBuildFinished;
 
         internal BuildingLightingState(Editor editor)
-            : base(editor)
+        : base(editor)
         {
         }
 
         /// <inheritdoc />
         public override bool CanEditContent => false;
+
+        /// <inheritdoc />
+        public override string Status => "Baking lighting...";
 
         /// <inheritdoc />
         public override bool CanEnter()

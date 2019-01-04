@@ -1,11 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Threading;
 using FlaxEngine;
 using FlaxEngine.GUI;
-using Window = FlaxEngine.GUI.Window;
 
 namespace FlaxEditor.GUI.Dialogs
 {
@@ -16,17 +13,25 @@ namespace FlaxEditor.GUI.Dialogs
     public abstract class Dialog : ContainerControl
     {
         private string _title;
-        
+
+        /// <summary>
+        /// Flag used to block the calling thread if it used ShowDialog option.
+        /// </summary>
         protected long _isWaitingForDialog;
+
+        /// <summary>
+        /// The parent window.
+        /// </summary>
         protected FlaxEngine.Window _window;
+
+        /// <summary>
+        /// The dialog result.
+        /// </summary>
         protected DialogResult _result;
 
         /// <summary>
         /// Gets the dialog result.
         /// </summary>
-        /// <value>
-        /// The result.
-        /// </value>
         public DialogResult Result => _result;
 
         /// <summary>
@@ -34,7 +39,7 @@ namespace FlaxEditor.GUI.Dialogs
         /// </summary>
         /// <param name="title">The title.</param>
         protected Dialog(string title)
-            : base(new Rectangle(0, 0, 300, 100))
+        : base(new Rectangle(0, 0, 300, 100))
         {
             BackgroundColor = Style.Current.Background;
             DockStyle = DockStyle.Fill;
@@ -58,9 +63,9 @@ namespace FlaxEditor.GUI.Dialogs
         /// </summary>
         /// <param name="parentWindow">The parent window.</param>
         /// <returns>The dialog result.</returns>
-        public DialogResult ShowDialog(Window parentWindow)
+        public DialogResult ShowDialog(WindowRootControl parentWindow)
         {
-            return ShowDialog(parentWindow?.NativeWindow);
+            return ShowDialog(parentWindow?.Window);
         }
 
         /// <summary>
@@ -70,7 +75,7 @@ namespace FlaxEditor.GUI.Dialogs
         /// <returns>The dialog result.</returns>
         public DialogResult ShowDialog(Control control)
         {
-            return ShowDialog(control?.ParentWindow);
+            return ShowDialog(control?.RootWindow);
         }
 
         /// <summary>
@@ -110,9 +115,9 @@ namespace FlaxEditor.GUI.Dialogs
         /// Shows the dialog.
         /// </summary>
         /// <param name="parentWindow">The parent window.</param>
-        public void Show(Window parentWindow)
+        public void Show(WindowRootControl parentWindow)
         {
-            Show(parentWindow?.NativeWindow);
+            Show(parentWindow?.Window);
         }
 
         /// <summary>
@@ -121,7 +126,7 @@ namespace FlaxEditor.GUI.Dialogs
         /// <param name="control">The control calling.</param>
         public void Show(Control control)
         {
-            Show(control?.ParentWindow);
+            Show(control?.Root);
         }
 
         /// <summary>
@@ -146,8 +151,8 @@ namespace FlaxEditor.GUI.Dialogs
             var windowGUI = _window.GUI;
 
             // Attach events
-            _window.OnClosing += OnClosing;
-            _window.OnClosed += OnClosed;
+            _window.Closing += OnClosing;
+            _window.Closed += OnClosed;
 
             // Link to the window
             Parent = windowGUI;
@@ -187,7 +192,7 @@ namespace FlaxEditor.GUI.Dialogs
                 return;
             }
 
-            // Supress closing
+            // Suppress closing
             cancel = true;
         }
 
@@ -233,7 +238,7 @@ namespace FlaxEditor.GUI.Dialogs
         protected virtual void OnShow()
         {
         }
-        
+
         /// <summary>
         /// Determines whether this dialog can be closed.
         /// </summary>

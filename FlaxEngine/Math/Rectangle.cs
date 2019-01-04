@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Globalization;
@@ -201,7 +201,7 @@ namespace FlaxEngine
         /// Determines whether a specified rectangle intersects with this rectangle
         /// </summary>
         /// <param name="value">The rectangle to evaluate</param>
-        /// <returns>True if the specified rectangle intersects with this one, therwise false</returns>
+        /// <returns>True if the specified rectangle intersects with this one, otherwise false</returns>
         public bool Intersects(Rectangle value)
         {
             return (value.Location.X < Right) && (Location.X < value.Right) && (value.Location.Y < Bottom) && (Location.Y < value.Bottom);
@@ -211,7 +211,7 @@ namespace FlaxEngine
         /// Determines whether a specified rectangle intersects with this rectangle
         /// </summary>
         /// <param name="value">The rectangle to evaluate</param>
-        /// <returns>True if the specified rectangle intersects with this one, therwise false</returns>
+        /// <returns>True if the specified rectangle intersects with this one, otherwise false</returns>
         public bool Intersects(ref Rectangle value)
         {
             return (value.Location.X < Right) && (Location.X < value.Right) && (value.Location.Y < Bottom) && (Location.Y < value.Bottom);
@@ -240,6 +240,17 @@ namespace FlaxEngine
         /// <summary>
         /// Make offseted rectangle
         /// </summary>
+        /// <param name="x">X coordinate offset</param>
+        /// <param name="y">Y coordinate offset</param>
+        /// <returns>Offseted rectangle</returns>
+        public Rectangle MakeOffseted(float x, float y)
+        {
+            return new Rectangle(Location + new Vector2(x, y), Size);
+        }
+
+        /// <summary>
+        /// Make offseted rectangle
+        /// </summary>
         /// <param name="offset">X and Y coordinate offset</param>
         /// <returns>Offseted rectangle</returns>
         public Rectangle MakeOffseted(Vector2 offset)
@@ -248,7 +259,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Expand rectangle area in all directions by given amout
+        /// Expand rectangle area in all directions by given amount
         /// </summary>
         /// <param name="toExpand">Amount of units to expand a rectangle</param>
         public void Expand(float toExpand)
@@ -258,7 +269,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Make expanded rectangle area in all directions by given amout
+        /// Make expanded rectangle area in all directions by given amount
         /// </summary>
         /// <param name="toExpand">Amount of units to expand a rectangle</param>
         /// <returns>Expanded rectangle</returns>
@@ -268,7 +279,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Scale rectangle area in all directions by given amout
+        /// Scale rectangle area in all directions by given amount
         /// </summary>
         /// <param name="scale">Scale value to expand a rectangle</param>
         public void Scale(float scale)
@@ -279,7 +290,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Make scaled rectangle area in all directions by given amout
+        /// Make scaled rectangle area in all directions by given amount
         /// </summary>
         /// <param name="scale">Scale value to expand a rectangle</param>
         /// <returns>Scaled rectangle</returns>
@@ -292,8 +303,8 @@ namespace FlaxEngine
         /// <summary>
         /// Calculates a rectangle that contains the union of a and b rectangles
         /// </summary>
-        /// <param name="a">First rectangle</param>
-        /// <param name="b">Second rectangle</param>
+        /// <param name="a">The first rectangle.</param>
+        /// <param name="b">The second rectangle.</param>
         /// <returns>Rectangle that contains both a and b rectangles</returns>
         public static Rectangle Union(Rectangle a, Rectangle b)
         {
@@ -305,11 +316,26 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Calculates a rectangle that contains the shared part of a and b rectangles
+        /// Calculates a rectangle that contains the union of a and b rectangles
         /// </summary>
         /// <param name="a">First rectangle</param>
         /// <param name="b">Second rectangle</param>
-        /// <returns>Rectangle that contains shared part of a and b rectangles</returns>
+        /// <param name="result">When the method completes, contains the rectangle that both a and b rectangles.</param>
+        public static void Union(ref Rectangle a, ref Rectangle b, out Rectangle result)
+        {
+            float left = Mathf.Min(a.Left, b.Left);
+            float right = Mathf.Max(a.Right, b.Right);
+            float top = Mathf.Min(a.Top, b.Top);
+            float bottom = Mathf.Max(a.Bottom, b.Bottom);
+            result = new Rectangle(left, top, Mathf.Max(right - left, 0.0f), Mathf.Max(bottom - top, 0.0f));
+        }
+
+        /// <summary>
+        /// Calculates a rectangle that contains the shared part of a and b rectangles.
+        /// </summary>
+        /// <param name="a">The first rectangle.</param>
+        /// <param name="b">The second rectangle.</param>
+        /// <returns>Rectangle that contains shared part of a and b rectangles.</returns>
         public static Rectangle Shared(Rectangle a, Rectangle b)
         {
             float left = Mathf.Max(a.Left, b.Left);
@@ -320,17 +346,45 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Creates rectangle from two points
+        /// Calculates a rectangle that contains the shared part of a and b rectangles.
+        /// </summary>
+        /// <param name="a">The first rectangle.</param>
+        /// <param name="b">The second rectangle.</param>
+        /// <param name="result">When the method completes, contains the rectangle that shared part of a and b rectangles.</param>
+        public static void Shared(ref Rectangle a, ref Rectangle b, out Rectangle result)
+        {
+            float left = Mathf.Max(a.Left, b.Left);
+            float right = Mathf.Min(a.Right, b.Right);
+            float top = Mathf.Max(a.Top, b.Top);
+            float bottom = Mathf.Min(a.Bottom, b.Bottom);
+            result = new Rectangle(left, top, Mathf.Max(right - left, 0.0f), Mathf.Max(bottom - top, 0.0f));
+        }
+
+        /// <summary>
+        /// Creates rectangle from two points.
         /// </summary>
         /// <param name="p1">First point</param>
         /// <param name="p2">Second point</param>
         /// <returns>Rectangle that contains both p1 and p2</returns>
         public static Rectangle FromPoints(Vector2 p1, Vector2 p2)
         {
-            Vector2 upperLeft, rightBottom;
-            Vector2.Min(ref p1, ref p2, out upperLeft);
-            Vector2.Max(ref p1, ref p2, out rightBottom);
+            Vector2.Min(ref p1, ref p2, out var upperLeft);
+            Vector2.Max(ref p1, ref p2, out var rightBottom);
             return new Rectangle(upperLeft, Vector2.Max(rightBottom - upperLeft, Vector2.Zero));
+        }
+
+        /// <summary>
+        /// Creates rectangle from two points.
+        /// </summary>
+        /// <param name="p1">First point</param>
+        /// <param name="p2">Second point</param>
+        /// <returns>Rectangle that contains both p1 and p2</returns>
+        /// <param name="result">When the method completes, contains the rectangle that contains both p1 and p2 points.</param>
+        public static void FromPoints(ref Vector2 p1, ref Vector2 p2, out Rectangle result)
+        {
+            Vector2.Min(ref p1, ref p2, out var upperLeft);
+            Vector2.Max(ref p1, ref p2, out var rightBottom);
+            result = new Rectangle(upperLeft, Vector2.Max(rightBottom - upperLeft, Vector2.Zero));
         }
 
         #region Operators
@@ -343,7 +397,7 @@ namespace FlaxEngine
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rectangle operator+(Rectangle rectangle, Vector2 offset)
+        public static Rectangle operator +(Rectangle rectangle, Vector2 offset)
         {
             return new Rectangle(rectangle.Location + offset, rectangle.Size);
         }
@@ -356,7 +410,7 @@ namespace FlaxEngine
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rectangle operator-(Rectangle rectangle, Vector2 offset)
+        public static Rectangle operator -(Rectangle rectangle, Vector2 offset)
         {
             return new Rectangle(rectangle.Location - offset, rectangle.Size);
         }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -22,7 +20,7 @@ namespace FlaxEngine
         /// <summary>
         /// Uses the smaller value of the touching materials: min(a,b).
         /// </summary>
-        Mininum = 1,
+        Minimum = 1,
 
         /// <summary>
         /// Multiplies the values of the touching materials: a*b.

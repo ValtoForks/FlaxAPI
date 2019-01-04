@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.SceneGraph.GUI;
 using FlaxEngine;
@@ -48,9 +46,12 @@ namespace FlaxEditor.SceneGraph.Actors
         /// </summary>
         /// <param name="scene">The scene.</param>
         public SceneNode(Scene scene)
-            : base(scene, new SceneTreeNode())
+        : base(scene, new SceneTreeNode())
         {
         }
+
+        /// <inheritdoc />
+        public override bool CanCreatePrefab => false;
 
         /// <inheritdoc />
         public override bool CanCopyPaste => false;

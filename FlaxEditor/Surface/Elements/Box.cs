@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using FlaxEngine;
 using FlaxEngine.Assertions;
@@ -12,7 +11,8 @@ namespace FlaxEditor.Surface.Elements
     /// Surface boxes base class (for input and output boxes). Boxes can be connected.
     /// </summary>
     /// <seealso cref="FlaxEditor.Surface.SurfaceNodeElementControl" />
-    public abstract class Box : SurfaceNodeElementControl
+    /// <seealso cref="IConnectionInstigator" />
+    public abstract class Box : SurfaceNodeElementControl, IConnectionInstigator
     {
         /// <summary>
         /// The current connection type. It's subset or equal to <see cref="DefaultType"/>.
@@ -35,7 +35,7 @@ namespace FlaxEditor.Surface.Elements
         public ConnectionType DefaultType => Archetype.ConnectionsType;
 
         /// <summary>
-        /// List with all connections to oher boxes.
+        /// List with all connections to other boxes.
         /// </summary>
         public readonly List<Box> Connections = new List<Box>();
 
@@ -85,30 +85,24 @@ namespace FlaxEditor.Surface.Elements
                     // Set new value
                     _currentType = value;
 
-                    // Cache color
-                    Surface.Style.GetConnectionColor(_currentType, out _currentTypeColor);
-
                     // Fire event
                     OnCurrentTypeChanged();
                 }
             }
         }
 
-        /// <summary>
-        /// Gets the connection origin point (in surface space).
-        /// </summary>
-        internal Vector2 ConnectionOrigin => Parent.PointToParent(Center);
-
         /// <inheritdoc />
         protected Box(SurfaceNode parentNode, NodeElementArchetype archetype, Vector2 location)
-            : base(parentNode, archetype, location, new Vector2(Constants.BoxSize), false)
+        : base(parentNode, archetype, location, new Vector2(Constants.BoxSize), false)
         {
             _currentType = DefaultType;
+
             Surface.Style.GetConnectionColor(_currentType, out _currentTypeColor);
+            TooltipText = CurrentType.ToString();
         }
 
         /// <summary>
-        /// Determines whether this box can use the specified type as a conection.
+        /// Determines whether this box can use the specified type as a connection.
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns>
@@ -116,14 +110,14 @@ namespace FlaxEditor.Surface.Elements
         /// </returns>
         public bool CanUseType(ConnectionType type)
         {
-            // Check drect connection
+            // Check direct connection
             if (Surface.CanUseDirectCast(_currentType, type))
             {
                 // Can
                 return true;
             }
 
-            // Check independent and if there is box with bigger potencial because it may block current one from changing type
+            // Check independent and if there is box with bigger potential because it may block current one from changing type
             var parentArch = ParentNode.Archetype;
             var boxes = parentArch.IndependentBoxes;
             if (boxes != null)
@@ -160,7 +154,7 @@ namespace FlaxEditor.Surface.Elements
         /// </summary>
         public void RemoveConnections()
         {
-            // Check if sth is conected
+            // Check if sth is connected
             if (HasAnyConnection)
             {
                 // Remove all connections
@@ -171,8 +165,10 @@ namespace FlaxEditor.Surface.Elements
                     var targetBox = Connections[i];
                     targetBox.Connections.Remove(this);
                     toUpdate.Add(targetBox);
+                    targetBox.OnConnectionsChanged();
                 }
                 Connections.Clear();
+                OnConnectionsChanged();
 
                 // Update
                 for (int i = 0; i < toUpdate.Count; i++)
@@ -218,6 +214,8 @@ namespace FlaxEditor.Surface.Elements
             // Update
             ConnectionTick();
             box.ConnectionTick();
+            OnConnectionsChanged();
+            box.OnConnectionsChanged();
         }
 
         /// <summary>
@@ -226,7 +224,7 @@ namespace FlaxEditor.Surface.Elements
         /// <param name="box">The other box.</param>
         public void CreateConnection(Box box)
         {
-            // Check if any box can have only single conenction
+            // Check if any box can have only single connection
             if (box.IsSingle)
                 box.RemoveConnections();
             if (IsSingle)
@@ -242,12 +240,14 @@ namespace FlaxEditor.Surface.Elements
             // Update
             ConnectionTick();
             box.ConnectionTick();
+            OnConnectionsChanged();
+            box.OnConnectionsChanged();
         }
 
         /// <summary>
         /// True if box can use only single connection.
         /// </summary>
-        /// <returns>True if only single conenction.</returns>
+        /// <returns>True if only single connection.</returns>
         public bool IsSingle => Archetype.Single;
 
         /// <summary>
@@ -278,7 +278,7 @@ namespace FlaxEditor.Surface.Elements
         /// <summary>
         /// True if box type doesn't depend on other boxes types of the node.
         /// </summary>
-        /// <returns>True if is independant, otherwise false.</returns>
+        /// <returns>True if is independent, otherwise false.</returns>
         public bool IsIndependentBox
         {
             get
@@ -305,6 +305,15 @@ namespace FlaxEditor.Surface.Elements
         /// </summary>
         protected virtual void OnCurrentTypeChanged()
         {
+            Surface.Style.GetConnectionColor(_currentType, out _currentTypeColor);
+            TooltipText = CurrentType.ToString();
+        }
+
+        /// <summary>
+        /// Called when connections array gets changed (also called after surface deserialization)
+        /// </summary>
+        public virtual void OnConnectionsChanged()
+        {
         }
 
         /// <summary>
@@ -319,17 +328,17 @@ namespace FlaxEditor.Surface.Elements
             if (rect.Size.LengthSquared < minBoxSize * minBoxSize)
                 return;
 
-            // Debuging boxes size
+            // Debugging boxes size
             //Render2D.DrawRectangle(rect, Color.Orange); return;
-            
+
             // Draw icon
             bool hasConnections = HasAnyConnection;
             float alpha = Enabled ? 1.0f : 0.6f;
             Color color = _currentTypeColor * alpha;
             var style = Surface.Style;
             Sprite icon;
-            if (_currentType == ConnectionType.Impulse)
-                icon = hasConnections ? style.Icons.ArowClose : style.Icons.ArowOpen;
+            if (_currentType == ConnectionType.Impulse || _currentType == ConnectionType.ImpulseSecondary)
+                icon = hasConnections ? style.Icons.ArrowClose : style.Icons.ArrowOpen;
             else
                 icon = hasConnections ? style.Icons.BoxClose : style.Icons.BoxOpen;
             Render2D.DrawSprite(icon, rect, color);
@@ -349,7 +358,7 @@ namespace FlaxEditor.Surface.Elements
         /// <inheritdoc />
         public override void OnMouseMove(Vector2 location)
         {
-            Surface.OnMosueOverBox(this);
+            Surface.ConnectingOver(this);
             base.OnMouseMove(location);
         }
 
@@ -365,6 +374,157 @@ namespace FlaxEditor.Surface.Elements
             }
 
             return result;
+        }
+
+        /// <inheritdoc />
+        public Vector2 ConnectionOrigin
+        {
+            get
+            {
+                var center = Center;
+                return Parent.PointToParent(ref center);
+            }
+        }
+
+        private static bool CanCast(ConnectionType oB, ConnectionType iB)
+        {
+            return (oB != ConnectionType.Impulse && oB != ConnectionType.Object) &&
+                   (iB != ConnectionType.Impulse && iB != ConnectionType.Object) &&
+                   (Mathf.IsPowerOfTwo((int)oB) && Mathf.IsPowerOfTwo((int)iB));
+        }
+
+        /// <inheritdoc />
+        public bool AreConnected(IConnectionInstigator other)
+        {
+            return Connections.Contains(other as Box);
+        }
+
+        /// <inheritdoc />
+        public bool CanConnectWith(IConnectionInstigator other)
+        {
+            var start = this;
+            var end = other as Box;
+
+            // Allow only box with box connection
+            if (end == null)
+            {
+                // Cannot
+                return false;
+            }
+
+            // Disable for the same box
+            if (start == end)
+            {
+                // Cannot
+                return false;
+            }
+
+            // Check if boxes are connected
+            bool areConnected = start.AreConnected(end);
+
+            // Check if boxes are different or (one of them is disabled and both are disconnected)
+            if (end.IsOutput == start.IsOutput || !((end.Enabled && start.Enabled) || areConnected))
+            {
+                // Cannot
+                return false;
+            }
+
+            // Cache Input and Output box (since connection may be made in a different way)
+            InputBox iB;
+            OutputBox oB;
+            if (start.IsOutput)
+            {
+                iB = (InputBox)end;
+                oB = (OutputBox)start;
+            }
+            else
+            {
+                iB = (InputBox)start;
+                oB = (OutputBox)end;
+            }
+
+            // Validate connection type (also check if any of boxes parent can manage that connections types)
+            if (!iB.CanUseType(oB.CurrentType))
+            {
+                if (!CanCast(oB.CurrentType, iB.CurrentType))
+                {
+                    // Cannot
+                    return false;
+                }
+            }
+
+            // Can
+            return true;
+        }
+
+        /// <inheritdoc />
+        public void DrawConnectingLine(ref Vector2 startPos, ref Vector2 endPos, ref Color color)
+        {
+            OutputBox.DrawConnection(ref startPos, ref endPos, ref color);
+        }
+
+        /// <inheritdoc />
+        public void Connect(IConnectionInstigator other)
+        {
+            var start = this;
+            var end = (Box)other;
+
+            // Check if boxes are connected
+            bool areConnected = start.AreConnected(end);
+
+            // Check if boxes are different or (one of them is disabled and both are disconnected)
+            if (end.IsOutput == start.IsOutput || !((end.Enabled && start.Enabled) || areConnected))
+            {
+                // Back
+                return;
+            }
+
+            // Check if they are already connected
+            if (areConnected)
+            {
+                // Break link
+                start.BreakConnection(end);
+                Surface.MarkAsEdited();
+                return;
+            }
+
+            // Cache Input and Output box (since connection may be made in a different way)
+            InputBox iB;
+            OutputBox oB;
+            if (start.IsOutput)
+            {
+                iB = (InputBox)end;
+                oB = (OutputBox)start;
+            }
+            else
+            {
+                iB = (InputBox)start;
+                oB = (OutputBox)end;
+            }
+
+            // Validate connection type (also check if any of boxes parent can manage that connections types)
+            bool useCaster = false;
+            if (!iB.CanUseType(oB.CurrentType))
+            {
+                if (CanCast(oB.CurrentType, iB.CurrentType))
+                    useCaster = true;
+                else
+                    return;
+            }
+
+            // Connect boxes
+            if (useCaster)
+            {
+                // Connect via Caster
+                //AddCaster(oB, iB);
+                throw new NotImplementedException("AddCaster(..) function");
+            }
+            else
+            {
+                // Connect directly
+                iB.CreateConnection(oB);
+                Surface.MarkAsEdited();
+            }
         }
     }
 }

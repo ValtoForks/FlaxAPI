@@ -1,16 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
-	public sealed partial class Material
-	{
-	    /// <summary>
-	    /// The asset type content domain.
-	    /// </summary>
-	    public const ContentDomain Domain = ContentDomain.Material;
-
+    public sealed partial class Material
+    {
         /// <inheritdoc />
         public override MaterialInstance CreateVirtualInstance()
         {

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -19,7 +17,7 @@ namespace FlaxEditor.CustomEditors.GUI
         /// The check box.
         /// </summary>
         public readonly CheckBox CheckBox;
-        
+
         /// <summary>
         /// Event fired when 'checked' state gets changed.
         /// </summary>
@@ -27,7 +25,7 @@ namespace FlaxEditor.CustomEditors.GUI
 
         /// <inheritdoc />
         public CheckablePropertyNameLabel(string name)
-            : base(name)
+        : base(name)
         {
             CheckBox = new CheckBox(2, 2)
             {
@@ -35,7 +33,7 @@ namespace FlaxEditor.CustomEditors.GUI
                 Size = new Vector2(14),
                 Parent = this
             };
-            CheckBox.CheckChanged += OnCheckChanged;
+            CheckBox.StateChanged += OnCheckChanged;
             Margin = new Margin(CheckBox.Right + 4, 0, 0, 0);
         }
 
@@ -79,7 +77,7 @@ namespace FlaxEditor.CustomEditors.GUI
         protected override void PerformLayoutSelf()
         {
             base.PerformLayoutSelf();
-            
+
             // Center checkbox
             CheckBox.Y = (Height - CheckBox.Height) / 2;
         }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -14,6 +12,8 @@ namespace FlaxEditor.CustomEditors
 {
     internal static class CustomEditorsUtil
     {
+        private static readonly StringBuilder CachedSb = new StringBuilder(256);
+
         /// <summary>
         /// Gets the property name for UI. Removes unnecessary characters and filters text. Makes it more user-friendly.
         /// </summary>
@@ -22,23 +22,36 @@ namespace FlaxEditor.CustomEditors
         public static string GetPropertyNameUI(string name)
         {
             int length = name.Length;
-            StringBuilder sb = new StringBuilder(length + 4);
+            StringBuilder sb = CachedSb;
+            sb.Clear();
+            sb.EnsureCapacity(length + 8);
+            int startIndex = 0;
 
-            for (int i = 0; i < length; i++)
+            // Skip some prefixes
+            if (name.StartsWith("g_") || name.StartsWith("m_"))
+                startIndex = 2;
+
+            // Filter text
+            for (int i = startIndex; i < length; i++)
             {
                 var c = name[i];
 
+                // Space before word starting with uppercase letter
                 if (char.IsUpper(c) && i > 0)
                 {
                     if (i + 2 < length && !char.IsUpper(name[i + 1]) && !char.IsUpper(name[i + 2]))
                         sb.Append(' ');
                 }
+                // Space instead of underscore
                 else if (c == '_')
                 {
                     if (sb.Length > 0)
                         sb.Append(' ');
                     continue;
                 }
+                // Space before digits sequence
+                else if (i > 1 && char.IsDigit(c) && !char.IsDigit(name[i - 1]))
+                    sb.Append(' ');
 
                 sb.Append(c);
             }
@@ -53,7 +66,7 @@ namespace FlaxEditor.CustomEditors
                 return overrideEditor;
 
             // Special case if property is a pure object type and all values are the same type
-            if (values.Type == typeof(object) && values.Count > 0 && values[0] != null && !values.HasDiffrentTypes)
+            if (values.Type == typeof(object) && values.Count > 0 && values[0] != null && !values.HasDifferentTypes)
                 return CreateEditor(values[0].GetType(), canUseRefPicker);
 
             // Use editor for the property type
@@ -89,11 +102,10 @@ namespace FlaxEditor.CustomEditors
                         return (CustomEditor)Activator.CreateInstance(type);
                     }
                     checkType = checkType.BaseType;
-                    
+
                     // Skip if cannot use ref editors
                     if (!canUseRefPicker && checkType == typeof(FlaxEngine.Object))
                         break;
-
                 } while (checkType != null);
             }
 
@@ -119,7 +131,7 @@ namespace FlaxEditor.CustomEditors
                     return new DictionaryEditor();
                 }
             }
-            
+
             // The most generic editor
             return new GenericEditor();
         }

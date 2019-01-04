@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -44,10 +42,10 @@ namespace FlaxEngine
             [EditorOrder(20), Tooltip("The mouse button to map for this action. Use None to ignore it.")]
             public MouseButton MouseButton;
 
-			/// <summary>
-			/// The gamepad button to map for this action. Use <see cref="GamePadButton.None"/> to ignore it.
-			/// </summary>
-			[EditorOrder(30), Tooltip("The gamepad button to map for this action. Use None to ignore it.")]
+            /// <summary>
+            /// The gamepad button to map for this action. Use <see cref="GamePadButton.None"/> to ignore it.
+            /// </summary>
+            [EditorOrder(30), Tooltip("The gamepad button to map for this action. Use None to ignore it.")]
             public GamePadButton GampadButton;
 
             /// <summary>
@@ -273,7 +271,7 @@ namespace FlaxEngine
         /// Gets the value of the virtual axis identified by name. Use <see cref="AxisMappings"/> to get the current config.
         /// </summary>
         /// <param name="name">The action name.</param>
-        /// <returns>The current axis value (e.g for gamepads it's in the range -1..1). Value is smoothed to redue artifacts.</returns>
+        /// <returns>The current axis value (e.g for gamepads it's in the range -1..1). Value is smoothed to reduce artifacts.</returns>
         /// <seealso cref="AxisMappings"/>
 #if !UNIT_TEST_COMPILANT
         [MethodImpl(MethodImplOptions.InternalCall)]

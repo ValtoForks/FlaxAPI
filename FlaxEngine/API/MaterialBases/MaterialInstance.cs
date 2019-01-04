@@ -1,16 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
     public sealed partial class MaterialInstance
     {
-        /// <summary>
-        /// The asset type content domain.
-        /// </summary>
-        public const ContentDomain Domain = ContentDomain.Material;
-
         /// <inheritdoc />
         public override MaterialInstance CreateVirtualInstance()
         {
@@ -21,7 +14,7 @@ namespace FlaxEngine
             if (baseMaterial)
                 baseMaterial.WaitForLoaded();
             instance.BaseMaterial = baseMaterial;
-            
+
             // Copy parameters
             var src = Parameters;
             var dst = instance.Parameters;

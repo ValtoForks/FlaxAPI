@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Xml;
@@ -32,7 +30,7 @@ namespace FlaxEditor.Windows.Assets
         private sealed class AtlasView : SpriteAtlasPreview
         {
             public AtlasView(bool useWidgets)
-                : base(useWidgets)
+            : base(useWidgets)
             {
             }
 
@@ -46,7 +44,7 @@ namespace FlaxEditor.Windows.Assets
                     var count = Asset.SpritesCount;
                     var style = Style.Current;
 
-                    // Draw all splites
+                    // Draw all splits
                     for (int i = 0; i < count; i++)
                     {
                         Asset.GetSpriteArea(i, out area);
@@ -91,7 +89,7 @@ namespace FlaxEditor.Windows.Assets
                     get => Sprite.Location;
                     set => Sprite.Location = value;
                 }
-                
+
                 [EditorOrder(3), Limit(0, 4096)]
                 public Vector2 Size
                 {
@@ -103,7 +101,7 @@ namespace FlaxEditor.Windows.Assets
             [EditorOrder(0), EditorDisplay("Sprites")]
             [CustomEditor(typeof(SpritesColelctionEditor))]
             public SpriteEntry[] Sprites;
-            
+
             [EditorOrder(1000), EditorDisplay("Import Settings", EditorDisplayAttribute.InlineStyle)]
             public TextureImportSettings ImportSettings { get; set; } = new TextureImportSettings();
 
@@ -142,7 +140,7 @@ namespace FlaxEditor.Windows.Assets
             }
 
             /// <summary>
-            /// Updates the sprites colelction.
+            /// Updates the sprites collection.
             /// </summary>
             public void UpdateSprites()
             {
@@ -164,7 +162,7 @@ namespace FlaxEditor.Windows.Assets
                 _window = win;
                 UpdateSprites();
 
-                // Try to restore target asset texture import options (usefull for fast reimport)
+                // Try to restore target asset texture import options (useful for fast reimport)
                 TextureImportSettings.InternalOptions options;
                 if (TextureImportEntry.Internal_GetTextureImportOptions(win.Item.Path, out options))
                 {
@@ -188,7 +186,7 @@ namespace FlaxEditor.Windows.Assets
             /// </summary>
             public void Reimport()
             {
-                Editor.Instance.ContentImporting.Reimport((BinaryAssetItem)_window.Item, ImportSettings);
+                Editor.Instance.ContentImporting.Reimport((BinaryAssetItem)_window.Item, ImportSettings, true);
             }
 
             /// <summary>
@@ -209,17 +207,17 @@ namespace FlaxEditor.Windows.Assets
             }
         }
 
-	    private readonly SplitPanel _split;
-		private readonly AtlasView _preview;
+        private readonly SplitPanel _split;
+        private readonly AtlasView _preview;
         private readonly CustomEditorPresenter _propertiesEditor;
-	    private readonly ToolStripButton _saveButton;
+        private readonly ToolStripButton _saveButton;
 
         private readonly PropertiesProxy _properties;
         private bool _isWaitingForLoad;
 
         /// <inheritdoc />
         public SpriteAtlasWindow(Editor editor, AssetItem item)
-            : base(editor, item)
+        : base(editor, item)
         {
             // Split Panel
             _split = new SplitPanel(Orientation.Horizontal, ScrollBars.None, ScrollBars.Vertical)
@@ -242,25 +240,25 @@ namespace FlaxEditor.Windows.Assets
             _propertiesEditor.Select(_properties);
             _propertiesEditor.Modified += MarkAsEdited;
 
-	        // Toolstrip
-	        _saveButton = (ToolStripButton)_toolstrip.AddButton(editor.UI.GetIcon("Save32"), Save).LinkTooltip("Save");
-	        _toolstrip.AddButton(editor.UI.GetIcon("Import32"), () => Editor.ContentImporting.Reimport((BinaryAssetItem)Item)).LinkTooltip("Reimport");
-	        _toolstrip.AddSeparator();
-	        _toolstrip.AddButton(editor.UI.GetIcon("AddDoc32"), () =>
-	        {
-		        var sprite = Asset.AddSprite();
-		        MarkAsEdited();
-		        _properties.UpdateSprites();
-		        _propertiesEditor.BuildLayout();
-	        }).LinkTooltip("Add a new sprite");
-	        _toolstrip.AddSeparator();
-	        _toolstrip.AddButton(editor.UI.GetIcon("PageScale32"), _preview.CenterView).LinkTooltip("Center view");
-		}
+            // Toolstrip
+            _saveButton = (ToolStripButton)_toolstrip.AddButton(editor.Icons.Save32, Save).LinkTooltip("Save");
+            _toolstrip.AddButton(editor.Icons.Import32, () => Editor.ContentImporting.Reimport((BinaryAssetItem)Item)).LinkTooltip("Reimport");
+            _toolstrip.AddSeparator();
+            _toolstrip.AddButton(editor.Icons.AddDoc32, () =>
+            {
+                var sprite = Asset.AddSprite();
+                MarkAsEdited();
+                _properties.UpdateSprites();
+                _propertiesEditor.BuildLayout();
+            }).LinkTooltip("Add a new sprite");
+            _toolstrip.AddSeparator();
+            _toolstrip.AddButton(editor.Icons.PageScale32, _preview.CenterView).LinkTooltip("Center view");
+        }
 
-		/// <inheritdoc />
-		public override void Save()
+        /// <inheritdoc />
+        public override void Save()
         {
-            // Check if don't need to push any new changes to the orginal asset
+            // Check if don't need to push any new changes to the original asset
             if (!IsEdited)
                 return;
 
@@ -280,7 +278,7 @@ namespace FlaxEditor.Windows.Assets
         /// <inheritdoc />
         protected override void UpdateToolstrip()
         {
-	        _saveButton.Enabled = IsEdited;
+            _saveButton.Enabled = IsEdited;
 
             base.UpdateToolstrip();
         }
@@ -340,28 +338,28 @@ namespace FlaxEditor.Windows.Assets
             }
         }
 
-	    /// <inheritdoc />
-	    public override bool UseLayoutData => true;
+        /// <inheritdoc />
+        public override bool UseLayoutData => true;
 
-	    /// <inheritdoc />
-	    public override void OnLayoutSerialize(XmlWriter writer)
-	    {
-		    writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
-	    }
+        /// <inheritdoc />
+        public override void OnLayoutSerialize(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Split", _split.SplitterValue.ToString());
+        }
 
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize(XmlElement node)
-	    {
-		    float value1;
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize(XmlElement node)
+        {
+            float value1;
 
-		    if (float.TryParse(node.GetAttribute("Split"), out value1))
-			    _split.SplitterValue = value1;
-	    }
+            if (float.TryParse(node.GetAttribute("Split"), out value1))
+                _split.SplitterValue = value1;
+        }
 
-	    /// <inheritdoc />
-	    public override void OnLayoutDeserialize()
-	    {
-		    _split.SplitterValue = 0.7f;
-	    }
-	}
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize()
+        {
+            _split.SplitterValue = 0.7f;
+        }
+    }
 }

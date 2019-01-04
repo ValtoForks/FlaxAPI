@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content.Thumbnails;
@@ -34,10 +32,10 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x2c3e50);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => MaterialInstance.Domain;
+        public override ContentDomain Domain => ContentDomain.Material;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(MaterialInstance).FullName;
+        public override Type AssetType => typeof(MaterialInstance);
 
         /// <inheritdoc />
         public override bool CanCreate(ContentFolder targetLocation)
@@ -46,9 +44,9 @@ namespace FlaxEditor.Content
         }
 
         /// <inheritdoc />
-        public override void Create(string outputPath)
+        public override void Create(string outputPath, object arg)
         {
-            if(Editor.CreateAsset(Editor.NewAssetType.MaterialInstance, outputPath))
+            if (Editor.CreateAsset(Editor.NewAssetType.MaterialInstance, outputPath))
                 throw new Exception("Failed to create new asset.");
         }
 
@@ -61,9 +59,9 @@ namespace FlaxEditor.Content
                 _preview.RenderOnlyWithWindow = false;
                 _preview.Task.Enabled = false;
                 _preview.PostFxVolume.Settings.Eye_Technique = EyeAdaptationTechnique.None;
-	            _preview.PostFxVolume.Settings.Eye_Exposure = 0.1f;
-	            _preview.PostFxVolume.Settings.data.Flags4 |= 0b1001;
-				_preview.Size = new Vector2(PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize);
+                _preview.PostFxVolume.Settings.Eye_Exposure = 0.1f;
+                _preview.PostFxVolume.Settings.data.Flags4 |= 0b1001;
+                _preview.Size = new Vector2(PreviewsCache.AssetIconSize, PreviewsCache.AssetIconSize);
                 _preview.SyncBackbufferSize();
             }
 

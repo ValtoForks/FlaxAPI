@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Diagnostics;
@@ -21,6 +19,13 @@ namespace FlaxEngine
         /// </summary>
         public event LogExceptionDegetae SendExceptionLog;
 
+        /// <inheritdoc />
+        public void LogWrite(LogType logType, string message)
+        {
+            Internal_LogWrite(logType, message);
+        }
+
+        /// <inheritdoc />
         public void LogException(Exception exception, Object context)
         {
             Internal_LogException(exception, context?.unmanagedPtr ?? IntPtr.Zero);
@@ -28,6 +33,7 @@ namespace FlaxEngine
             SendExceptionLog?.Invoke(exception, context);
         }
 
+        /// <inheritdoc />
         public void Log(LogType logType, Object context, string message)
         {
 #if DEBUG
@@ -49,6 +55,9 @@ namespace FlaxEngine
         {
             Debug.Logger.LogException(exception);
         }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void Internal_LogWrite(LogType level, string msg);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_Log(LogType level, string msg, IntPtr obj, string stackTrace);

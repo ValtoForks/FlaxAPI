@@ -1,12 +1,12 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FlaxEngine;
+
 // ReSharper disable InconsistentNaming
 
 namespace FlaxEditor.Content.Import
@@ -199,57 +199,75 @@ namespace FlaxEditor.Content.Import
         /// <summary>
         /// Texture format type
         /// </summary>
-        [EditorOrder(0), Tooltip("Texture import format type")]
+        [EditorOrder(0), DefaultValue(CustomTextureFormatType.ColorRGB), Tooltip("Texture import format type")]
         public CustomTextureFormatType Type { get; set; } = CustomTextureFormatType.ColorRGB;
 
         /// <summary>
-        /// True if texture should be improted as a texture atlas resource
+        /// True if texture should be imported as a texture atlas resource
         /// </summary>
-        [EditorOrder(10), Tooltip("True if texture should be improted as a texture atlas (with sprites)")]
+        [EditorOrder(10), DefaultValue(false), Tooltip("True if texture should be imported as a texture atlas (with sprites)")]
         public bool IsAtlas { get; set; }
 
         /// <summary>
         /// True if disable dynamic texture streaming
         /// </summary>
-        [EditorOrder(20), Tooltip("True if disable dynamic texture streaming")]
+        [EditorOrder(20), DefaultValue(false), Tooltip("True if disable dynamic texture streaming")]
         public bool NeverStream { get; set; }
 
         /// <summary>
         /// Enables/disables texture data compression.
         /// </summary>
-        [EditorOrder(30), Tooltip("True if comrpess texture data")]
+        [EditorOrder(30), DefaultValue(true), Tooltip("True if compress texture data")]
         public bool Compress { get; set; } = true;
 
         /// <summary>
         /// True if texture channels have independent data
         /// </summary>
-        [EditorOrder(40), Tooltip("True if texture channels have independent data (for compression methods)")]
+        [EditorOrder(40), DefaultValue(false), Tooltip("True if texture channels have independent data (for compression methods)")]
         public bool IndependentChannels { get; set; }
 
         /// <summary>
         /// True if texture contains sRGB format and engine should keep that data format
         /// </summary>
-        [EditorOrder(50), EditorDisplay(null, "Is sRGB"), Tooltip("True if texture contains colors in sRGB format data")]
+        [EditorOrder(50), DefaultValue(false), EditorDisplay(null, "Is sRGB"), Tooltip("True if texture contains colors in sRGB format data")]
         public bool IsSRGB { get; set; }
 
         /// <summary>
         /// True if generate mip maps chain for the texture.
         /// </summary>
-        [EditorOrder(60), Tooltip("True if generate mip maps chain for the texture")]
+        [EditorOrder(60), DefaultValue(true), Tooltip("True if generate mip maps chain for the texture")]
         public bool GenerateMipMaps { get; set; } = true;
+
+        /// <summary>
+        /// True if flip Y coordinate of the texture.
+        /// </summary>
+        [EditorOrder(65), DefaultValue(false), EditorDisplay(null, "Flip Y"), Tooltip("True if flip Y coordinate of the texture.")]
+        public bool FlipY { get; set; } = false;
 
         /// <summary>
         /// The import texture scale.
         /// </summary>
-        [EditorOrder(70), Tooltip("Texture scale. Default is 1.")]
+        [EditorOrder(70), DefaultValue(1.0f), Tooltip("Texture scale. Default is 1.")]
         public float Scale { get; set; } = 1.0f;
 
         /// <summary>
         /// Maximum size of the texture (for both width and height).
         /// Higher resolution textures will be resized during importing process.
         /// </summary>
-        [EditorOrder(80), Tooltip("Maximum texture size (will be resized if need to)")]
+        [EditorOrder(80), DefaultValue(CustomMaxSizeType._8192), Tooltip("Maximum texture size (will be resized if need to)")]
         public CustomMaxSizeType MaxSize { get; set; } = CustomMaxSizeType._8192;
+
+        /// <summary>
+        /// True if resize texture on import. Use Size property to define texture width and height. Texture scale property will be ignored.
+        /// </summary>
+        [EditorOrder(90), DefaultValue(false), Tooltip("True if resize texture on import. Use Size property to define texture width and height. Texture scale property will be ignored.")]
+        public bool Resize { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the size of the imported texture. If Resize property is set to true then texture will be resized during the import to this value. Otherwise it will be ignored.
+        /// </summary>
+        [EditorOrder(100), VisibleIf("Resize"), DefaultValue(typeof(Int2), "1024,1024"), Tooltip("The size of the imported texture. If Resize property is set to true then texture will be resized during the import to this value. Otherwise it will be ignored.")]
+        public Int2 Size { get; set; } = new Int2(1024, 1024);
 
         /// <summary>
         /// The sprites. Used to keep created sprites on sprite atlas reimport.
@@ -261,14 +279,17 @@ namespace FlaxEditor.Content.Import
         internal struct InternalOptions
         {
             public TextureFormatType Type;
-            public bool IsAtlas;
-            public bool NeverStream;
-            public bool Compress;
-            public bool IndependentChannels;
-            public bool IsSRGB;
-            public bool GenerateMipMaps;
+            public byte IsAtlas;
+            public byte NeverStream;
+            public byte Compress;
+            public byte IndependentChannels;
+            public byte IsSRGB;
+            public byte GenerateMipMaps;
+            public byte FlipY;
+            public byte Resize;
             public float Scale;
             public int MaxSize;
+            public Int2 Size;
             public Rectangle[] SpriteAreas;
             public string[] SpriteNames;
         }
@@ -278,13 +299,16 @@ namespace FlaxEditor.Content.Import
             options = new InternalOptions
             {
                 Type = (TextureFormatType)(int)Type,
-                IsAtlas = IsAtlas,
-                NeverStream = NeverStream,
-                Compress = Compress,
-                IndependentChannels = IndependentChannels,
-                IsSRGB = IsSRGB,
-                GenerateMipMaps = GenerateMipMaps,
+                IsAtlas = (byte)(IsAtlas ? 1 : 0),
+                NeverStream = (byte)(NeverStream ? 1 : 0),
+                Compress = (byte)(Compress ? 1 : 0),
+                IndependentChannels = (byte)(IndependentChannels ? 1 : 0),
+                IsSRGB = (byte)(IsSRGB ? 1 : 0),
+                GenerateMipMaps = (byte)(GenerateMipMaps ? 1 : 0),
+                FlipY = (byte)(FlipY ? 1 : 0),
+                Resize = (byte)(Resize ? 1 : 0),
                 Scale = Scale,
+                Size = Size,
                 MaxSize = (int)MaxSize
             };
             if (Sprites != null && Sprites.Count > 0)
@@ -308,14 +332,17 @@ namespace FlaxEditor.Content.Import
         internal void FromInternal(ref InternalOptions options)
         {
             Type = (CustomTextureFormatType)(int)options.Type;
-            IsAtlas = options.IsAtlas;
-            NeverStream = options.NeverStream;
-            Compress = options.Compress;
-            IndependentChannels = options.IndependentChannels;
-            IsSRGB = options.IsSRGB;
-            GenerateMipMaps = options.GenerateMipMaps;
+            IsAtlas = options.IsAtlas != 0;
+            NeverStream = options.NeverStream != 0;
+            Compress = options.Compress != 0;
+            IndependentChannels = options.IndependentChannels != 0;
+            IsSRGB = options.IsSRGB != 0;
+            GenerateMipMaps = options.GenerateMipMaps != 0;
+            FlipY = options.FlipY != 0;
+            Resize = options.Resize != 0;
             Scale = options.Scale;
             MaxSize = ConvertMaxSize(options.MaxSize);
+            Size = options.Size;
             if (options.SpriteAreas != null)
             {
                 int spritesCount = options.SpriteAreas.Length;
@@ -356,18 +383,20 @@ namespace FlaxEditor.Content.Import
         /// <summary>
         /// Initializes a new instance of the <see cref="TextureImportEntry"/> class.
         /// </summary>
-        /// <param name="url">The source file url.</param>
-        /// <param name="resultUrl">The result file url.</param>
-        public TextureImportEntry(string url, string resultUrl)
-            : base(url, resultUrl)
+        /// <param name="request">The import request.</param>
+        public TextureImportEntry(ref Request request)
+        : base(ref request)
         {
-            // Try to restore target asset texture import options (usefull for fast reimport)
-            TextureImportSettings.TryRestore(ref _settings, resultUrl);
-
             // Try to guess format type based on file name
-            var shortName = System.IO.Path.GetFileNameWithoutExtension(url);
-            string snl = shortName.ToLower();
-            if (_settings.Type != TextureImportSettings.CustomTextureFormatType.ColorRGB)
+            var snl = System.IO.Path.GetFileNameWithoutExtension(SourceUrl).ToLower();
+            var extension = System.IO.Path.GetExtension(SourceUrl).ToLower();
+            if (extension == ".raw")
+            {
+                // Raw image data in 16bit gray-scale, preserve the quality
+                _settings.Type = TextureImportSettings.CustomTextureFormatType.HdrRGBA;
+                _settings.Compress = false;
+            }
+            else if (_settings.Type != TextureImportSettings.CustomTextureFormatType.ColorRGB)
             {
                 // Skip checking
             }
@@ -385,6 +414,7 @@ namespace FlaxEditor.Content.Import
                      || snl.Contains("diffuse")
                      || snl.Contains("diff")
                      || snl.Contains("color")
+                     || snl.Contains("_col")
                      || snl.Contains("basecolor")
                      || snl.Contains("albedo"))
             {
@@ -396,7 +426,10 @@ namespace FlaxEditor.Content.Import
                      || snl.EndsWith("gloss")
                      || snl.EndsWith("_r")
                      || snl.EndsWith("_displ")
+                     || snl.EndsWith("_disp")
                      || snl.EndsWith("roughness")
+                     || snl.EndsWith("_rgh")
+                     || snl.EndsWith("_met")
                      || snl.EndsWith("metalness")
                      || snl.EndsWith("displacement")
                      || snl.EndsWith("spec")
@@ -411,8 +444,11 @@ namespace FlaxEditor.Content.Import
                 // Glossiness, metalness, ambient occlusion, displacement, height, cavity or specular
                 _settings.Type = TextureImportSettings.CustomTextureFormatType.GrayScale;
             }
+
+            // Try to restore target asset texture import options (useful for fast reimport)
+            TextureImportSettings.TryRestore(ref _settings, ResultUrl);
         }
-        
+
         /// <inheritdoc />
         public override object Settings => _settings;
 

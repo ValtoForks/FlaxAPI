@@ -1,12 +1,9 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
 using FlaxEngine.Collections;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Assert = FlaxEngine.Assertions.Assert;
 
@@ -99,7 +96,10 @@ namespace FlaxEngine.Tests
             Assert.AreEqual(2, buffer[2]);
             Assert.AreEqual(5, buffer[3]);
 
-            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { var test = buffer[4]; });
+            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () =>
+            {
+                var test = buffer[4];
+            });
 
             Assert.AreEqual(5, buffer.Front());
             Assert.AreEqual(0, buffer.Back());
@@ -127,7 +127,10 @@ namespace FlaxEngine.Tests
             Assert.AreEqual(1, buffer[2]);
             Assert.AreEqual(0, buffer[3]);
 
-            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { var test = buffer[4]; });
+            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () =>
+            {
+                var test = buffer[4];
+            });
 
             Assert.AreEqual(0, buffer.Front());
             Assert.AreEqual(5, buffer.Back());
@@ -164,7 +167,10 @@ namespace FlaxEngine.Tests
             Assert.AreEqual(1, buffer[2]);
             Assert.AreEqual(2, buffer[3]);
 
-            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { var test = buffer[4]; });
+            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () =>
+            {
+                var test = buffer[4];
+            });
 
             Assert.AreEqual(buffer.Count, 4);
             Assert.AreEqual(buffer.Capacity, 5);
@@ -300,14 +306,20 @@ namespace FlaxEngine.Tests
             var buffer = new CircularBuffer<long>(1);
             Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { buffer.Front(); });
             Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { buffer.Back(); });
-            Assert.ExceptionExpected(typeof(ArgumentOutOfRangeException), () => { var test = buffer[-1]; });
-            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { var test = buffer[1]; });
+            Assert.ExceptionExpected(typeof(ArgumentOutOfRangeException), () =>
+            {
+                var test = buffer[-1];
+            });
+            Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () =>
+            {
+                var test = buffer[1];
+            });
             Assert.ExceptionExpected(typeof(ArgumentOutOfRangeException), () => { buffer[-1] = 0; });
             Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { buffer[1] = 0; });
             Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { buffer.PopBack(); });
             Assert.ExceptionExpected(typeof(IndexOutOfRangeException), () => { buffer.PopFront(); });
         }
-        
+
         [Test]
         public void CircularBufferTestForceSet()
         {
@@ -505,7 +517,6 @@ namespace FlaxEngine.Tests
             Assert.IsTrue(json.Contains("frontItem"));
             Assert.IsTrue(json.Contains("backItem"));
             var deserializedBuffer = JsonConvert.DeserializeObject<CircularBuffer<long>>(json);
-
 
             Assert.AreEqual(-3, deserializedBuffer[0]);
             Assert.AreEqual(0, deserializedBuffer[1]);

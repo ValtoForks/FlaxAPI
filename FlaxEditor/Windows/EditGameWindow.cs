@@ -1,14 +1,14 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using FlaxEditor.SceneGraph;
 using FlaxEditor.SceneGraph.Actors;
 using FlaxEditor.States;
 using FlaxEditor.Viewport;
+using FlaxEditor.Viewport.Cameras;
 using FlaxEngine;
 using FlaxEngine.GUI;
 using FlaxEngine.Rendering;
@@ -58,7 +58,7 @@ namespace FlaxEditor.Windows
             /// Initializes a new instance of the <see cref="CameraPreview"/> class.
             /// </summary>
             public CameraPreview()
-                : base(RenderTask.Create<SceneRenderTask>())
+            : base(RenderTask.Create<SceneRenderTask>())
             {
                 // Don't steal focus
                 CanFocus = false;
@@ -121,7 +121,7 @@ namespace FlaxEditor.Windows
         /// </summary>
         /// <param name="editor">The editor.</param>
         public EditGameWindow(Editor editor)
-            : base(editor, true, ScrollBars.None)
+        : base(editor, true, ScrollBars.None)
         {
             Title = "Editor";
 
@@ -129,6 +129,8 @@ namespace FlaxEditor.Windows
             Viewport = new MainEditorGizmoViewport(editor);
             Viewport.Parent = this;
             Viewport.Task.Flags = ViewFlags.DefaultEditor;
+            Viewport.NearPlane = 8.0f;
+            Viewport.FarPlane = 20000.0f;
 
             Editor.Scene.ActorRemoved += SceneOnActorRemoved;
         }
@@ -143,54 +145,11 @@ namespace FlaxEditor.Windows
         }
 
         /// <summary>
-        /// Moves the viewport to visualize the actor.
-        /// </summary>
-        /// <param name="actor">The actor to preview.</param>
-        public void ShowActor(Actor actor)
-        {
-            BoundingSphere sphere;
-            GetActorSphere(actor, out sphere);
-            ShowSphere(ref sphere);
-        }
-
-        /// <summary>
         /// Moves the viewport to visualize selected actors.
         /// </summary>
         public void ShowSelectedActors()
         {
-            var selection = Viewport.TransformGizmo.SelectedParents;
-            if (selection.Count == 0)
-                return;
-
-            BoundingSphere mergesSphere = BoundingSphere.Empty;
-            for (int i = 0; i < selection.Count; i++)
-            {
-                if (selection[i] is ActorNode actor)
-                {
-                    BoundingSphere sphere;
-                    GetActorSphere(actor.Actor, out sphere);
-                    BoundingSphere.Merge(ref mergesSphere, ref sphere, out mergesSphere);
-                }
-            }
-            ShowSphere(ref mergesSphere);
-        }
-
-        private void GetActorSphere(Actor actor, out BoundingSphere sphere)
-        {
-            BoundingBox box = actor.BoxWithChildren;
-            BoundingSphere.FromBox(ref box, out sphere);
-            sphere.Radius = Math.Max(sphere.Radius, 15.0f);
-        }
-
-        private void ShowSphere(ref BoundingSphere sphere)
-        {
-            // Calculate view transform
-            Quaternion orientation = new Quaternion(0.424461186f, -0.0940724313f, 0.0443938486f, 0.899451137f);
-            Vector3 position = sphere.Center - Vector3.ForwardLH * orientation * (sphere.Radius * 2.5f);
-
-            // Move vieport
-            Viewport.TargetPoint = sphere.Center;
-            Viewport.MoveViewport(position, orientation);
+            ((FPSCamera)Viewport.ViewportCamera).ShowActors(Viewport.TransformGizmo.SelectedParents);
         }
 
         /// <summary>
@@ -207,7 +166,7 @@ namespace FlaxEditor.Windows
 
             var selection = Editor.SceneEditing.Selection;
 
-            // Hide unpined previews for which camera being previews is not selected
+            // Hide unpinned previews for which camera being previews is not selected
             for (int i = 0; i < _previews.Count; i++)
             {
                 if (_previews[i].IsPinned)
@@ -221,26 +180,29 @@ namespace FlaxEditor.Windows
                 }
             }
 
-            // Find any selected cameras and create pewviews for them
-            for (int i = 0; i < selection.Count; i++)
+            if (Editor.Options.Options.Interface.ShowSelectedCameraPreview)
             {
-                if (selection[i] is CameraNode cameraNode)
+                // Find any selected cameras and create previews for them
+                for (int i = 0; i < selection.Count; i++)
                 {
-                    // Check limit for cameras
-                    if (_previews.Count >= 8)
-                        break;
-
-                    var camera = (Camera)cameraNode.Actor;
-                    var preview = _previews.FirstOrDefault(x => x.Camera == camera);
-                    if (preview == null)
+                    if (selection[i] is CameraNode cameraNode)
                     {
-                        // Show it
-                        preview = new CameraPreview
+                        // Check limit for cameras
+                        if (_previews.Count >= 8)
+                            break;
+
+                        var camera = (Camera)cameraNode.Actor;
+                        var preview = _previews.FirstOrDefault(x => x.Camera == camera);
+                        if (preview == null)
                         {
-                            Camera = camera,
-                            Parent = this
-                        };
-                        _previews.Add(preview);
+                            // Show it
+                            preview = new CameraPreview
+                            {
+                                Camera = camera,
+                                Parent = this
+                            };
+                            _previews.Add(preview);
+                        }
                     }
                 }
             }
@@ -315,10 +277,8 @@ namespace FlaxEditor.Windows
         /// <inheritdoc />
         public override void OnSceneLoaded(Scene scene, Guid sceneId)
         {
-            if (SceneManager.LoadedScenesCount == 1)
+            if (SceneManager.ScenesCount == 1)
             {
-
-
                 // TODO: load cached viewport for that scene
             }
         }
@@ -336,9 +296,10 @@ namespace FlaxEditor.Windows
         /// <inheritdoc />
         public override void Update(float deltaTime)
         {
+            // TODO: call camera preview update only on selecion change, or state change
             UpdateCameraPreview();
 
-            if (ParentWindow.GetKeyDown(Keys.F12))
+            if (Root.GetKeyDown(Keys.F12))
             {
                 Viewport.TakeScreenshot();
             }
@@ -352,6 +313,47 @@ namespace FlaxEditor.Windows
             HideAllCameraPreviews();
 
             base.OnDestroy();
+        }
+
+        /// <inheritdoc />
+        public override bool UseLayoutData => true;
+
+        /// <inheritdoc />
+        public override void OnLayoutSerialize(XmlWriter writer)
+        {
+            writer.WriteAttributeString("GridEnabled", Viewport.Grid.Enabled.ToString());
+            writer.WriteAttributeString("NearPlane", Viewport.NearPlane.ToString());
+            writer.WriteAttributeString("FarPlane", Viewport.FarPlane.ToString());
+            writer.WriteAttributeString("FieldOfView", Viewport.FieldOfView.ToString());
+            writer.WriteAttributeString("MovementSpeed", Viewport.MovementSpeed.ToString());
+        }
+
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize(XmlElement node)
+        {
+            bool value1;
+            float value2;
+
+            if (bool.TryParse(node.GetAttribute("GridEnabled"), out value1))
+                Viewport.Grid.Enabled = value1;
+            if (float.TryParse(node.GetAttribute("NearPlane"), out value2))
+                Viewport.NearPlane = value2;
+            if (float.TryParse(node.GetAttribute("FarPlane"), out value2))
+                Viewport.FarPlane = value2;
+            if (float.TryParse(node.GetAttribute("FieldOfView"), out value2))
+                Viewport.FieldOfView = value2;
+            if (float.TryParse(node.GetAttribute("MovementSpeed"), out value2))
+                Viewport.MovementSpeed = value2;
+        }
+
+        /// <inheritdoc />
+        public override void OnLayoutDeserialize()
+        {
+            Viewport.Grid.Enabled = true;
+            Viewport.NearPlane = 8.0f;
+            Viewport.FarPlane = 20000.0f;
+            Viewport.FieldOfView = 60.0f;
+            Viewport.MovementSpeed = 1.0f;
         }
     }
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -53,14 +51,19 @@ namespace FlaxEditor.SceneGraph
         /// </summary>
         public abstract SceneNode ParentScene { get; }
 
+        /// <summary>
+        /// Gets the root node of the scene graph (if has).
+        /// </summary>
+        public virtual RootNode Root => ParentNode?.Root;
+
         /// <inheritdoc />
         public abstract Transform Transform { get; set; }
-        
+
         /// <summary>
         /// Gets a value indicating whether this instance can be copied or/and pasted.
         /// </summary>
         public virtual bool CanCopyPaste => true;
-        
+
         /// <summary>
         /// Gets a value indicating whether this node can be deleted by the user.
         /// </summary>
@@ -70,12 +73,12 @@ namespace FlaxEditor.SceneGraph
         /// Gets a value indicating whether this node can be dragged by the user.
         /// </summary>
         public virtual bool CanDrag => true;
-        
+
         /// <summary>
         /// Gets a value indicating whether this node can be transformed by the user.
         /// </summary>
         public virtual bool CanTransform => true;
-        
+
         /// <summary>
         /// Gets a value indicating whether this <see cref="SceneGraphNode"/> is active.
         /// </summary>
@@ -90,7 +93,7 @@ namespace FlaxEditor.SceneGraph
         /// Gets or sets order of the node in the parent container.
         /// </summary>
         public abstract int OrderInParent { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the parent node.
         /// </summary>
@@ -161,18 +164,51 @@ namespace FlaxEditor.SceneGraph
         }
 
         /// <summary>
-        /// Performs raycasting over nodes hierarchy trying to get the closest object hited by the given ray.
+        /// The scene graph raycasting data container.
         /// </summary>
-        /// <param name="ray">The ray.</param>
+        public struct RayCastData
+        {
+            /// <summary>
+            /// The raycasting optional flags.
+            /// </summary>
+            [Flags]
+            public enum FlagTypes
+            {
+                /// <summary>
+                /// The none.
+                /// </summary>
+                None = 0,
+
+                /// <summary>
+                /// The skip colliders flag.
+                /// </summary>
+                SkipColliders = 1,
+            }
+
+            /// <summary>
+            /// The ray.
+            /// </summary>
+            public Ray Ray;
+
+            /// <summary>
+            /// The flags.
+            /// </summary>
+            public FlagTypes Flags;
+        }
+
+        /// <summary>
+        /// Performs raycasting over nodes hierarchy trying to get the closest object hit by the given ray.
+        /// </summary>
+        /// <param name="ray">The ray casting data.</param>
         /// <param name="distance">The result distance.</param>
-        /// <returns>Hitted object or null if there is no interseciotn at all.</returns>
-        public virtual SceneGraphNode RayCast(ref Ray ray, ref float distance)
+        /// <returns>Hit object or null if there is no intersection at all.</returns>
+        public virtual SceneGraphNode RayCast(ref RayCastData ray, ref float distance)
         {
             if (!IsActive)
                 return null;
 
             // TODO: early out with boxWithChildren test
-            
+
             // Check itself
             SceneGraphNode minTarget = null;
             float minDistance = float.MaxValue;
@@ -204,10 +240,10 @@ namespace FlaxEditor.SceneGraph
         /// <summary>
         /// Checks if given ray intersects with the node.
         /// </summary>
-        /// <param name="ray">The ray.</param>
+        /// <param name="ray">The ray casting data.</param>
         /// <param name="distance">The distance.</param>
         /// <returns>True ray hits this node, otherwise false.</returns>
-        public virtual bool RayCastSelf(ref Ray ray, out float distance)
+        public virtual bool RayCastSelf(ref RayCastData ray, out float distance)
         {
             distance = 0;
             return false;

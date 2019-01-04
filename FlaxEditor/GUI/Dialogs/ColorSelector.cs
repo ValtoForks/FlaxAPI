@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -52,7 +50,7 @@ namespace FlaxEditor.GUI.Dialogs
         /// Initializes a new instance of the <see cref="ColorSelector"/> class.
         /// </summary>
         public ColorSelector()
-            : this(64)
+        : this(64)
         {
         }
 
@@ -61,9 +59,9 @@ namespace FlaxEditor.GUI.Dialogs
         /// </summary>
         /// <param name="wheelSize">Size of the wheel.</param>
         public ColorSelector(float wheelSize = 64)
-            : base(0, 0, wheelSize, wheelSize)
+        : base(0, 0, wheelSize, wheelSize)
         {
-            _colorWheelSprite = Editor.Instance.UI.GetIcon("ColorWheel");
+            _colorWheelSprite = Editor.Instance.Icons.ColorWheel;
             _wheelRect = new Rectangle(0, 0, wheelSize, wheelSize);
         }
 
@@ -130,7 +128,9 @@ namespace FlaxEditor.GUI.Dialogs
                 if (_color == Color.Black && hsv.Z <= 0.001f)
                     hsv.Z = 1.0f;
 
-                Color = Color.FromHSV(hsv);
+                var color = Color.FromHSV(hsv);
+                color.A = _color.A;
+                Color = color;
             }
         }
 
@@ -195,7 +195,7 @@ namespace FlaxEditor.GUI.Dialogs
 
             return base.OnMouseUp(location, buttons);
         }
-        
+
         /// <inheritdoc />
         public override void OnEndMouseCapture()
         {
@@ -204,11 +204,11 @@ namespace FlaxEditor.GUI.Dialogs
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
             _wheelRect = new Rectangle(0, 0, size.Y, size.Y);
-            
-            base.SetSizeInternal(size);
+
+            base.SetSizeInternal(ref size);
         }
     }
 
@@ -229,7 +229,7 @@ namespace FlaxEditor.GUI.Dialogs
         /// <param name="wheelSize">Size of the wheel.</param>
         /// <param name="slidersThickness">The sliders thickness.</param>
         public ColorSelectorWithSliders(float wheelSize, float slidersThickness)
-            : base(wheelSize)
+        : base(wheelSize)
         {
             // Setup dimensions
             const float slidersMargin = 8.0f;
@@ -278,14 +278,14 @@ namespace FlaxEditor.GUI.Dialogs
             // Value
             float valueY = _slider2Rect.Height * (1 - hsv.Z);
             var valueR = new Rectangle(_slider1Rect.X - slidersOffset, _slider1Rect.Y + valueY - slidersThickness / 2, _slider1Rect.Width + slidersOffset * 2, slidersThickness);
-            Render2D.FillRectangle(_slider1Rect, hsC, hsC, Color.Black, Color.Black, true);
+            Render2D.FillRectangle(_slider1Rect, hsC, hsC, Color.Black, Color.Black);
             Render2D.DrawRectangle(_slider1Rect, _isMouseDownSlider1 ? style.BackgroundSelected : Color.Black);
             Render2D.DrawRectangle(valueR, _isMouseDownSlider1 ? Color.White : Color.Gray);
 
             // Alpha
             float alphaY = _slider2Rect.Height * (1 - _color.A);
             var alphaR = new Rectangle(_slider2Rect.X - slidersOffset, _slider2Rect.Y + alphaY - slidersThickness / 2, _slider2Rect.Width + slidersOffset * 2, slidersThickness);
-            Render2D.FillRectangle(_slider2Rect, _color, _color, Color.Transparent, Color.Transparent, true);
+            Render2D.FillRectangle(_slider2Rect, _color, _color, Color.Transparent, Color.Transparent);
             Render2D.DrawRectangle(_slider2Rect, _isMouseDownSlider2 ? style.BackgroundSelected : Color.Black);
             Render2D.DrawRectangle(alphaR, _isMouseDownSlider2 ? Color.White : Color.Gray);
         }
@@ -332,7 +332,7 @@ namespace FlaxEditor.GUI.Dialogs
 
             return base.OnMouseUp(location, buttons);
         }
-        
+
         /// <inheritdoc />
         public override void OnEndMouseCapture()
         {

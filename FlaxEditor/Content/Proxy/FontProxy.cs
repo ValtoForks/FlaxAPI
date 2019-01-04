@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEditor.Content.Thumbnails;
 using FlaxEditor.Windows;
 using FlaxEditor.Windows.Assets;
@@ -36,18 +35,19 @@ namespace FlaxEditor.Content
         public override Color AccentColor => Color.FromRGB(0x2D74B2);
 
         /// <inheritdoc />
-        public override ContentDomain Domain => FontAsset.Domain;
+        public override ContentDomain Domain => ContentDomain.Font;
 
         /// <inheritdoc />
-        public override string TypeName => typeof(FontAsset).FullName;
+        public override Type AssetType => typeof(FontAsset);
 
         /// <inheritdoc />
         public override void OnThumbnailDrawBegin(ThumbnailRequest request, ContainerControl guiRoot, GPUContext context)
         {
             var asset = FlaxEngine.Content.Load<FontAsset>(request.Item.Path);
-            guiRoot.AddChild(new Label(Vector2.Zero, guiRoot.Size)
+            guiRoot.AddChild(new Label
             {
                 Text = asset.FamilyName,
+                Size = guiRoot.Size,
                 Wrapping = TextWrapping.WrapWords
             });
         }

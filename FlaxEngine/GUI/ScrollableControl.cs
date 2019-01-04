@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.GUI
 {
@@ -8,10 +6,11 @@ namespace FlaxEngine.GUI
     /// Base class for container controls that can offset controls in a view (eg. scroll panels).
     /// </summary>
     /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
+    [HideInEditor]
     public class ScrollableControl : ContainerControl
     {
         /// <summary>
-        /// The view offset. Usefull to offset contents of the container (used by the scrollbars and drop panels).
+        /// The view offset. Useful to offset contents of the container (used by the scrollbars and drop panels).
         /// </summary>
         protected Vector2 _viewOffset;
 
@@ -59,21 +58,21 @@ namespace FlaxEngine.GUI
         public override bool IntersectsContent(ref Vector2 locationParent, out Vector2 location)
         {
             // Little workaround to prevent applying offset when performing intersection test with this scrollable control.
-            // Note that overriden PointFromParent applyies view offset.
-            location = base.PointFromParent(locationParent);
+            // Note that overriden PointFromParent applies view offset.
+            location = base.PointFromParent(ref locationParent);
             return ContainsPoint(ref location);
         }
 
         /// <inheritdoc />
-        public override Vector2 PointToParent(Vector2 location)
+        public override Vector2 PointToParent(ref Vector2 location)
         {
-            return base.PointToParent(location) + _viewOffset;
+            return base.PointToParent(ref location) + _viewOffset;
         }
 
         /// <inheritdoc />
-        public override Vector2 PointFromParent(Vector2 location)
+        public override Vector2 PointFromParent(ref Vector2 location)
         {
-            return base.PointFromParent(location) - _viewOffset;
+            return base.PointFromParent(ref location) - _viewOffset;
         }
     }
 }

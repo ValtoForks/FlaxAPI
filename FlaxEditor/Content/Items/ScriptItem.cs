@@ -1,9 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Text;
 using FlaxEditor.Scripting;
+using FlaxEngine;
 
 namespace FlaxEditor.Content
 {
@@ -19,11 +18,19 @@ namespace FlaxEditor.Content
         public string ScriptName => FilterScriptName(ShortName);
 
         /// <summary>
+        /// Checks if the script item references the valid use script type that can be used in a gameplay.
+        /// </summary>
+        public bool IsValid
+        {
+            get { return ScriptsBuilder.FindScript(ScriptName) != null; }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ScriptItem"/> class.
         /// </summary>
         /// <param name="path">The path to the item.</param>
         public ScriptItem(string path)
-            : base(path)
+        : base(path)
         {
         }
 
@@ -71,7 +78,10 @@ namespace FlaxEditor.Content
         public override ContentItemType ItemType => ContentItemType.Script;
 
         /// <inheritdoc />
-        public override string DefaultThumbnailName => "Script64";
+        public override ContentItemSearchFilter SearchFilter => ContentItemSearchFilter.Script;
+
+        /// <inheritdoc />
+        public override Sprite DefaultThumbnail => Editor.Instance.Icons.Script64;
 
         /// <inheritdoc />
         public override ScriptItem FindScriptWitScriptName(string scriptName)

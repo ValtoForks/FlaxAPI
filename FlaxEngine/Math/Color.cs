@@ -1,8 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -12,9 +11,15 @@ namespace FlaxEngine
     /// Representation of RGBA colors.
     /// </summary>
     [Serializable]
+    [TypeConverter(typeof(TypeConverters.ColorConverter))]
     [StructLayout(LayoutKind.Sequential)]
     public partial struct Color
     {
+        /// <summary>
+        /// The size of the <see cref="Color" /> type, in bytes.
+        /// </summary>
+        public static readonly int SizeInBytes = Marshal.SizeOf(typeof(Color));
+
         /// <summary>
         /// Red component of the color.
         /// </summary>
@@ -48,22 +53,22 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                    {
-                        return R;
-                    }
-                    case 1:
-                    {
-                        return G;
-                    }
-                    case 2:
-                    {
-                        return B;
-                    }
-                    case 3:
-                    {
-                        return A;
-                    }
+                case 0:
+                {
+                    return R;
+                }
+                case 1:
+                {
+                    return G;
+                }
+                case 2:
+                {
+                    return B;
+                }
+                case 3:
+                {
+                    return A;
+                }
                 }
                 throw new IndexOutOfRangeException("Invalid Color index!");
             }
@@ -71,30 +76,30 @@ namespace FlaxEngine
             {
                 switch (index)
                 {
-                    case 0:
-                    {
-                        R = value;
-                        break;
-                    }
-                    case 1:
-                    {
-                        G = value;
-                        break;
-                    }
-                    case 2:
-                    {
-                        B = value;
-                        break;
-                    }
-                    case 3:
-                    {
-                        A = value;
-                        break;
-                    }
-                    default:
-                    {
-                        throw new IndexOutOfRangeException("Invalid Color index!");
-                    }
+                case 0:
+                {
+                    R = value;
+                    break;
+                }
+                case 1:
+                {
+                    G = value;
+                    break;
+                }
+                case 2:
+                {
+                    B = value;
+                    break;
+                }
+                case 3:
+                {
+                    A = value;
+                    break;
+                }
+                default:
+                {
+                    throw new IndexOutOfRangeException("Invalid Color index!");
+                }
                 }
             }
         }
@@ -285,7 +290,7 @@ namespace FlaxEngine
 
             result[6] = digits[(a >> 4) & 0x0f];
             result[7] = digits[(a) & 0x0f];
-            
+
             return new string(result);
         }
 
@@ -447,7 +452,13 @@ namespace FlaxEngine
         /// <returns>A four-element array containing the components of the color.</returns>
         public float[] ToArray()
         {
-            return new[] { R, G, B, A };
+            return new[]
+            {
+                R,
+                G,
+                B,
+                A
+            };
         }
 
         /// <summary>
@@ -468,19 +479,50 @@ namespace FlaxEngine
             return new Color(Mathf.SRgbToLinear(R), Mathf.SRgbToLinear(G), Mathf.SRgbToLinear(B), A);
         }
 
-        static readonly int[][] RGBSwizzle = {
-            new []{ 0, 3, 1 },
-            new []{ 2, 0, 1 },
-            new []{ 1, 0, 3 },
-            new []{ 1, 2, 0 },
-            new []{ 3, 1, 0 },
-            new []{ 0, 1, 2 },
+        static readonly int[][] RGBSwizzle =
+        {
+            new[]
+            {
+                0,
+                3,
+                1
+            },
+            new[]
+            {
+                2,
+                0,
+                1
+            },
+            new[]
+            {
+                1,
+                0,
+                3
+            },
+            new[]
+            {
+                1,
+                2,
+                0
+            },
+            new[]
+            {
+                3,
+                1,
+                0
+            },
+            new[]
+            {
+                0,
+                1,
+                2
+            },
         };
 
         /// <summary>
         /// Creates RGB color from Hue[0-360], Saturation[0-1] and Value[0-1].
         /// </summary>
-        /// <param name="hue">The hue angle in degress [0-360].</param>
+        /// <param name="hue">The hue angle in degrees [0-360].</param>
         /// <param name="saturation">The saturation normalized [0-1].</param>
         /// <param name="value">The value normalized [0-1].</param>
         /// <param name="alpha">The alpha value. Default is 1.</param>
@@ -502,9 +544,9 @@ namespace FlaxEngine
             int swizzleIndex = ((int)hDiv60Floor) % 6;
 
             return new Color(rgbValues[RGBSwizzle[swizzleIndex][0]],
-                rgbValues[RGBSwizzle[swizzleIndex][1]],
-                rgbValues[RGBSwizzle[swizzleIndex][2]],
-                alpha);
+                             rgbValues[RGBSwizzle[swizzleIndex][1]],
+                             rgbValues[RGBSwizzle[swizzleIndex][2]],
+                             alpha);
         }
 
         /// <summary>
@@ -517,7 +559,7 @@ namespace FlaxEngine
         {
             return FromHSV(hsv.X, hsv.Y, hsv.Z, alpha);
         }
-        
+
         /// <summary>
         /// Linearly interpolates between colors a and b by t.
         /// </summary>
@@ -667,7 +709,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Substracts one color from the another.
+        /// Subtracts one color from the another.
         /// </summary>
         /// <param name="a">The first color.</param>
         /// <param name="b">The second color.</param>
@@ -688,7 +730,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Converts the color to HSV color space (retured as vector).
+        /// Converts the color to HSV color space (returned as vector).
         /// </summary>
         /// <returns>The HSV color.</returns>
         public Vector3 ToHSV()
@@ -716,7 +758,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Convert color from the RGB colro space to HSV color space.
+        /// Convert color from the RGB color space to HSV color space.
         /// </summary>
         /// <param name="rgbColor">Color of the RGB.</param>
         /// <param name="h">The output Hue.</param>

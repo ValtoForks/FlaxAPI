@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.CustomEditors.Elements;
 using FlaxEngine;
@@ -17,16 +15,16 @@ namespace FlaxEditor.CustomEditors.GUI
         // TODO: sync splitter for whole presenter
 
         /// <summary>
-        /// The spliter size (in pixels).
+        /// The splitter size (in pixels).
         /// </summary>
-        public const int SpliterSize = 2;
+        public const int SplitterSize = 2;
 
         /// <summary>
         /// The splitter margin (in pixels).
         /// </summary>
         public const int SplitterMargin = 4;
 
-        private const int SpliterSizeHalf = SpliterSize / 2;
+        private const int SplitterSizeHalf = SplitterSize / 2;
 
         private PropertiesListElement _element;
         private float _splitterValue;
@@ -75,7 +73,7 @@ namespace FlaxEditor.CustomEditors.GUI
 
         private void UpdateSplitRect()
         {
-            _splitterRect = new Rectangle(Mathf.Clamp(_splitterValue * Width - SpliterSizeHalf, 0.0f, Width), 0, SpliterSize, Height);
+            _splitterRect = new Rectangle(Mathf.Clamp(_splitterValue * Width - SplitterSizeHalf, 0.0f, Width), 0, SplitterSize, Height);
             LeftMargin = _splitterValue * Width + SplitterMargin;
         }
 
@@ -177,33 +175,34 @@ namespace FlaxEditor.CustomEditors.GUI
         }
 
         /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
+        protected override void SetSizeInternal(ref Vector2 size)
         {
-            base.SetSizeInternal(size);
+            base.SetSizeInternal(ref size);
 
             // Refresh
             UpdateSplitRect();
             PerformLayout();
         }
-        
+
         /// <inheritdoc />
         protected override void PerformLayoutSelf()
         {
             // Sort controls from up to down into two columns: one for labels and one for the rest of the stuff
 
-            float y = _topMargin;
-            float w = Width - _leftMargin - _rightMargin;
+            float y = _margin.Top;
+            float w = Width - _margin.Width;
             for (int i = 0; i < _children.Count; i++)
             {
                 Control c = _children[i];
-                if (c.Visible && !(c is PropertyNameLabel))
+                if (!(c is PropertyNameLabel))
                 {
                     var h = c.Height;
-                    c.Bounds = new Rectangle(_leftMargin, y + _spacing, w, h);
-                    y = c.Bottom;
+                    c.Bounds = new Rectangle(_margin.Left, y + _spacing, w, h);
+                    if (c.Visible)
+                        y = c.Bottom;
                 }
             }
-            y += _bottomMargin;
+            y += _margin.Bottom;
 
             float namesWidth = _splitterValue * Width;
             int count = _element.Labels.Count;
@@ -229,7 +228,8 @@ namespace FlaxEditor.CustomEditors.GUI
                 label.Bounds = rect;
             }
 
-            Height = y;
+            if (_autoSize)
+                Height = y;
         }
     }
 }

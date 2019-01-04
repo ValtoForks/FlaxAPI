@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -8,9 +8,5 @@ namespace FlaxEngine
     /// <seealso cref="FlaxEngine.BinaryAsset" />
     public sealed class Shader : BinaryAsset
     {
-        /// <summary>
-        /// The asset type content domain.
-        /// </summary>
-        public const ContentDomain Domain = ContentDomain.Shader;
     }
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -13,19 +11,23 @@ namespace FlaxEditor.Surface
     /// <summary>
     /// Visject Surface node control.
     /// </summary>
-    /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
-    public class SurfaceNode : ContainerControl
+    /// <seealso cref="SurfaceControl" />
+    public class SurfaceNode : SurfaceControl
     {
-        private Rectangle _headerRect;
-        private Rectangle _closeButtonRect;
-        private Rectangle _footerRect;
-        private Vector2 _mousePosition;
-        private bool _isSelected;
+        /// <summary>
+        /// The header rectangle (local space).
+        /// </summary>
+        protected Rectangle _headerRect;
 
         /// <summary>
-        /// The surface.
+        /// The close button rectangle (local space).
         /// </summary>
-        public readonly VisjectSurface Surface;
+        protected Rectangle _closeButtonRect;
+
+        /// <summary>
+        /// The footer rectangle (local space).
+        /// </summary>
+        protected Rectangle _footerRect;
 
         /// <summary>
         /// The node archetype.
@@ -43,21 +45,14 @@ namespace FlaxEditor.Surface
         public readonly List<ISurfaceNodeElement> Elements = new List<ISurfaceNodeElement>();
 
         /// <summary>
-        /// The values (node paramaters in layout based on <see cref="NodeArchetype.DefaultValues"/>).
+        /// The values (node parameters in layout based on <see cref="NodeArchetype.DefaultValues"/>).
         /// </summary>
         public readonly object[] Values;
 
         /// <summary>
-        /// Gets a value indicating whether this node is selected.
+        /// Gets or sets the node title text.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if this node is selected; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsSelected
-        {
-            get => _isSelected;
-            internal set { _isSelected = value; }
-        }
+        public string Title { get; set; }
 
         /// <summary>
         /// The identifier of the node.
@@ -65,13 +60,13 @@ namespace FlaxEditor.Surface
         public readonly uint ID;
 
         /// <summary>
-        /// Gets the type (packed GrouID (higher 16 bits) and TypeID (lower 16 bits)).
+        /// Gets the type (packed GroupID (higher 16 bits) and TypeID (lower 16 bits)).
         /// </summary>
         /// <value>
         /// The type.
         /// </value>
         public uint Type => ((uint)GroupArchetype.GroupID << 16) | Archetype.TypeID;
-        
+
         /// <summary>
         /// The metadata.
         /// </summary>
@@ -81,16 +76,14 @@ namespace FlaxEditor.Surface
         /// Initializes a new instance of the <see cref="SurfaceNode"/> class.
         /// </summary>
         /// <param name="id">The node id.</param>
-        /// <param name="surface">The surface.</param>
+        /// <param name="context">The surface context.</param>
         /// <param name="nodeArch">The node archetype.</param>
         /// <param name="groupArch">The group archetype.</param>
-        public SurfaceNode(uint id, VisjectSurface surface, NodeArchetype nodeArch, GroupArchetype groupArch)
-            : base(0, 0, nodeArch.Size.X + Constants.NodeMarginX * 2, nodeArch.Size.Y + Constants.NodeMarginY * 2 + Constants.NodeHeaderSize + Constants.NodeFooterSize)
+        public SurfaceNode(uint id, VisjectSurfaceContext context, NodeArchetype nodeArch, GroupArchetype groupArch)
+        : base(context, nodeArch.Size.X + Constants.NodeMarginX * 2, nodeArch.Size.Y + Constants.NodeMarginY * 2 + Constants.NodeHeaderSize + Constants.NodeFooterSize)
         {
-            ClipChildren = false;
-
+            Title = nodeArch.Title;
             ID = id;
-            Surface = surface;
             Archetype = nodeArch;
             GroupArchetype = groupArch;
 
@@ -108,7 +101,20 @@ namespace FlaxEditor.Surface
         /// <param name="height">The height.</param>
         protected void Resize(float width, float height)
         {
+            var prevSize = Size;
             Size = new Vector2(width + Constants.NodeMarginX * 2, height + Constants.NodeMarginY * 2 + Constants.NodeHeaderSize + Constants.NodeFooterSize);
+
+            // Update boxes on width change
+            if (!Mathf.NearEqual(prevSize.X, Size.X))
+            {
+                for (int i = 0; i < Elements.Count; i++)
+                {
+                    if (Elements[i] is OutputBox box)
+                    {
+                        box.Location = box.Archetype.Position + new Vector2(width, 0);
+                    }
+                }
+            }
         }
 
         internal void AddElement(ISurfaceNodeElement element)
@@ -120,30 +126,25 @@ namespace FlaxEditor.Surface
 
         internal void RemoveElement(ISurfaceNodeElement element, bool dispose = true)
         {
-            if(element is Box box)
+            if (element is Box box)
                 box.RemoveConnections();
             Elements.Remove(element);
             if (element is Control control)
             {
                 RemoveChild(control);
-                if(dispose)
+                if (dispose)
                     control.Dispose();
             }
         }
 
-        internal bool HitsHeader(ref Vector2 location)
-        {
-            return _headerRect.MakeOffseted(Location).Contains(ref location);
-        }
-        
         /// <summary>
-        /// Remeove all connections from and to that node.
+        /// Removes all connections from and to that node.
         /// </summary>
-        public void RemoveConnections()
+        public virtual void RemoveConnections()
         {
             for (int i = 0; i < Elements.Count; i++)
             {
-                if(Elements[i] is Box box)
+                if (Elements[i] is Box box)
                     box.RemoveConnections();
             }
 
@@ -151,20 +152,53 @@ namespace FlaxEditor.Surface
         }
 
         /// <summary>
+        /// Gets a value indicating whether this node uses dependent boxes.
+        /// </summary>
+        public bool HasDependentBoxes => Archetype.DependentBoxes != null;
+
+        /// <summary>
+        /// Gets a value indicating whether this node uses independent boxes.
+        /// </summary>
+        public bool HasIndependentBoxes => Archetype.IndependentBoxes != null;
+
+        /// <summary>
+        /// Gets a value indicating whether this node has dependent boxes with assigned valid types. Otherwise any box has no dependent type assigned.
+        /// </summary>
+        public bool HasDependentBoxesSetup
+        {
+            get
+            {
+                if (Archetype.DependentBoxes == null || Archetype.IndependentBoxes == null)
+                    return true;
+
+                for (int i = 0; i < Archetype.DependentBoxes.Length; i++)
+                {
+                    var b = GetBox(Archetype.DependentBoxes[i]);
+                    if (b != null && b.CurrentType == b.DefaultType)
+                        return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Updates dependant/independent boxes types.
         /// </summary>
         public void UpdateBoxesTypes()
         {
-            // Check there is no need to use box types depedency feature
-            if (Archetype.DependentBoxes == null || Archetype.IndependentBoxes == null)
+            // Check there is no need to use box types dependency feature
+            if (Archetype.DependentBoxes == null && Archetype.IndependentBoxes == null)
             {
                 // Back
                 return;
             }
-            
+            var independentBoxesLength = Archetype.IndependentBoxes?.Length;
+            var dependentBoxesLength = Archetype.DependentBoxes?.Length;
+
             // Get type to assign to all dependent boxes
             ConnectionType type = Archetype.DefaultType;
-            for (int i = 0; i < Archetype.IndependentBoxes.Length; i++)
+            for (int i = 0; i < independentBoxesLength; i++)
             {
                 var b = GetBox(Archetype.IndependentBoxes[i]);
                 if (b != null && b.HasAnyConnection)
@@ -179,7 +213,7 @@ namespace FlaxEditor.Surface
             }
 
             // Assign connection type
-            for (int i = 0; i < Archetype.DependentBoxes.Length; i++)
+            for (int i = 0; i < dependentBoxesLength; i++)
             {
                 var b = GetBox(Archetype.DependentBoxes[i]);
                 if (b != null)
@@ -190,7 +224,7 @@ namespace FlaxEditor.Surface
             }
 
             // Validate minor independent boxes to fit main one
-            for (int i = 0; i < Archetype.IndependentBoxes.Length; i++)
+            for (int i = 0; i < independentBoxesLength; i++)
             {
                 var b = GetBox(Archetype.IndependentBoxes[i]);
                 if (b != null)
@@ -208,13 +242,35 @@ namespace FlaxEditor.Surface
         /// <returns>Box or null if cannot find.</returns>
         public Box GetBox(int id)
         {
-            // TODO: maybe create local cache for boxes? but not a dictionary, use lookup table because ids are usally small (less than 20)
+            // TODO: maybe create local cache for boxes? but not a dictionary, use lookup table because ids are usually small (less than 20)
             for (int i = 0; i < Elements.Count; i++)
             {
                 if (Elements[i] is Box box && box.ID == id)
                     return box;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Tries to get box with given ID.
+        /// </summary>
+        /// <param name="id">The box id.</param>
+        /// <param name="result">Box or null if cannot find.</param>
+        /// <returns>True fi box has been found, otherwise false.</returns>
+        public bool TryGetBox(int id, out Box result)
+        {
+            // TODO: maybe create local cache for boxes? but not a dictionary, use lookup table because ids are usually small (less than 20)
+            for (int i = 0; i < Elements.Count; i++)
+            {
+                if (Elements[i] is Box box && box.ID == id)
+                {
+                    result = box;
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
         }
 
         internal List<Box> GetBoxes()
@@ -228,20 +284,60 @@ namespace FlaxEditor.Surface
             return result;
         }
 
-        /// <summary>
-        /// Called when node gets loaded and elements are created.
-        /// </summary>
-        public virtual void OnLoaded()
+        internal void GetBoxes(List<Box> result)
         {
+            result.Clear();
+            for (int i = 0; i < Elements.Count; i++)
+            {
+                if (Elements[i] is Box box)
+                    result.Add(box);
+            }
         }
 
         /// <summary>
-        /// Called when surface gets loaded and boxes are connected.
+        /// Draws all the connections between surface objects related to this node.
         /// </summary>
-        public virtual void OnSurfaceLoaded()
+        /// <param name="mousePosition">The current mouse position (in surface-space).</param>
+        public virtual void DrawConnections(ref Vector2 mousePosition)
         {
-            UpdateRectangles();
+            for (int j = 0; j < Elements.Count; j++)
+            {
+                if (Elements[j] is OutputBox ob && ob.HasAnyConnection)
+                {
+                    ob.DrawConnections();
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool CanSelect(ref Vector2 location)
+        {
+            return _headerRect.MakeOffseted(Location).Contains(ref location);
+        }
+
+        /// <inheritdoc />
+        public override void OnSurfaceLoaded()
+        {
+            base.OnSurfaceLoaded();
+
             UpdateBoxesTypes();
+
+            for (int i = 0; i < Elements.Count; i++)
+            {
+                if (Elements[i] is Box box)
+                    box.OnConnectionsChanged();
+            }
+        }
+
+        /// <summary>
+        /// Sets the value of the node parameter.
+        /// </summary>
+        /// <param name="index">The value index.</param>
+        /// <param name="value">The value.</param>
+        public virtual void SetValue(int index, object value)
+        {
+            Values[index] = value;
+            Surface.MarkAsEdited();
         }
 
         /// <summary>
@@ -253,10 +349,8 @@ namespace FlaxEditor.Surface
             UpdateBoxesTypes();
         }
 
-        /// <summary>
-        /// Updates the cached rectangles on node size change.
-        /// </summary>
-        protected virtual void UpdateRectangles()
+        /// <inheritdoc />
+        protected override void UpdateRectangles()
         {
             const float footerSize = Constants.NodeFooterSize;
             const float headerSize = Constants.NodeHeaderSize;
@@ -286,7 +380,7 @@ namespace FlaxEditor.Surface
 
             // Header
             Render2D.FillRectangle(_headerRect, style.BackgroundHighlighted);
-            Render2D.DrawText(style.FontLarge, Archetype.Title, _headerRect, style.Foreground, TextAlignment.Center, TextAlignment.Center, TextWrapping.NoWrap, 1.0f);
+            Render2D.DrawText(style.FontLarge, Title, _headerRect, style.Foreground, TextAlignment.Center, TextAlignment.Center);
 
             // Close button
             if ((Archetype.Flags & NodeFlags.NoCloseButton) == 0)
@@ -297,30 +391,6 @@ namespace FlaxEditor.Surface
 
             // Footer
             Render2D.FillRectangle(_footerRect, GroupArchetype.Color);
-        }
-
-        /// <inheritdoc />
-        public override void OnMouseEnter(Vector2 location)
-        {
-            _mousePosition = location;
-
-            base.OnMouseEnter(location);
-        }
-
-        /// <inheritdoc />
-        public override void OnMouseMove(Vector2 location)
-        {
-            _mousePosition = location;
-
-            base.OnMouseMove(location);
-        }
-
-        /// <inheritdoc />
-        public override void OnMouseLeave()
-        {
-            _mousePosition = Vector2.Minimum;
-
-            base.OnMouseLeave();
         }
 
         /// <inheritdoc />
@@ -341,27 +411,14 @@ namespace FlaxEditor.Surface
             // Secondary Context Menu
             if (buttons == MouseButton.Right)
             {
-                Surface.ShowSecondaryCM(this, Parent.PointToParent(PointToParent(location)));
+                if (!IsSelected)
+                    Surface.Select(this);
+                var tmp = PointToParent(ref location);
+                Surface.ShowSecondaryCM(Parent.PointToParent(ref tmp));
                 return true;
             }
 
             return false;
-        }
-
-        /// <inheritdoc />
-        protected override void SetScaleInternal(ref Vector2 scale)
-        {
-            base.SetScaleInternal(ref scale);
-
-            UpdateRectangles();
-        }
-
-        /// <inheritdoc />
-        protected override void SetSizeInternal(Vector2 size)
-        {
-            base.SetSizeInternal(size);
-
-            UpdateRectangles();
         }
     }
 }

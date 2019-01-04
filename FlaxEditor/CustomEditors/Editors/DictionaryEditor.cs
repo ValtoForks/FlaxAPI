@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
@@ -61,16 +59,16 @@ namespace FlaxEditor.CustomEditors.Editors
             _notNullItems = false;
 
             // No support for different collections for now
-            if (HasDiffrentValues || HasDiffrentTypes)
+            if (HasDifferentValues || HasDifferentTypes)
                 return;
 
             var type = Values.Type;
             var size = Count;
 
             // Try get MemberCollectionAttribute for collection editor meta
-            if (Values.Info != null)
+            var attributes = Values.GetAttributes();
+            if (attributes != null)
             {
-                var attributes = Values.Info.GetCustomAttributes(true);
                 var memberCollection = (MemberCollectionAttribute)attributes.FirstOrDefault(x => x is MemberCollectionAttribute);
                 if (memberCollection != null)
                 {
@@ -109,7 +107,7 @@ namespace FlaxEditor.CustomEditors.Editors
                 {
                     var item = layout.CustomContainer<UniformGridPanel>();
                     var itemGrid = item.CustomControl;
-                    itemGrid.Height = TextBox.DefaultHeight;// TODO: make slots auto sizable instead of fixed height
+                    itemGrid.Height = TextBox.DefaultHeight; // TODO: make slots auto sizable instead of fixed height
                     itemGrid.SlotsHorizontally = 2;
                     itemGrid.SlotsVertically = 1;
 
@@ -141,7 +139,7 @@ namespace FlaxEditor.CustomEditors.Editors
         {
             var dictionary = Values[0] as IDictionary;
             var oldSize = dictionary?.Count ?? 0;
-            
+
             if (oldSize != newSize)
             {
                 // Allocate new collection
@@ -217,12 +215,14 @@ namespace FlaxEditor.CustomEditors.Editors
                 SetValue(newValues);
             }
         }
-        
+
         /// <inheritdoc />
         public override void Refresh()
         {
+            base.Refresh();
+
             // No support for different collections for now
-            if (HasDiffrentValues || HasDiffrentTypes)
+            if (HasDifferentValues || HasDifferentTypes)
                 return;
 
             // Check if collection has been resized (by UI or from external source)

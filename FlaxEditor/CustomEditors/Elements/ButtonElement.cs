@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -17,7 +15,7 @@ namespace FlaxEditor.CustomEditors.Elements
         /// The button.
         /// </summary>
         public readonly Button Button = new Button();
-        
+
         /// <summary>
         /// Initializes the element.
         /// </summary>

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -23,7 +21,7 @@ namespace FlaxEditor.Surface
         NoCloseButton = 1,
 
         /// <summary>
-        /// Node should use dependant and independant boxes types.
+        /// Node should use dependant and independent boxes types.
         /// </summary>
         UseDependantBoxes = 2,
 
@@ -46,5 +44,10 @@ namespace FlaxEditor.Surface
         /// Disable removing that node from the graph.
         /// </summary>
         NoRemove = 32,
+
+        /// <summary>
+        /// Node only for the animation graphs.
+        /// </summary>
+        AnimGraphOnly = 64,
     }
 }

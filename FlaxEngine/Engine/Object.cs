@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -151,7 +149,7 @@ namespace FlaxEngine
 #endif
         }
 
-#region Internal Calls
+        #region Internal Calls
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern Object Internal_Create(Type type);
@@ -168,6 +166,6 @@ namespace FlaxEngine
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_ChangeID(IntPtr obj, ref Guid id);
 
-#endregion
+        #endregion
     }
 }

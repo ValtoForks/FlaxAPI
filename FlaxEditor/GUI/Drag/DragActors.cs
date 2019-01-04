@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,58 +9,39 @@ using FlaxEngine.GUI;
 namespace FlaxEditor.GUI.Drag
 {
     /// <summary>
+    /// Actors references collection drag handler.
+    /// </summary>
+    public sealed class DragActors : DragActors<DragEventArgs>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DragActors"/> class.
+        /// </summary>
+        /// <param name="validateFunction">The validation function</param>
+        public DragActors(Func<ActorNode, bool> validateFunction)
+        : base(validateFunction)
+        {
+        }
+    }
+
+    /// <summary>
     /// Helper class for handling <see cref="ActorNode"/> drag and drop.
     /// </summary>
     /// <seealso cref="Actor" />
     /// <seealso cref="ActorNode" />
-    public sealed class DragActors : DragHelper<ActorNode>
+    public class DragActors<U> : DragHelper<ActorNode, U> where U : DragEventArgs
     {
         /// <summary>
         /// The default prefix for drag data used for <see cref="ActorNode"/>.
         /// </summary>
         public const string DragPrefix = "ACTOR!?";
 
-        /// <inheritdoc />
-        protected override void GetherObjects(DragDataText data, Func<ActorNode, bool> validateFunc)
-        {
-            var items = ParseData(data);
-            for (int i = 0; i < items.Length; i++)
-            {
-                if (validateFunc(items[i]))
-                    Objects.Add(items[i]);
-            }
-        }
-
         /// <summary>
-        /// Tries to parse the drag data to extract <see cref="ActorNode"/> collection.
+        /// Creates a new DragHelper
         /// </summary>
-        /// <param name="data">The data.</param>
-        /// <returns>Gathered objects or empty array if cannot get any valid.</returns>
-        public static ActorNode[] ParseData(DragDataText data)
+        /// <param name="validateFunction">The validation function</param>
+        public DragActors(Func<ActorNode, bool> validateFunction)
+        : base(validateFunction)
         {
-            if (data.Text.StartsWith(DragPrefix))
-            {
-                // Remove prefix and parse splited names
-                var ids = data.Text.Remove(0, DragPrefix.Length).Split('\n');
-                var results = new List<ActorNode>(ids.Length);
-                for (int i = 0; i < ids.Length; i++)
-                {
-                    // Find element
-                    Guid id;
-                    if (Guid.TryParse(ids[i], out id))
-                    {
-                        var obj = Editor.Instance.Scene.GetActorNode(id);
-
-                        // Check it
-                        if (obj != null)
-                            results.Add(obj);
-                    }
-                }
-
-                return results.ToArray();
-            }
-
-            return new ActorNode[0];
         }
 
         /// <summary>
@@ -70,7 +49,20 @@ namespace FlaxEditor.GUI.Drag
         /// </summary>
         /// <param name="actor">The actor.</param>
         /// <returns>The data.</returns>
-        public static DragDataText GetDragData(Actor actor)
+        public DragData ToDragData(Actor actor) => GetDragData(actor);
+
+        /// <inheritdoc/>
+        public override DragData ToDragData(ActorNode item) => GetDragData(item);
+
+        /// <inheritdoc/>
+        public override DragData ToDragData(IEnumerable<ActorNode> items) => GetDragData(items);
+
+        /// <summary>
+        /// Gets the drag data.
+        /// </summary>
+        /// <param name="actor">The actor.</param>
+        /// <returns>The data.</returns>
+        public static DragData GetDragData(Actor actor)
         {
             if (actor == null)
                 throw new ArgumentNullException();
@@ -83,7 +75,7 @@ namespace FlaxEditor.GUI.Drag
         /// </summary>
         /// <param name="item">The item.</param>
         /// <returns>The data.</returns>
-        public static DragDataText GetDragData(ActorNode item)
+        public static DragData GetDragData(ActorNode item)
         {
             if (item == null)
                 throw new ArgumentNullException();
@@ -96,7 +88,7 @@ namespace FlaxEditor.GUI.Drag
         /// </summary>
         /// <param name="items">The items.</param>
         /// <returns>The data.</returns>
-        public static DragDataText GetDragData(IEnumerable<ActorNode> items)
+        public static DragData GetDragData(IEnumerable<ActorNode> items)
         {
             if (items == null)
                 throw new ArgumentNullException();
@@ -105,6 +97,37 @@ namespace FlaxEditor.GUI.Drag
             foreach (var item in items)
                 text += item.ID.ToString("N") + '\n';
             return new DragDataText(text);
+        }
+
+        /// <inheritdoc/>
+        public override IEnumerable<ActorNode> FromDragData(DragData data)
+        {
+            if (data is DragDataText dataText)
+            {
+                if (dataText.Text.StartsWith(DragPrefix))
+                {
+                    // Remove prefix and parse spitted names
+                    var ids = dataText.Text.Remove(0, DragPrefix.Length).Split('\n');
+                    var results = new List<ActorNode>(ids.Length);
+                    for (int i = 0; i < ids.Length; i++)
+                    {
+                        // Find element
+                        Guid id;
+                        if (Guid.TryParse(ids[i], out id))
+                        {
+                            var obj = Editor.Instance.Scene.GetActorNode(id);
+
+                            // Check it
+                            if (obj != null)
+                                results.Add(obj);
+                        }
+                    }
+
+                    return results.ToArray();
+                }
+            }
+
+            return new ActorNode[0];
         }
     }
 }

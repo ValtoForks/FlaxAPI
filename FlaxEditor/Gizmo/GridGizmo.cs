@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -42,7 +40,7 @@ namespace FlaxEditor.Gizmo
         /// </summary>
         /// <param name="owner">The gizmos owner.</param>
         public GridGizmo(IGizmoOwner owner)
-            : base(owner)
+        : base(owner)
         {
         }
 

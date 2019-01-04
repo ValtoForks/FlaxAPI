@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -20,6 +18,13 @@ namespace FlaxEngine
         /// Occurs on sending a exception log message.
         /// </summary>
         event LogExceptionDegetae SendExceptionLog;
+
+        /// <summary>
+        /// Logs the raw message to the log.
+        /// </summary>
+        /// <param name="logType">Type of the log message. Not: fatal will stop the engine. Error may show a message popup.</param>
+        /// <param name="message">The message contents.</param>
+        void LogWrite(LogType logType, string message);
 
         /// <summary>
         /// <para>A variant of ILogHandler.LogFormat that logs an exception message.</para>

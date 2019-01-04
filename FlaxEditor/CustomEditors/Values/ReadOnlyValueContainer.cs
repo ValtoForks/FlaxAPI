@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.CustomEditors
 {
@@ -15,7 +13,7 @@ namespace FlaxEditor.CustomEditors
         /// </summary>
         /// <param name="value">The initial value.</param>
         public ReadOnlyValueContainer(object value)
-            : base(null, typeof(object))
+        : base(null, typeof(object))
         {
             Add(value);
         }
@@ -34,6 +32,12 @@ namespace FlaxEditor.CustomEditors
 
         /// <inheritdoc />
         public override void Set(ValueContainer instanceValues)
+        {
+            // Not supported
+        }
+
+        /// <inheritdoc />
+        public override void RefreshReferenceValue(object instanceValue)
         {
             // Not supported
         }

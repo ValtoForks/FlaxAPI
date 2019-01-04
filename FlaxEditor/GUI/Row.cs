@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -35,7 +33,7 @@ namespace FlaxEditor.GUI
         /// </summary>
         /// <param name="height">The height.</param>
         public Row(float height = 16)
-            : base(0, 0, 100, height)
+        : base(0, 0, 100, height)
         {
             Depth = -1;
         }
@@ -49,7 +47,7 @@ namespace FlaxEditor.GUI
 
             if (IsMouseOver)
             {
-                Render2D.FillRectangle(new Rectangle(Vector2.Zero, Size), style.BackgroundHighlighted * 0.1f, true);
+                Render2D.FillRectangle(new Rectangle(Vector2.Zero, Size), style.BackgroundHighlighted * 0.7f);
             }
 
             if (Values != null && _table?.Columns != null)
@@ -78,7 +76,7 @@ namespace FlaxEditor.GUI
                     {
                         float arrowSize = 12.0f;
                         leftDepthMargin = arrowSize * (Depth + 1);
-                        
+
                         // Check if has any child events (next row should be it)
                         int nextIndex = IndexInParent + 1;
                         if (nextIndex < _table.ChildrenCount)
@@ -188,7 +186,7 @@ namespace FlaxEditor.GUI
                 {
                     if (child.Depth == Depth + 1)
                         child.Visible = visible;
-                    else if(child.Depth <= Depth)
+                    else if (child.Depth <= Depth)
                         break;
                 }
             }

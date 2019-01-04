@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEditor.Content
 {
@@ -15,9 +13,8 @@ namespace FlaxEditor.Content
         /// <summary>
         /// Initializes a new instance of the <see cref="RootContentTreeNode"/> class.
         /// </summary>
-        /// <inheritdoc />
         public RootContentTreeNode()
-            : base(null, string.Empty)
+        : base(null, string.Empty)
         {
             _name = Editor.Instance.ProjectInfo.Name;
         }

@@ -1,6 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
@@ -14,6 +12,7 @@ namespace FlaxEngine.Collections
     ///     Creates new structure array like, with fast front and back insertion.
     ///     <para>Every overflow of this buffer removes last item form other side of insertion</para>
     /// </summary>
+    /// <remarks>This collection is NOT thread-safe.</remarks>
     /// <typeparam name="T">Type of items inserted into buffer</typeparam>
     [Serializable]
     [JsonObject(MemberSerialization.OptIn)]
@@ -74,7 +73,7 @@ namespace FlaxEngine.Collections
         }
 
         /// <summary>
-        ///     Arguments for item being replaced because of buffer was oveflown with data
+        ///     Arguments for item being replaced because of buffer was overflown with data
         /// </summary>
         public class ItemOverflownEventArgs : EventArgs
         {
@@ -102,8 +101,10 @@ namespace FlaxEngine.Collections
 
         [JsonProperty("buffer")]
         private T[] _buffer;
+
         [JsonProperty("frontItem")]
         private int _frontItem;
+
         [JsonProperty("backItem")]
         private int _backItem;
 
@@ -139,10 +140,24 @@ namespace FlaxEngine.Collections
         /// <summary>
         ///     Current capacity of internal buffer
         /// </summary>
-        public int Capacity => _buffer.Length;
+        public int Capacity
+        {
+            get => _buffer.Length;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException();
+                if (value == _buffer.Length)
+                    return;
+                if (Count > 0)
+                    throw new InvalidOperationException("Cannot change capacity for non-empty buffer.");
+
+                _buffer = new T[value];
+            }
+        }
 
         /// <summary>
-        ///     Returns true if there are no items in sturcutre, or false if there are
+        ///     Returns true if there are no items in structure, or false if there are
         /// </summary>
         public bool IsEmpty => Count == 0;
 
@@ -154,7 +169,7 @@ namespace FlaxEngine.Collections
         /// <summary>
         ///     Creates new instance of object with given capacity, copies given array as a framework
         /// </summary>
-        /// <param name="items">Items inside an buffer to insert into</param>
+        /// <param name="buffer">Buffer to insert into</param>
         /// <param name="frontItem">First index of an item in provided buffer</param>
         /// <param name="backItem">Last index on an item in provided buffer</param>
         [JsonConstructor]
@@ -163,13 +178,13 @@ namespace FlaxEngine.Collections
             var insertionArray = buffer.ToArray();
             if (insertionArray.Length < frontItem)
                 throw new ArgumentOutOfRangeException(nameof(frontItem),
-                                                      "argument cannot be larger then requested capaclity");
+                                                      "argument cannot be larger then requested capacity");
             if (-1 > frontItem)
                 throw new ArgumentOutOfRangeException(nameof(frontItem),
                                                       "argument cannot be smaller then -1");
             if (insertionArray.Length < backItem)
                 throw new ArgumentOutOfRangeException(nameof(frontItem),
-                                                      "argument cannot be larger then requested capaclity");
+                                                      "argument cannot be larger then requested capacity");
             if (-1 > backItem)
                 throw new ArgumentOutOfRangeException(nameof(frontItem),
                                                       "argument cannot be smaller then -1");
@@ -184,12 +199,17 @@ namespace FlaxEngine.Collections
         /// </summary>
         /// <param name="capacity">Capacity of internal structure</param>
         public CircularBuffer(int capacity)
-            : this(capacity, new T[] { })
         {
+            if (capacity <= 0)
+                throw new ArgumentOutOfRangeException(nameof(capacity), "argument cannot be lower or equal zero");
+            _buffer = new T[capacity];
+            _backItem = 0;
+            _frontItem = 0;
+            Count = 0;
         }
 
         /// <summary>
-        ///     Creates new instance of object with given capacity and adds array of items to internall buffer
+        ///     Creates new instance of object with given capacity and adds array of items to internal buffer
         /// </summary>
         /// <param name="capacity">Capacity of internal structure</param>
         /// <param name="items">Items to input</param>
@@ -199,8 +219,7 @@ namespace FlaxEngine.Collections
             if (capacity <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacity), "argument cannot be lower or equal zero");
             if (items.Length + arrayIndex > capacity)
-                throw new ArgumentOutOfRangeException(nameof(items),
-                    "argument cannot be larger then requested capaclity with moved arrayIndex");
+                throw new ArgumentOutOfRangeException(nameof(items), "argument cannot be larger then requested capacity with moved arrayIndex");
             _buffer = new T[capacity];
             items.CopyTo(_buffer, arrayIndex);
             _backItem = arrayIndex;
@@ -212,7 +231,7 @@ namespace FlaxEngine.Collections
 
         /// <summary>
         ///     Gets or sets item from list at given index.
-        ///     <remarks>All items are in order of input regardless of overlow that may occur</remarks>
+        ///     <remarks>All items are in order of input regardless of overflow that may occur</remarks>
         /// </summary>
         /// <param name="index">Index to item required</param>
         public T this[int index]
@@ -337,30 +356,29 @@ namespace FlaxEngine.Collections
             return result;
         }
 
-
         /// <summary>
-        ///     Copies the buffer contents to an array, acording to the logical
+        ///     Copies the buffer contents to an array, according to the logical
         ///     contents of the buffer (i.e. independent of the internal
         ///     order/contents)
         /// </summary>
         /// <returns>A new array with a copy of the buffer contents.</returns>
         public T[] ToArray()
         {
-            lock (_buffer)
-            {
-                var result = new T[Count];
-                if (_backItem > _frontItem)
-                {
-                    Array.Copy(_buffer, _backItem, result, 0, Capacity - _backItem);
-                    Array.Copy(_buffer, 0, result, Capacity - _backItem, _frontItem + 1);
-                }
-                else
-                {
-                    Array.Copy(_buffer, _backItem, result, 0, _frontItem - _backItem + 1);
-                }
+            if (Count == 0)
+                return Enumerable.Empty<T>() as T[];
 
-                return result;
+            var result = new T[Count];
+            if (_backItem > _frontItem)
+            {
+                Array.Copy(_buffer, _backItem, result, 0, Capacity - _backItem);
+                Array.Copy(_buffer, 0, result, Capacity - _backItem, _frontItem + 1);
             }
+            else
+            {
+                Array.Copy(_buffer, _backItem, result, 0, _frontItem - _backItem + 1);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -384,6 +402,21 @@ namespace FlaxEngine.Collections
                 _backItem = 0;
                 Count = 0;
             }
+        }
+
+        /// <summary>
+        /// Clears buffer and changes its capacity.
+        /// </summary>
+        /// <param name="newCapacity">The new capacity of the buffer.</param>
+        public void Clear(int newCapacity)
+        {
+            if (newCapacity <= 0)
+                throw new ArgumentOutOfRangeException();
+
+            _buffer = new T[newCapacity];
+            _frontItem = 0;
+            _backItem = 0;
+            Count = 0;
         }
 
         IEnumerator IEnumerable.GetEnumerator()

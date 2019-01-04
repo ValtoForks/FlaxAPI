@@ -1,14 +1,12 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
-using System.Collections.Generic;
 using FlaxEngine;
+using FlaxEngine.Rendering;
 
 namespace FlaxEditor.Gizmo
 {
     /// <summary>
-    /// Describies objects that can own gizmo tools.
+    /// Describes objects that can own gizmo tools.
     /// </summary>
     public interface IGizmoOwner
     {
@@ -16,6 +14,11 @@ namespace FlaxEditor.Gizmo
         /// Gets the gizmos collection.
         /// </summary>
         GizmosCollection Gizmos { get; }
+
+        /// <summary>
+        /// Gets the render task used by the owner to render the scene and the gizmos.
+        /// </summary>
+        SceneRenderTask RenderTask { get; }
 
         /// <summary>
         /// Gets a value indicating whether left mouse button is pressed down.
@@ -26,6 +29,16 @@ namespace FlaxEditor.Gizmo
         /// Gets a value indicating whether right mouse button is pressed down.
         /// </summary>
         bool IsRightMouseButtonDown { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether Alt key is pressed down.
+        /// </summary>
+        bool IsAltKeyDown { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether Control key is pressed down.
+        /// </summary>
+        bool IsControlDown { get; }
 
         /// <summary>
         /// Gets the view position.
@@ -58,10 +71,10 @@ namespace FlaxEditor.Gizmo
         bool UseSnapping { get; }
 
         /// <summary>
-        /// Gets a value indicating whether duplicate objects during gizmo operation (eg. when tranforming).
+        /// Gets a value indicating whether duplicate objects during gizmo operation (eg. when transforming).
         /// </summary>
         bool UseDuplicate { get; }
-		
+
         /// <summary>
         /// Gets a <see cref="FlaxEditor.Undo"/> object used by the gizmo owner.
         /// </summary>

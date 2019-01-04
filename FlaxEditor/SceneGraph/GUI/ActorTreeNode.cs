@@ -1,27 +1,31 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FlaxEditor.Content;
 using FlaxEditor.GUI;
 using FlaxEditor.GUI.Drag;
+using FlaxEditor.Utilities;
 using FlaxEngine;
 using FlaxEngine.GUI;
+using Object = FlaxEngine.Object;
 
 namespace FlaxEditor.SceneGraph.GUI
 {
     /// <summary>
     /// Tree node GUI control used as a proxy object for actors hierarchy.
     /// </summary>
-    /// <seealso cref="FlaxEngine.GUI.TreeNode" />
+    /// <seealso cref="FlaxEditor.GUI.TreeNode" />
     public class ActorTreeNode : TreeNode
     {
         private int _orderInParent;
         private DragActors _dragActors;
         private DragAssets _dragAssets;
         private DragActorType _dragActorType;
+        private DragHandlers _dragHandlers;
+        private List<Rectangle> _highlights;
+        private bool _hasSearchFilter;
 
         /// <summary>
         /// The actor node that owns this node.
@@ -42,7 +46,7 @@ namespace FlaxEditor.SceneGraph.GUI
         /// Initializes a new instance of the <see cref="ActorTreeNode"/> class.
         /// </summary>
         public ActorTreeNode()
-            : base(true)
+        : base(true)
         {
         }
 
@@ -52,14 +56,21 @@ namespace FlaxEditor.SceneGraph.GUI
             if (node.Actor != null)
             {
                 _orderInParent = node.Actor.OrderInParent;
+
+                var id = node.Actor.ID;
+                if (Editor.Instance.ProjectCache.IsExpandedActor(ref id))
+                {
+                    Expand(true);
+                }
             }
             else
             {
                 _orderInParent = 0;
             }
+
             UpdateText();
         }
-		
+
         internal void OnOrderInParentChanged()
         {
             if (Parent is ActorTreeNode parent)
@@ -86,12 +97,96 @@ namespace FlaxEditor.SceneGraph.GUI
             Text = _actorNode.Name;
         }
 
+        /// <summary>
+        /// Updates the query search filter.
+        /// </summary>
+        /// <param name="filterText">The filter text.</param>
+        public void UpdateFilter(string filterText)
+        {
+            // SKip hidden actors
+            var actor = Actor;
+            if (actor != null && (actor.HideFlags & HideFlags.HideInHierarchy) != 0)
+                return;
+
+            bool noFilter = string.IsNullOrWhiteSpace(filterText);
+            _hasSearchFilter = !noFilter;
+
+            // Update itself
+            bool isThisVisible;
+            if (noFilter)
+            {
+                // Clear filter
+                _highlights?.Clear();
+                isThisVisible = true;
+            }
+            else
+            {
+                QueryFilterHelper.Range[] ranges;
+                var text = Text;
+                if (QueryFilterHelper.Match(filterText, text, out ranges))
+                {
+                    // Update highlights
+                    if (_highlights == null)
+                        _highlights = new List<Rectangle>(ranges.Length);
+                    else
+                        _highlights.Clear();
+                    var style = Style.Current;
+                    var font = style.FontSmall;
+                    var textRect = TextRect;
+                    for (int i = 0; i < ranges.Length; i++)
+                    {
+                        var start = font.GetCharPosition(text, ranges[i].StartIndex);
+                        var end = font.GetCharPosition(text, ranges[i].EndIndex);
+                        _highlights.Add(new Rectangle(start.X + textRect.X, textRect.Y, end.X - start.X, textRect.Height));
+                    }
+                    isThisVisible = true;
+                }
+                else
+                {
+                    // Hide
+                    _highlights?.Clear();
+                    isThisVisible = false;
+                }
+            }
+
+            // Update children
+            bool isAnyChildVisible = false;
+            for (int i = 0; i < _children.Count; i++)
+            {
+                if (_children[i] is ActorTreeNode child)
+                {
+                    child.UpdateFilter(filterText);
+                    isAnyChildVisible |= child.Visible;
+                }
+            }
+
+            bool isExpanded = isAnyChildVisible;
+
+            // Restore cached state on query filter clear
+            if (noFilter && actor != null)
+            {
+                var id = actor.ID;
+                isExpanded = Editor.Instance.ProjectCache.IsExpandedActor(ref id);
+            }
+
+            if (isExpanded)
+            {
+                Expand(true);
+            }
+            else
+            {
+                Collapse(true);
+            }
+
+            Visible = isThisVisible | isAnyChildVisible;
+        }
+
         /// <inheritdoc />
         public override void Update(float deltaTime)
         {
             // Update hidden state
             var actor = Actor;
-            if (actor != null)
+            if (actor != null && !_hasSearchFilter)
             {
                 Visible = (actor.HideFlags & HideFlags.HideInHierarchy) == 0;
             }
@@ -103,23 +198,30 @@ namespace FlaxEditor.SceneGraph.GUI
         protected override Color CacheTextColor()
         {
             // Update node text color (based on ActorNode.IsActiveInHierarchy but with optimized logic a little)
-            if (Parent is ActorTreeNode parent)
+            if (Parent is ActorTreeNode)
             {
-                var style = Style.Current;
-                bool isActive = Actor?.IsActiveInHierarchy ?? true;
-                if (!isActive)
+                Color color = Color.White;
+                var actor = Actor;
+                if (actor != null && actor.HasPrefabLink)
+                {
+                    // Prefab
+                    color = Style.Current.ProgressNormal;
+                }
+
+                if (actor != null && !actor.IsActiveInHierarchy)
                 {
                     // Inactive
-                    return style.ForegroundDisabled;
+                    return color * 0.6f;
                 }
-                if (Editor.Instance.StateMachine.IsPlayMode && Actor.IsStatic)
+
+                if (actor?.Scene != null && Editor.Instance.StateMachine.IsPlayMode && actor.IsStatic)
                 {
                     // Static
-                    return style.Foreground * 0.85f;
+                    return color * 0.85f;
                 }
 
                 // Default
-                return style.Foreground;
+                return color;
             }
 
             return base.CacheTextColor();
@@ -129,10 +231,9 @@ namespace FlaxEditor.SceneGraph.GUI
         public override bool OnMouseDoubleClick(Vector2 location, MouseButton buttons)
         {
             var actor = Actor;
-            if (actor && testHeaderHit(ref location))
+            if (actor && TestHeaderHit(ref location))
             {
-                Select();
-                Editor.Instance.Windows.EditWin.ShowActor(actor);
+                StartRenaming();
                 return true;
             }
 
@@ -149,45 +250,113 @@ namespace FlaxEditor.SceneGraph.GUI
             return base.Compare(other);
         }
 
-        /// <inheritdoc />
-        protected override void OnLongPress()
+        /// <summary>
+        /// Starts the actor renaming action.
+        /// </summary>
+        public void StartRenaming()
         {
+            // Block renaming during scripts reload
+            if (Editor.Instance.ProgressReporting.CompileScripts.IsActive)
+                return;
+
             Select();
 
             // Start renaming the actor
-            var dialog = RenamePopup.Show(this, _headerRect, _actorNode.Name, false);
+            var dialog = RenamePopup.Show(this, HeaderRect, _actorNode.Name, false);
             dialog.Renamed += OnRenamed;
         }
 
         private void OnRenamed(RenamePopup renamePopup)
         {
-            using (new UndoBlock(Editor.Instance.Undo, Actor, "Rename"))
+            using (new UndoBlock(ActorNode.Root.Undo, Actor, "Rename"))
                 Actor.Name = renamePopup.Text;
+        }
+
+        /// <inheritdoc />
+        protected override void OnExpandedChanged()
+        {
+            base.OnExpandedChanged();
+
+            if (!IsLayoutLocked && Actor)
+            {
+                var id = Actor.ID;
+                Editor.Instance.ProjectCache.SetExpandedActor(ref id, IsExpanded);
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Draw()
+        {
+            base.Draw();
+
+            // Draw all highlights
+            if (_highlights != null)
+            {
+                var style = Style.Current;
+                var color = style.ProgressNormal * 0.6f;
+                for (int i = 0; i < _highlights.Count; i++)
+                    Render2D.FillRectangle(_highlights[i], color);
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool OnKeyDown(Keys key)
+        {
+            if (IsFocused)
+            {
+                if (key == Keys.F2)
+                {
+                    StartRenaming();
+                    return true;
+                }
+            }
+
+            return base.OnKeyDown(key);
         }
 
         /// <inheritdoc />
         protected override DragDropEffect OnDragEnterHeader(DragData data)
         {
-            // Check if cannot edit scene or there is no scene loaded
-            if (!Editor.Instance.StateMachine.CurrentState.CanEditScene || !SceneManager.IsAnySceneLoaded)
-                return DragDropEffect.None;
+            // Check if cannot edit scene or there is no scene loaded (handle case for actors in prefab editor)
+            if (_actorNode?.ParentScene != null)
+            {
+                if (!Editor.Instance.StateMachine.CurrentState.CanEditScene || !SceneManager.IsAnySceneLoaded)
+                    return DragDropEffect.None;
+            }
+            else
+            {
+                if (!Editor.Instance.StateMachine.CurrentState.CanEditContent)
+                    return DragDropEffect.None;
+            }
+
+            if (_dragHandlers == null)
+                _dragHandlers = new DragHandlers();
 
             // Check if drop actors
             if (_dragActors == null)
-                _dragActors = new DragActors();
-            if (_dragActors.OnDragEnter(data, ValidateDragActor))
+            {
+                _dragActors = new DragActors(ValidateDragActor);
+                _dragHandlers.Add(_dragActors);
+            }
+            if (_dragActors.OnDragEnter(data))
                 return _dragActors.Effect;
 
             // Check if drag assets
-            if(_dragAssets == null)
-                _dragAssets = new DragAssets();
-            if (_dragAssets.OnDragEnter(data, ValidateDragAsset))
+            if (_dragAssets == null)
+            {
+                _dragAssets = new DragAssets(ValidateDragAsset);
+                _dragHandlers.Add(_dragAssets);
+            }
+            if (_dragAssets.OnDragEnter(data))
                 return _dragAssets.Effect;
-            
+
             // Check if drag actor type
-            if(_dragActorType == null)
-                _dragActorType = new DragActorType();
-            if (_dragActorType.OnDragEnter(data, ValidateDragActorType))
+            if (_dragActorType == null)
+            {
+                _dragActorType = new DragActorType(ValidateDragActorType);
+                _dragHandlers.Add(_dragActorType);
+            }
+            if (_dragActorType.OnDragEnter(data))
                 return _dragActorType.Effect;
 
             return DragDropEffect.None;
@@ -196,22 +365,125 @@ namespace FlaxEditor.SceneGraph.GUI
         /// <inheritdoc />
         protected override DragDropEffect OnDragMoveHeader(DragData data)
         {
-            if (_dragActors != null && _dragActors.HasValidDrag)
-                return _dragActors.Effect;
-            if (_dragAssets != null && _dragAssets.HasValidDrag)
-                return _dragAssets.Effect;
-            if (_dragActorType != null && _dragActorType.HasValidDrag)
-                return _dragActorType.Effect;
-
-            return DragDropEffect.None;
+            return _dragHandlers.Effect;
         }
 
         /// <inheritdoc />
         protected override void OnDragLeaveHeader()
         {
-            _dragActors?.OnDragLeave();
-            _dragAssets?.OnDragLeave();
-            _dragActorType?.OnDragLeave();
+            _dragHandlers.OnDragLeave();
+        }
+
+        private class ReparentAction : IUndoAction
+        {
+            private Guid[] _ids;
+            private int _actorsCount;
+            private Guid[] _prefabIds;
+            private Guid[] _prefabObjectIds;
+
+            public ReparentAction(Actor actor)
+            : this(new List<Actor> { actor })
+            {
+            }
+
+            public ReparentAction(List<Actor> actors)
+            {
+                var allActors = new List<Actor>();
+                allActors.Capacity = Mathf.NextPowerOfTwo(actors.Count);
+                for (int i = 0; i < actors.Count; i++)
+                {
+                    GetAllActors(allActors, actors[i]);
+                }
+
+                var allScripts = new List<Script>();
+                allScripts.Capacity = allActors.Capacity;
+                GetAllScripts(allActors, allScripts);
+
+                int allCount = allActors.Count + allScripts.Count;
+                _actorsCount = allActors.Count;
+                _ids = new Guid[allCount];
+                _prefabIds = new Guid[allCount];
+                _prefabObjectIds = new Guid[allCount];
+
+                for (int i = 0; i < allActors.Count; i++)
+                {
+                    _ids[i] = allActors[i].ID;
+                    _prefabIds[i] = allActors[i].PrefabID;
+                    _prefabObjectIds[i] = allActors[i].PrefabObjectID;
+                }
+                for (int i = 0; i < allScripts.Count; i++)
+                {
+                    int j = _actorsCount + i;
+                    _ids[j] = allScripts[i].ID;
+                    _prefabIds[j] = allScripts[i].PrefabID;
+                    _prefabObjectIds[j] = allScripts[i].PrefabObjectID;
+                }
+            }
+
+            private void GetAllActors(List<Actor> allActors, Actor actor)
+            {
+                allActors.Add(actor);
+
+                for (int i = 0; i < actor.ChildrenCount; i++)
+                {
+                    var child = actor.GetChild(i);
+                    if (!allActors.Contains(child))
+                    {
+                        GetAllActors(allActors, child);
+                    }
+                }
+            }
+
+            private void GetAllScripts(List<Actor> allActors, List<Script> allScripts)
+            {
+                for (int i = 0; i < allActors.Count; i++)
+                {
+                    var actor = allActors[i];
+                    for (int j = 0; j < actor.ScriptsCount; j++)
+                    {
+                        allScripts.Add(actor.GetScript(j));
+                    }
+                }
+            }
+
+            /// <inheritdoc />
+            public string ActionString => string.Empty;
+
+            /// <inheritdoc />
+            public void Do()
+            {
+                // Note: prefab links are broken by the C++ backend on actor reparenting
+            }
+
+            /// <inheritdoc />
+            public void Undo()
+            {
+                // Restore links
+                for (int i = 0; i < _actorsCount; i++)
+                {
+                    var actor = Object.Find<Actor>(ref _ids[i]);
+                    if (actor != null && _prefabIds[i] != Guid.Empty)
+                    {
+                        Actor.Internal_LinkPrefab(actor.unmanagedPtr, ref _prefabIds[i], ref _prefabObjectIds[i]);
+                    }
+                }
+                for (int i = _actorsCount; i < _ids.Length; i++)
+                {
+                    var script = Object.Find<Script>(ref _ids[i]);
+                    if (script != null && _prefabIds[i] != Guid.Empty)
+                    {
+                        Script.Internal_LinkPrefab(script.unmanagedPtr, ref _prefabIds[i], ref _prefabObjectIds[i]);
+                    }
+                }
+            }
+
+            /// <inheritdoc />
+            public void Dispose()
+            {
+                _ids = null;
+                _prefabIds = null;
+                _prefabObjectIds = null;
+            }
         }
 
         /// <inheritdoc />
@@ -237,7 +509,7 @@ namespace FlaxEditor.SceneGraph.GUI
                 newParent = myActor;
 
                 // Use drag positioning to change target parent and index
-                if (_dragOverMode == DragItemPositioning.Above)
+                if (DragOverMode == DragItemPositioning.Above)
                 {
                     if (myActor.HasParent)
                     {
@@ -245,7 +517,7 @@ namespace FlaxEditor.SceneGraph.GUI
                         newOrder = myActor.OrderInParent;
                     }
                 }
-                else if (_dragOverMode == DragItemPositioning.Below)
+                else if (DragOverMode == DragItemPositioning.Below)
                 {
                     if (myActor.HasParent)
                     {
@@ -260,12 +532,13 @@ namespace FlaxEditor.SceneGraph.GUI
             // Drag actors
             if (_dragActors != null && _dragActors.HasValidDrag)
             {
-                bool worldPositionLock = ParentWindow.GetKey(Keys.Control) == false;
+                bool worldPositionLock = Root.GetKey(Keys.Control) == false;
                 var singleObject = _dragActors.Objects.Count == 1;
                 if (singleObject)
                 {
                     var targetActor = _dragActors.Objects[0].Actor;
-                    using (new UndoBlock(Editor.Instance.Undo, targetActor, "Change actor parent"))
+                    var customAction = targetActor.HasPrefabLink ? new ReparentAction(targetActor) : null;
+                    using (new UndoBlock(ActorNode.Root.Undo, targetActor, "Change actor parent", customAction))
                     {
                         targetActor.SetParent(newParent, worldPositionLock);
                         targetActor.OrderInParent = newOrder;
@@ -274,7 +547,8 @@ namespace FlaxEditor.SceneGraph.GUI
                 else
                 {
                     var targetActors = _dragActors.Objects.ConvertAll(x => x.Actor);
-                    using (new UndoMultiBlock(Editor.Instance.Undo, targetActors, "Change actors parent"))
+                    var customAction = targetActors.Any(x => x.HasPrefabLink) ? new ReparentAction(targetActors) : null;
+                    using (new UndoMultiBlock(ActorNode.Root.Undo, targetActors, "Change actors parent", customAction))
                     {
                         for (int i = 0; i < targetActors.Count; i++)
                         {
@@ -296,53 +570,82 @@ namespace FlaxEditor.SceneGraph.GUI
 
                     switch (item.ItemDomain)
                     {
-                        case ContentDomain.Model:
+                    case ContentDomain.Model:
+                    {
+                        if (item.TypeName == typeof(SkinnedModel).FullName)
+                        {
+                            // Create actor
+                            var model = FlaxEngine.Content.LoadAsync<SkinnedModel>(item.ID);
+                            var actor = AnimatedModel.New();
+                            actor.StaticFlags = Actor.StaticFlags;
+                            actor.Name = item.ShortName;
+                            actor.SkinnedModel = model;
+                            actor.Transform = Actor.Transform;
+
+                            // Spawn
+                            ActorNode.Root.Spawn(actor, Actor);
+                        }
+                        else
                         {
                             // Create actor
                             var model = FlaxEngine.Content.LoadAsync<Model>(item.ID);
-                            var actor = ModelActor.New();
+                            var actor = StaticModel.New();
                             actor.StaticFlags = Actor.StaticFlags;
                             actor.Name = item.ShortName;
                             actor.Model = model;
                             actor.Transform = Actor.Transform;
 
                             // Spawn
-                            Editor.Instance.SceneEditing.Spawn(actor, Actor);
-                            
-                            break;
+                            ActorNode.Root.Spawn(actor, Actor);
                         }
-                        case ContentDomain.Other:
-                        {
-                            if (item.TypeName == typeof(CollisionData).FullName)
-                            {
-                                // Create actor
-                                var actor = MeshCollider.New();
-                                actor.StaticFlags = Actor.StaticFlags;
-                                actor.Name = item.ShortName;
-                                actor.CollisionData = FlaxEngine.Content.LoadAsync<CollisionData>(item.ID);
-                                actor.Transform = Actor.Transform;
 
-                                // Spawn
-                                Editor.Instance.SceneEditing.Spawn(actor, Actor);
-                            }
-
-                            break;
-                        }
-	                    case ContentDomain.Audio:
-	                    {
-			                var actor = AudioSource.New();
-			                actor.StaticFlags = Actor.StaticFlags;
-			                actor.Name = item.ShortName;
-			                actor.Clip = FlaxEngine.Content.LoadAsync<AudioClip>(item.ID);
-			                actor.Transform = Actor.Transform;
-			                Editor.Instance.SceneEditing.Spawn(actor, Actor);
-							
-		                    break;
-	                    }
-						case ContentDomain.Prefab:
+                        break;
+                    }
+                    case ContentDomain.Other:
+                    {
+                        if (item.TypeName == typeof(CollisionData).FullName)
                         {
-                            throw new NotImplementedException("Spawning prefabs");
+                            // Create actor
+                            var actor = MeshCollider.New();
+                            actor.StaticFlags = Actor.StaticFlags;
+                            actor.Name = item.ShortName;
+                            actor.CollisionData = FlaxEngine.Content.LoadAsync<CollisionData>(item.ID);
+                            actor.Transform = Actor.Transform;
+
+                            // Spawn
+                            ActorNode.Root.Spawn(actor, Actor);
                         }
+
+                        break;
+                    }
+                    case ContentDomain.Audio:
+                    {
+                        // Create actor
+                        var actor = AudioSource.New();
+                        actor.StaticFlags = Actor.StaticFlags;
+                        actor.Name = item.ShortName;
+                        actor.Clip = FlaxEngine.Content.LoadAsync<AudioClip>(item.ID);
+                        actor.Transform = Actor.Transform;
+
+                        // Spawn
+                        ActorNode.Root.Spawn(actor, Actor);
+
+                        break;
+                    }
+                    case ContentDomain.Prefab:
+                    {
+                        // Create prefab instance
+                        var prefab = FlaxEngine.Content.LoadAsync<Prefab>(item.ID);
+                        var actor = PrefabManager.SpawnPrefab(prefab, null);
+                        actor.StaticFlags = Actor.StaticFlags;
+                        actor.Name = item.ShortName;
+                        actor.Transform = Actor.Transform;
+
+                        // Spawn
+                        ActorNode.Root.Spawn(actor, Actor);
+
+                        break;
+                    }
                     }
                 }
 
@@ -367,16 +670,14 @@ namespace FlaxEditor.SceneGraph.GUI
                     actor.Transform = Actor.Transform;
 
                     // Spawn
-                    Editor.Instance.SceneEditing.Spawn(actor, Actor);
+                    ActorNode.Root.Spawn(actor, Actor);
                 }
 
                 result = DragDropEffect.Move;
             }
 
             // Clear cache
-            _dragActors?.OnDragDrop();
-            _dragAssets?.OnDragDrop();
-            _dragActorType?.OnDragDrop();
+            _dragHandlers.OnDragDrop(null);
 
             // Check if scene has been modified
             if (result != DragDropEffect.None)
@@ -390,28 +691,44 @@ namespace FlaxEditor.SceneGraph.GUI
 
         private bool ValidateDragActor(ActorNode actorNode)
         {
+            // Reject dragging actors not linked to scene (eg. from prefab) or in the opposite way
+            var thisHasScene = ActorNode.ParentScene != null;
+            var otherHasScene = actorNode.ParentScene != null;
+            if (thisHasScene != otherHasScene)
+                return false;
+
             // Reject dragging parents and itself
             return actorNode.Actor != null && actorNode != ActorNode && actorNode.Find(Actor) == null;
         }
 
-        private bool ValidateDragAsset(AssetItem item)
+        /// <summary>
+        /// Validates the asset for drag and drop into one of the scene tree nodes.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns>True if can drag and drop it, otherwise false.</returns>
+        public static bool ValidateDragAsset(AssetItem item)
         {
             switch (item.ItemDomain)
             {
-                case ContentDomain.Model:
-                case ContentDomain.Audio:
-                case ContentDomain.Prefab: return true;
-                case ContentDomain.Other:
-                {
-                    if (item.TypeName == typeof(CollisionData).FullName)
-                        return true;
-                    return false;
-                }
-                default: return false;
+            case ContentDomain.Model:
+            case ContentDomain.Audio:
+            case ContentDomain.Prefab: return true;
+            case ContentDomain.Other:
+            {
+                if (item.TypeName == typeof(CollisionData).FullName)
+                    return true;
+                return false;
+            }
+            default: return false;
             }
         }
 
-        private bool ValidateDragActorType(Type actorType)
+        /// <summary>
+        /// Validates the type of the actor for drag and drop into one of the scene tree nodes.
+        /// </summary>
+        /// <param name="actorType">Type of the actor.</param>
+        /// <returns>True if can drag and drop it, otherwise false.</returns>
+        public static bool ValidateDragActorType(Type actorType)
         {
             return true;
         }

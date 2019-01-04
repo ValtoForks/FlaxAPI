@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.Content;
 using FlaxEditor.CustomEditors;
@@ -18,15 +16,15 @@ namespace FlaxEditor.Windows.Assets
     public sealed class JsonAssetWindow : AssetEditorWindowBase<JsonAsset>
     {
         private readonly CustomEditorPresenter _presenter;
-	    private readonly ToolStripButton _saveButton;
+        private readonly ToolStripButton _saveButton;
         private object _object;
 
         /// <inheritdoc />
         public JsonAssetWindow(Editor editor, AssetItem item)
-            : base(editor, item)
+        : base(editor, item)
         {
-			// Toolstrip
-	        _saveButton = (ToolStripButton)_toolstrip.AddButton(editor.UI.GetIcon("Save32"), Save).LinkTooltip("Save");
+            // Toolstrip
+            _saveButton = (ToolStripButton)_toolstrip.AddButton(editor.Icons.Save32, Save).LinkTooltip("Save");
 
             // Panel
             var panel = new Panel(ScrollBars.Vertical)
@@ -58,7 +56,7 @@ namespace FlaxEditor.Windows.Assets
             if (Editor.SaveJsonAsset(_item.Path, _object))
             {
                 // Error
-                Editor.LogError("Failed to save " + _item.Name);
+                Editor.LogError("Failed to save " + _item);
                 return;
             }
 
@@ -66,7 +64,7 @@ namespace FlaxEditor.Windows.Assets
             ClearEditedFlag();
             _item.RefreshThumbnail();
         }
-		
+
         /// <inheritdoc />
         protected override void UpdateToolstrip()
         {

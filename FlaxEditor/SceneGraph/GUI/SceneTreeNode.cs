@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.SceneGraph.Actors;
 using FlaxEngine;
@@ -17,6 +15,15 @@ namespace FlaxEditor.SceneGraph.GUI
         public override void UpdateText()
         {
             base.UpdateText();
+
+            // Append asset name if used
+            var filename = ((Scene)Actor).Filename;
+            if (!string.IsNullOrEmpty(filename))
+            {
+                Text += " (";
+                Text += filename;
+                Text += ")";
+            }
 
             // Append star character to modified scenes
             if (ActorNode is SceneNode node && node.IsEdited)

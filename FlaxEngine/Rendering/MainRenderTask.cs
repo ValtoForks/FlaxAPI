@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -20,20 +18,16 @@ namespace FlaxEngine.Rendering
         /// <summary>
         /// Gets the main game rendering task. Use it to plug custom rendering logic for your game.
         /// </summary>
-        public static MainRenderTask Instance
-        {
-            get;
-            internal set;
-        }
+        public static MainRenderTask Instance { get; internal set; }
 
         // TODO: add API to override main camera
-        
+
         internal MainRenderTask()
         {
         }
 
         /// <inheritdoc />
-        protected override void OnBegin()
+        protected override void OnBegin(GPUContext context)
         {
             // Use the main camera for the game
             Camera = Camera.MainCamera;
@@ -44,7 +38,7 @@ namespace FlaxEngine.Rendering
                 Buffers.Size = Screen.Size;
             }
 
-            base.OnBegin();
+            base.OnBegin(context);
         }
 
         internal override bool Internal_Begin(out IntPtr outputPtr)

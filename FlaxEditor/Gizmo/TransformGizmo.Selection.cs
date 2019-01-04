@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System.Collections.Generic;
 using FlaxEditor.SceneGraph;
@@ -21,7 +19,7 @@ namespace FlaxEditor.Gizmo
         /// <summary>
         /// Gets the selection center point (in world space).
         /// </summary>
-        /// <returns>Center point or <see cref="Vector3.Zero"/> if no object selectd.</returns>
+        /// <returns>Center point or <see cref="Vector3.Zero"/> if no object selected.</returns>
         public Vector3 GetSelectionCenter()
         {
             int count = _selectionParents.Count;
@@ -95,104 +93,104 @@ namespace FlaxEditor.Gizmo
             _activeAxis = Axis.None;
             switch (_activeMode)
             {
-                case Mode.Translate:
+            case Mode.Translate:
+            {
+                // Axis boxes collision
+                if (XAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
                 {
-                    // Axis boxes collision
-                    if (XAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.X;
-                        closestintersection = intersection;
-                    }
-                    if (YAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Y;
-                        closestintersection = intersection;
-                    }
-                    if (ZAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Z;
-                        closestintersection = intersection;
-                    }
-
-                    // Quad planes collision
-                    if (closestintersection >= float.MaxValue)
-                        closestintersection = float.MinValue;
-                    if (XYBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
-                    {
-                        _activeAxis = Axis.XY;
-                        closestintersection = intersection;
-                    }
-                    if (XZBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
-                    {
-                        _activeAxis = Axis.ZX;
-                        closestintersection = intersection;
-                    }
-                    if (YZBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
-                    {
-                        _activeAxis = Axis.YZ;
-                        closestintersection = intersection;
-                    }
-
-                    break;
+                    _activeAxis = Axis.X;
+                    closestintersection = intersection;
+                }
+                if (YAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Y;
+                    closestintersection = intersection;
+                }
+                if (ZAxisBox.Intersects(ref localRay, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Z;
+                    closestintersection = intersection;
                 }
 
-                case Mode.Rotate:
+                // Quad planes collision
+                if (closestintersection >= float.MaxValue)
+                    closestintersection = float.MinValue;
+                if (XYBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
                 {
-                    // Circles
-                    if (IntersectsRotateCircle(Vector3.UnitX, ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.X;
-                        closestintersection = intersection;
-                    }
-                    if (IntersectsRotateCircle(Vector3.UnitY, ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Y;
-                        closestintersection = intersection;
-                    }
-                    if (IntersectsRotateCircle(Vector3.UnitZ, ref localRay, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Z;
-                        closestintersection = intersection;
-                    }
-
-                    // Center
-                    /*if (CenterSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Center;
-                        closestintersection = intersection;
-                    }*/
-
-                    break;
+                    _activeAxis = Axis.XY;
+                    closestintersection = intersection;
+                }
+                if (XZBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
+                {
+                    _activeAxis = Axis.ZX;
+                    closestintersection = intersection;
+                }
+                if (YZBox.Intersects(ref localRay, out intersection) && intersection > closestintersection)
+                {
+                    _activeAxis = Axis.YZ;
+                    closestintersection = intersection;
                 }
 
-                case Mode.Scale:
+                break;
+            }
+
+            case Mode.Rotate:
+            {
+                // Circles
+                if (IntersectsRotateCircle(Vector3.UnitX, ref localRay, out intersection) && intersection < closestintersection)
                 {
-                    // Spheres collision
-                    if (ScaleXSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.X;
-                        closestintersection = intersection;
-                    }
-                    if (ScaleYSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Y;
-                        closestintersection = intersection;
-                    }
-                    if (ScaleZSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Z;
-                        closestintersection = intersection;
-                    }
-
-                    // Center
-                    if (CenterBox.Intersects(ref ray, out intersection) && intersection < closestintersection)
-                    {
-                        _activeAxis = Axis.Center;
-                        closestintersection = intersection;
-                    }
-
-                    break;
+                    _activeAxis = Axis.X;
+                    closestintersection = intersection;
                 }
+                if (IntersectsRotateCircle(Vector3.UnitY, ref localRay, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Y;
+                    closestintersection = intersection;
+                }
+                if (IntersectsRotateCircle(Vector3.UnitZ, ref localRay, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Z;
+                    closestintersection = intersection;
+                }
+
+                // Center
+                /*if (CenterSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Center;
+                    closestintersection = intersection;
+                }*/
+
+                break;
+            }
+
+            case Mode.Scale:
+            {
+                // Spheres collision
+                if (ScaleXSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.X;
+                    closestintersection = intersection;
+                }
+                if (ScaleYSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Y;
+                    closestintersection = intersection;
+                }
+                if (ScaleZSphere.Intersects(ref ray, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Z;
+                    closestintersection = intersection;
+                }
+
+                // Center
+                if (CenterBox.Intersects(ref ray, out intersection) && intersection < closestintersection)
+                {
+                    _activeAxis = Axis.Center;
+                    closestintersection = intersection;
+                }
+
+                break;
+            }
             }
         }
     }

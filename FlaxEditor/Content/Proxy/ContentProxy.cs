@@ -1,15 +1,14 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Windows;
 using FlaxEngine;
+using FlaxEngine.GUI;
 
 namespace FlaxEditor.Content
 {
     /// <summary>
-    /// Base class for asstes proxy objects used to manage <see cref="ContentItem"/>.
+    /// Base class for assets proxy objects used to manage <see cref="ContentItem"/>.
     /// </summary>
     public abstract class ContentProxy
     {
@@ -24,6 +23,15 @@ namespace FlaxEditor.Content
         /// <param name="item">The item.</param>
         /// <returns><c>true</c> if is proxy for asset item; otherwise, <c>false</c>.</returns>
         public abstract bool IsProxyFor(ContentItem item);
+
+        /// <summary>
+        /// Determines whether this proxy is for the specified asset.
+        /// </summary>
+        /// <returns><c>true</c> if is proxy for asset item; otherwise, <c>false</c>.</returns>
+        public virtual bool IsProxyFor<T>() where T : Asset
+        {
+            return false;
+        }
 
         /// <summary>
         /// Gets a value indicating whether this proxy if for assets.
@@ -83,9 +91,19 @@ namespace FlaxEditor.Content
         /// Creates new item at the specified output path.
         /// </summary>
         /// <param name="outputPath">The output path.</param>
-        public virtual void Create(string outputPath)
+        /// <param name="arg">The custom argument provided for the item creation. Can be used as a source of data or null.</param>
+        public virtual void Create(string outputPath, object arg)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Called when content window wants to show the context menu. Allows to add custom functions for the given asset type.
+        /// </summary>
+        /// <param name="menu">The menu.</param>
+        /// <param name="item">The item.</param>
+        public virtual void OnContentWindowContextMenu(ContextMenu menu, ContentItem item)
+        {
         }
 
         /// <summary>

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -10,24 +8,25 @@ namespace FlaxEngine.GUI
     /// The tooltip popup.
     /// </summary>
     /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
+    [HideInEditor]
     public class Tooltip : ContainerControl
     {
         private float _timeToPopupLeft;
         private Control _lastTarget;
+        private Control _showTarget;
         private string _currentText;
-        private FlaxEngine.Window _window;
-        private Rectangle _mouseMovementRange;
+        private Window _window;
 
         /// <summary>
         /// Gets or sets the time in seconds that mouse have to be over the target to show the tooltip.
         /// </summary>
-        public float TimeToShow { get; set; } = 0.3f;// 300ms by default
+        public float TimeToShow { get; set; } = 0.3f; // 300ms by default
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tooltip"/> class.
         /// </summary>
         public Tooltip()
-            : base(0, 0, 300, 24)
+        : base(0, 0, 300, 24)
         {
             Visible = false;
             CanFocus = false;
@@ -37,8 +36,8 @@ namespace FlaxEngine.GUI
         /// Shows tooltip over given control.
         /// </summary>
         /// <param name="target">The parent control to attach to it.</param>
-        /// <param name="location">Popup menu orgin location in parent cntrol coordinates.</param>
-        /// <param name="targetArea">Tooltip target area or intrest.</param>
+        /// <param name="location">Popup menu origin location in parent control coordinates.</param>
+        /// <param name="targetArea">Tooltip target area of interest.</param>
         public void Show(Control target, Vector2 location, Rectangle targetArea)
         {
             if (target == null)
@@ -51,8 +50,8 @@ namespace FlaxEngine.GUI
             UnlockChildrenRecursive();
             PerformLayout();
 
-            // Calculate popup directinon and initial location
-            var parentWin = target.ParentWindow;
+            // Calculate popup direction and initial location
+            var parentWin = target.Root;
             if (parentWin == null)
                 return;
             Vector2 locationWS = target.PointToWindow(location);
@@ -69,6 +68,7 @@ namespace FlaxEngine.GUI
                 // Direction: left
                 locationSS.X -= Width;
             }
+            _showTarget = target;
 
             // Create window
             var desc = CreateWindowSettings.Default;
@@ -95,9 +95,6 @@ namespace FlaxEngine.GUI
             Parent = _window.GUI;
             Visible = true;
             _window.Show();
-
-            // Cache mouse safe movement area
-            _mouseMovementRange = new Rectangle(target.ClientToScreen(targetArea.Location), targetArea.Size);
         }
 
         /// <summary>
@@ -180,9 +177,10 @@ namespace FlaxEngine.GUI
         {
             // Auto hide if mouse leaves control area
             Vector2 mousePos = Application.MousePosition;
-            if (!_mouseMovementRange.Contains(mousePos))
+            Vector2 location = _showTarget.ScreenToClient(mousePos);
+            if (!_showTarget.OnTestTooltipOverControl(ref location))
             {
-                // Mouse left
+                // Mouse left or sth
                 Hide();
             }
 

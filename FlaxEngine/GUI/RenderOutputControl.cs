@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine.Rendering;
@@ -11,6 +9,7 @@ namespace FlaxEngine.GUI
     /// A common control used to present rendered frame in the UI.
     /// </summary>
     /// <seealso cref="FlaxEngine.GUI.ContainerControl" />
+    [HideInEditor]
     public class RenderOutputControl : ContainerControl
     {
         /// <summary>
@@ -32,6 +31,7 @@ namespace FlaxEngine.GUI
         /// The back buffer.
         /// </summary>
         protected RenderTarget _backBuffer;
+
         private RenderTarget _backBufferOld;
         private int _oldBackbufferLiveTimeLeft;
         private float _resizeTime;
@@ -45,6 +45,16 @@ namespace FlaxEngine.GUI
         /// Gets a value indicating whether render to that output only if parent window exists, otherwise false.
         /// </summary>
         public bool RenderOnlyWithWindow { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the color of the tint used to color the backbuffer of the render output.
+        /// </summary>
+        public Color TintColor { get; set; } = Color.White;
+
+        /// <summary>
+        /// Gets or sets the brightness of the output.
+        /// </summary>
+        public float Brightness { get; set; } = 1.0f;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RenderOutputControl"/> class.
@@ -85,7 +95,7 @@ namespace FlaxEngine.GUI
         {
             while (c != null)
             {
-                if (c is Window win)
+                if (c is RootControl win)
                 {
                     return false;
                 }
@@ -112,7 +122,7 @@ namespace FlaxEngine.GUI
             if (Width < MinRenderSize || Height < MinRenderSize)
                 return true;
 
-            // Disable task rendering if control is not used in a window (has issing ParentWindow)
+            // Disable task rendering if control is not used in a window (has using ParentWindow)
             if (RenderOnlyWithWindow)
             {
                 return walkTree(Parent);
@@ -125,9 +135,10 @@ namespace FlaxEngine.GUI
         /// Called when ask rendering ends.
         /// </summary>
         /// <param name="task">The task.</param>
-        protected virtual void OnEnd(SceneRenderTask task)
+        /// <param name="context">The GPU execution context.</param>
+        protected virtual void OnEnd(SceneRenderTask task, GPUContext context)
         {
-            // Check if was using old backuffer
+            // Check if was using old backbuffer
             if (_backBufferOld)
             {
                 _oldBackbufferLiveTimeLeft--;
@@ -148,7 +159,7 @@ namespace FlaxEngine.GUI
                 _resizeTime = 0;
                 SyncBackbufferSize();
             }
-            
+
             base.Update(deltaTime);
         }
 
@@ -157,11 +168,12 @@ namespace FlaxEngine.GUI
         {
             // Draw backbuffer texture
             var buffer = _backBufferOld ? _backBufferOld : _backBuffer;
-            Render2D.DrawRenderTarget(buffer, new Rectangle(Vector2.Zero, Size), Color.White);
+            var color = TintColor * Brightness;
+            Render2D.DrawRenderTarget(buffer, new Rectangle(Vector2.Zero, Size), color);
 
             base.Draw();
         }
-        
+
         /// <summary>
         /// Synchronizes size of the back buffer with the size of the control.
         /// </summary>
@@ -178,14 +190,14 @@ namespace FlaxEngine.GUI
                 return;
             }
 
-            // Cache old backuffer to remove flckering effect
+            // Cache old backbuffer to remove flickering effect
             if (_backBufferOld == null && _backBuffer.IsAllocated)
             {
                 _backBufferOld = _backBuffer;
                 _backBuffer = RenderTarget.New();
             }
 
-            // Set timout to remove old buffer
+            // Set timeout to remove old buffer
             _oldBackbufferLiveTimeLeft = 3;
 
             // Resize backbuffer
@@ -196,11 +208,15 @@ namespace FlaxEngine.GUI
         /// <inheritdoc />
         public override void OnDestroy()
         {
+            if (IsDisposing)
+                return;
+
             // Cleanup
             _task?.Dispose();
             Object.Destroy(ref _backBuffer);
             Object.Destroy(ref _backBufferOld);
-            
+            Object.Destroy(ref _task);
+
             base.OnDestroy();
         }
     }

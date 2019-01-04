@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -16,12 +14,18 @@ namespace FlaxEditor
     /// </summary>
     public class Undo : IDisposable
     {
+        /// <summary>
+        /// Undo system event.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        public delegate void UndoEventDelegate(IUndoAction action);
+
         internal interface IUndoInternal
         {
             /// <summary>
             /// Creates the undo action object on recording end.
             /// </summary>
-            /// <param name="snapshotInstance">The snapshoted object.</param>
+            /// <param name="snapshotInstance">The snapshot object.</param>
             /// <returns>The undo action. May be null if no changes found.</returns>
             IUndoAction End(object snapshotInstance);
         }
@@ -37,22 +41,22 @@ namespace FlaxEditor
         /// <value>
         /// The undo operations stack.
         /// </value>
-        public HistoryStack UndoOperationsStack { get; } = new HistoryStack();
+        public HistoryStack UndoOperationsStack { get; }
 
         /// <summary>
         /// Occurs when undo operation is done.
         /// </summary>
-        public event Action UndoDone;
+        public event UndoEventDelegate UndoDone;
 
         /// <summary>
         /// Occurs when redo operation is done.
         /// </summary>
-        public event Action RedoDone;
+        public event UndoEventDelegate RedoDone;
 
         /// <summary>
         /// Occurs when action is done and appended to the <see cref="Undo"/>.
         /// </summary>
-        public event Action ActionDone;
+        public event UndoEventDelegate ActionDone;
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="Undo"/> is enabled.
@@ -95,6 +99,15 @@ namespace FlaxEditor
         public string FirstRedoName => UndoOperationsStack.PeekReverse().ActionString;
 
         /// <summary>
+        /// Gets or sets the capacity of the undo history buffers.
+        /// </summary>
+        public int Capacity
+        {
+            get => UndoOperationsStack.HistoryActionsLimit;
+            set => UndoOperationsStack.HistoryActionsLimit = value;
+        }
+
+        /// <summary>
         ///     Internal class for keeping reference of undo action.
         /// </summary>
         internal class UndoInternal : IUndoInternal
@@ -121,6 +134,15 @@ namespace FlaxEditor
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Undo"/> class.
+        /// </summary>
+        /// <param name="historyActionsLimit">The history actions limit.</param>
+        public Undo(int historyActionsLimit = 1000)
+        {
+            UndoOperationsStack = new HistoryStack(historyActionsLimit);
+        }
+
+        /// <summary>
         ///     Begins recording for undo action.
         /// </summary>
         /// <param name="snapshotInstance">Instance of an object to record.</param>
@@ -137,7 +159,9 @@ namespace FlaxEditor
         ///     Ends recording for undo action.
         /// </summary>
         /// <param name="snapshotInstance">Instance of an object to finish recording, if null take last provided.</param>
-        public void RecordEnd(object snapshotInstance = null)
+        /// <param name="customActionBefore">Custom action to append to the undo block action before recorded modifications apply.</param>
+        /// <param name="customActionAfter">Custom action to append to the undo block action after recorded modifications apply.</param>
+        public void RecordEnd(object snapshotInstance = null, IUndoAction customActionBefore = null, IUndoAction customActionAfter = null)
         {
             if (!Enabled)
                 return;
@@ -152,6 +176,20 @@ namespace FlaxEditor
             // It may be null if no changes has been found during recording
             if (action != null)
             {
+                // Batch with a custom action if provided
+                if (customActionBefore != null && customActionAfter != null)
+                {
+                    action = new MultiUndoAction(new[] { customActionBefore, action, customActionAfter });
+                }
+                else if (customActionBefore != null)
+                {
+                    action = new MultiUndoAction(new[] { customActionBefore, action });
+                }
+                else if (customActionAfter != null)
+                {
+                    action = new MultiUndoAction(new[] { action, customActionAfter });
+                }
+
                 UndoOperationsStack.Push(action);
                 OnAction(action);
             }
@@ -214,7 +252,9 @@ namespace FlaxEditor
         ///     Ends recording for undo action.
         /// </summary>
         /// <param name="snapshotInstance">Instance of an object to finish recording, if null take last provided.</param>
-        public void RecordMultiEnd(object[] snapshotInstance = null)
+        /// <param name="customActionBefore">Custom action to append to the undo block action before recorded modifications apply.</param>
+        /// <param name="customActionAfter">Custom action to append to the undo block action after recorded modifications apply.</param>
+        public void RecordMultiEnd(object[] snapshotInstance = null, IUndoAction customActionBefore = null, IUndoAction customActionAfter = null)
         {
             if (!Enabled)
                 return;
@@ -229,6 +269,20 @@ namespace FlaxEditor
             // It may be null if no changes has been found during recording
             if (action != null)
             {
+                // Batch with a custom action if provided
+                if (customActionBefore != null && customActionAfter != null)
+                {
+                    action = new MultiUndoAction(new[] { customActionBefore, action, customActionAfter });
+                }
+                else if (customActionBefore != null)
+                {
+                    action = new MultiUndoAction(new[] { customActionBefore, action });
+                }
+                else if (customActionAfter != null)
+                {
+                    action = new MultiUndoAction(new[] { action, customActionAfter });
+                }
+
                 UndoOperationsStack.Push(action);
                 OnAction(action);
             }
@@ -254,7 +308,7 @@ namespace FlaxEditor
         /// <param name="actionString">Name of action to be displayed in undo stack.</param>
         /// <param name="actionsToSave">Action in after witch recording will be finished.</param>
         public void RecordAction<T>(T snapshotInstance, string actionString, Action<T> actionsToSave)
-            where T : new()
+        where T : new()
         {
             RecordBegin(snapshotInstance, actionString);
             actionsToSave?.Invoke(snapshotInstance);
@@ -301,7 +355,7 @@ namespace FlaxEditor
 
             var action = (IUndoAction)UndoOperationsStack.PopHistory();
             action.Undo();
-            
+
             OnUndo(action);
         }
 
@@ -325,25 +379,25 @@ namespace FlaxEditor
         /// <param name="action">The action.</param>
         protected virtual void OnAction(IUndoAction action)
         {
-            ActionDone?.Invoke();
+            ActionDone?.Invoke(action);
         }
-        
+
         /// <summary>
         /// Called when <see cref="Undo"/> performs undo action.
         /// </summary>
         /// <param name="action">The action.</param>
         protected virtual void OnUndo(IUndoAction action)
         {
-            UndoDone?.Invoke();
+            UndoDone?.Invoke(action);
         }
-        
+
         /// <summary>
         /// Called when <see cref="Undo"/> performs redo action.
         /// </summary>
         /// <param name="action">The action.</param>
         protected virtual void OnRedo(IUndoAction action)
         {
-            RedoDone?.Invoke();
+            RedoDone?.Invoke(action);
         }
 
         /// <summary>

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -30,7 +28,7 @@ namespace FlaxEditor.Content
         /// <param name="typeName">The asset type name.</param>
         /// <param name="id">The asset identifier.</param>
         protected AssetItem(string path, string typeName, ref Guid id)
-            : base(path)
+        : base(path)
         {
             TypeName = typeName;
             ID = id;

@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -119,7 +119,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Sets the gamead vibration.
+        /// Sets the gamepad vibration.
         /// </summary>
         /// <param name="state">The state.</param>
         public void SetVibration(GamepadVibrationState state)

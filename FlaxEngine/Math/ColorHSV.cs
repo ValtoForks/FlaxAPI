@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Globalization;
@@ -66,18 +66,18 @@ namespace FlaxEngine
 
             switch (hi)
             {
-                case 0:
-                    return new Color(V, t, p, A);
-                case 1:
-                    return new Color(q, V, p, A);
-                case 2:
-                    return new Color(p, V, t, A);
-                case 3:
-                    return new Color(p, q, V, A);
-                case 4:
-                    return new Color(t, p, V, A);
-                default:
-                    return new Color(V, p, q, A);
+            case 0:
+                return new Color(V, t, p, A);
+            case 1:
+                return new Color(q, V, p, A);
+            case 2:
+                return new Color(p, V, t, A);
+            case 3:
+                return new Color(p, q, V, A);
+            case 4:
+                return new Color(t, p, V, A);
+            default:
+                return new Color(V, p, q, A);
             }
         }
 

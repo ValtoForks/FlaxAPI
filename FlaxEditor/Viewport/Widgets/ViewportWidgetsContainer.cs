@@ -1,15 +1,23 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.GUI;
 
 namespace FlaxEditor.Viewport.Widgets
 {
+    /// <summary>
+    /// The viewport widget location.
+    /// </summary>
     public enum ViewportWidgetLocation
     {
+        /// <summary>
+        /// The upper left.
+        /// </summary>
         UpperLeft,
+
+        /// <summary>
+        /// The upper right.
+        /// </summary>
         UpperRight,
     }
 
@@ -44,7 +52,7 @@ namespace FlaxEditor.Viewport.Widgets
         /// </summary>
         /// <param name="location">The location.</param>
         public ViewportWidgetsContainer(ViewportWidgetLocation location)
-            : base(0, WidgetsMargin, 64, WidgetsHeight + 2)
+        : base(0, WidgetsMargin, 64, WidgetsHeight + 2)
         {
             CanFocus = false;
             WidgetLocation = location;
@@ -58,12 +66,12 @@ namespace FlaxEditor.Viewport.Widgets
             var clientRect = new Rectangle(Vector2.Zero, Size);
 
             // Draw background
-            Render2D.FillRectangle(clientRect, style.LightBackground * (IsMouseOver ? 1.0f : 0.4f), true);
+            Render2D.FillRectangle(clientRect, style.LightBackground * (IsMouseOver ? 0.3f : 0.2f));
 
             base.Draw();
 
             // Draw frame
-            Render2D.DrawRectangle(clientRect, style.BackgroundSelected * (IsMouseOver ? 1.0f : 0.4f), true);
+            Render2D.DrawRectangle(clientRect, style.BackgroundSelected * (IsMouseOver ? 1.0f : 0.6f));
         }
 
         /// <inheritdoc />
@@ -108,17 +116,17 @@ namespace FlaxEditor.Viewport.Widgets
                     float x;
                     switch (widget.WidgetLocation)
                     {
-                        case ViewportWidgetLocation.UpperLeft:
-                            x = left;
-                            left += widget.Width + margin;
-                            break;
-                        case ViewportWidgetLocation.UpperRight:
-                            x = right - widget.Width;
-                            right = x - margin;
-                            break;
-                        default:
-                            x = 0;
-                            break;
+                    case ViewportWidgetLocation.UpperLeft:
+                        x = left;
+                        left += widget.Width + margin;
+                        break;
+                    case ViewportWidgetLocation.UpperRight:
+                        x = right - widget.Width;
+                        right = x - margin;
+                        break;
+                    default:
+                        x = 0;
+                        break;
                     }
                     widget.Location = new Vector2(x, margin);
                 }

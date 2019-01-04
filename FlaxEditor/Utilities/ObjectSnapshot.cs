@@ -1,12 +1,11 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using FlaxEngine;
+using FlaxEngine.Json;
 
 namespace FlaxEditor.Utilities
 {
@@ -90,7 +89,7 @@ namespace FlaxEditor.Utilities
 
         private static void GetEntries(object instance, Stack<MemberInfoPath.Entry> membersPath, Type type, List<TypeEntry> result, List<object> values, Stack<object> refStack)
         {
-            // Note: this should match Flax serialization rules and atttributes (see ExtendedDefaultContractResolver)
+            // Note: this should match Flax serialization rules and attributes (see ExtendedDefaultContractResolver)
 
             var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -187,7 +186,7 @@ namespace FlaxEditor.Utilities
 
         /// <summary>
         /// Gets a list of MemberComparison values that represent the fields and/or properties
-        /// that differbetween the given object and the captured state.
+        /// that differ between the given object and the captured state.
         /// </summary>
         /// <param name="obj">The object to compare.</param>
         /// <returns>The collection of modified properties.</returns>
@@ -206,7 +205,7 @@ namespace FlaxEditor.Utilities
                 object xValue = _values[i];
                 object yValue = m.Path.GetLastValue(obj);
 
-                if (!Equals(xValue, yValue))
+                if (!JsonSerializer.ValueEquals(xValue, yValue))
                 {
                     //Debug.Log("Diff on: " + (new MemberComparison(m.Path, xValue, yValue)));
 

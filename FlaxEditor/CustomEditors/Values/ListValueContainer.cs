@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections;
@@ -11,7 +9,7 @@ namespace FlaxEditor.CustomEditors
     /// Custom <see cref="ValueContainer"/> for <see cref="IList"/> (used for <see cref="Array"/> and <see cref="System.Collections.Generic.List{T}"/>.
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.ValueContainer" />
-    public sealed class ListValueContainer : ValueContainer
+    public class ListValueContainer : ValueContainer
     {
         /// <summary>
         /// The index in the collection.
@@ -24,7 +22,7 @@ namespace FlaxEditor.CustomEditors
         /// <param name="elementType">Type of the collection elements.</param>
         /// <param name="index">The index.</param>
         public ListValueContainer(Type elementType, int index)
-            : base(null, elementType)
+        : base(null, elementType)
         {
             Index = index;
         }
@@ -36,13 +34,25 @@ namespace FlaxEditor.CustomEditors
         /// <param name="index">The index.</param>
         /// <param name="values">The collection values.</param>
         public ListValueContainer(Type elementType, int index, ValueContainer values)
-            : this(elementType, index)
+        : this(elementType, index)
         {
             Capacity = values.Count;
             for (int i = 0; i < values.Count; i++)
             {
                 var v = (IList)values[i];
                 Add(v[index]);
+            }
+
+            if (values.HasReferenceValue)
+            {
+                var v = (IList)values.ReferenceValue;
+
+                // Get the reference value if collections are the same size
+                if (v != null && values.Count == v.Count)
+                {
+                    _referenceValue = v[index];
+                    _hasReferenceValue = true;
+                }
             }
         }
 
@@ -83,6 +93,16 @@ namespace FlaxEditor.CustomEditors
             {
                 var v = (IList)instanceValues[i];
                 v[Index] = this[i];
+            }
+        }
+
+        /// <inheritdoc />
+        public override void RefreshReferenceValue(object instanceValue)
+        {
+            if (instanceValue is IList v)
+            {
+                _referenceValue = v[Index];
+                _hasReferenceValue = true;
             }
         }
     }

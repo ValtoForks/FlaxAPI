@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -14,15 +12,15 @@ namespace FlaxEditor.SceneGraph
     {
         /// <inheritdoc />
         protected ActorNodeWithIcon(Actor actor)
-            : base(actor)
+        : base(actor)
         {
         }
 
         /// <inheritdoc />
-        public override bool RayCastSelf(ref Ray ray, out float distance)
+        public override bool RayCastSelf(ref RayCastData ray, out float distance)
         {
             BoundingSphere sphere = new BoundingSphere(Transform.Translation, 7.0f);
-            return CollisionsHelper.RayIntersectsSphere(ref ray, ref sphere, out distance);
+            return CollisionsHelper.RayIntersectsSphere(ref ray.Ray, ref sphere, out distance);
         }
     }
 }

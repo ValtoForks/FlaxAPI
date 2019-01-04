@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Windows;
@@ -89,7 +87,7 @@ namespace FlaxEditor.Content
     {
         /// <inheritdoc />
         public override string Name { get; } = CustomEditors.CustomEditorsUtil.GetPropertyNameUI(typeof(T).Name);
-        
+
         /// <inheritdoc />
         public override bool CanCreate(ContentFolder targetLocation)
         {
@@ -97,7 +95,7 @@ namespace FlaxEditor.Content
         }
 
         /// <inheritdoc />
-        public override void Create(string outputPath)
+        public override void Create(string outputPath, object arg)
         {
             Editor.SaveJsonAsset(outputPath, new T());
         }

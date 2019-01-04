@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -23,7 +21,7 @@ namespace FlaxEngine
         /// The maximum range value.
         /// </summary>
         public readonly float Max;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="RangeAttribute"/> class.
         /// </summary>

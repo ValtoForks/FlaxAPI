@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -11,10 +9,20 @@ namespace FlaxEngine
     public sealed partial class Scene
     {
         /// <summary>
+        /// The scene asset typename. Type of the serialized scene asset data. Hidden class for the scene assets. Actors deserialization rules are strictly controlled under the hood by the C++ core parts. Mostly because scene asset has the same ID as scene root actor so loading both managed objects for scene asset and scene will crash (due to object ids conflict). This type does not exist in the engine assembly.
+        /// </summary>
+        public const string AssetTypename = "FlaxEngine.SceneAsset";
+
+        /// <summary>
+        /// The scene asset typename used by the Editor asset picker control. Use it for asset reference picker filter.
+        /// </summary>
+        public const string EditorPickerTypename = "FlaxEditor.Content.SceneItem";
+
+        /// <summary>
         /// Saves this scene to the asset.
         /// </summary>
         /// <returns>True if action fails, otherwise false.</returns>
-        public bool SaveScene(Scene scene)
+        public bool Save()
         {
             return SceneManager.SaveScene(this);
         }
@@ -22,7 +30,7 @@ namespace FlaxEngine
         /// <summary>
         /// Saves this scene to the asset. Done in the background.
         /// </summary>
-        public void SaveSceneAsync(Scene scene)
+        public void SaveAsync()
         {
             SceneManager.SaveSceneAsync(this);
         }
@@ -31,7 +39,7 @@ namespace FlaxEngine
         /// Unloads this scene.
         /// </summary>
         /// <returns>True if action fails, otherwise false.</returns>
-        public bool UnloadScene(Scene scene)
+        public bool Unload()
         {
             return SceneManager.UnloadScene(this);
         }
@@ -39,7 +47,7 @@ namespace FlaxEngine
         /// <summary>
         /// Unloads this scene. Done in the background.
         /// </summary>
-        public void UnloadSceneAsync(Scene scene)
+        public void UnloadAsync()
         {
             SceneManager.UnloadSceneAsync(this);
         }
@@ -67,6 +75,7 @@ namespace FlaxEngine
 #if !UNIT_TEST_COMPILANT
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_GetLightmapSettings(IntPtr obj, out LightmapSettings.Internal data);
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void Internal_SetLightmapSettings(IntPtr obj, ref LightmapSettings.Internal data);
 #endif

@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using FlaxEngine;
@@ -40,8 +39,9 @@ namespace FlaxEditor.Content.Settings
         /// <summary>
         /// Reference to the first scene to load on a game startup.
         /// </summary>
-        [EditorOrder(900), EditorDisplay("Startup"), AssetReference(SceneItem.SceneAssetTypename, true), Tooltip("Reference to the first scene to load on a game startup")]
-        public JsonAssetItem FirstScene;
+        [EditorOrder(900), EditorDisplay("Startup"), Tooltip("Reference to the first scene to load on a game startup")]
+        //[EditorOrder(900), EditorDisplay("Startup"), AssetReference(Scene.EditorPickerTypename), Tooltip("Reference to the first scene to load on a game startup")]
+        public SceneReference FirstScene;
 
         /// <summary>
         /// The custom macros used using scripts compilation.
@@ -55,10 +55,10 @@ namespace FlaxEditor.Content.Settings
         [EditorOrder(1010), EditorDisplay("Other Settings"), AssetReference(typeof(TimeSettings), true), Tooltip("Reference to Time Settings asset")]
         public JsonAsset Time;
 
-		/// <summary>
-		/// Reference to <see cref="AudioSettings"/> asset.
-		/// </summary>
-		[EditorOrder(1015), EditorDisplay("Other Settings"), AssetReference(typeof(AudioSettings), true), Tooltip("Reference to Audio Settings asset")]
+        /// <summary>
+        /// Reference to <see cref="AudioSettings"/> asset.
+        /// </summary>
+        [EditorOrder(1015), EditorDisplay("Other Settings"), AssetReference(typeof(AudioSettings), true), Tooltip("Reference to Audio Settings asset")]
         public JsonAsset Audio;
 
         /// <summary>
@@ -110,9 +110,9 @@ namespace FlaxEditor.Content.Settings
         public JsonAsset UWPPlatform;
 
         /// <summary>
-        /// Gets the absolute path to the game settigns asset file.
+        /// Gets the absolute path to the game settings asset file.
         /// </summary>
-        public static string GameSettignsAssetPath
+        public static string GameSettingsAssetPath
         {
             get { return StringUtils.CombinePaths(Globals.ContentFolder, "GameSettings.json"); }
         }
@@ -123,7 +123,7 @@ namespace FlaxEditor.Content.Settings
         /// <returns>The loaded game settings.</returns>
         public static GameSettings Load()
         {
-            var asset = FlaxEngine.Content.Load<JsonAsset>(GameSettignsAssetPath);
+            var asset = FlaxEngine.Content.Load<JsonAsset>(GameSettingsAssetPath);
             if (asset)
             {
                 if (asset.CreateInstance() is GameSettings result)
@@ -177,16 +177,19 @@ namespace FlaxEditor.Content.Settings
                 return LoadAsset<WindowsPlatformSettings>(gameSettings.WindowsPlatform) as T;
             if (type == typeof(UWPPlatformSettings))
                 return LoadAsset<UWPPlatformSettings>(gameSettings.UWPPlatform) as T;
-	        if (type == typeof(AudioSettings))
+            if (type == typeof(AudioSettings))
                 return LoadAsset<AudioSettings>(gameSettings.Audio) as T;
 
-            foreach (var e in gameSettings.CustomSettings)
+            if (gameSettings.CustomSettings != null)
             {
-                if (e.Value && !e.Value.WaitForLoaded() && e.Value.DataTypeName == type.FullName)
+                foreach (var e in gameSettings.CustomSettings)
                 {
-                    var custom = e.Value.CreateInstance();
-                    if (custom is T result)
-                        return result;
+                    if (e.Value && !e.Value.WaitForLoaded() && e.Value.DataTypeName == type.FullName)
+                    {
+                        var custom = e.Value.CreateInstance();
+                        if (custom is T result)
+                            return result;
+                    }
                 }
             }
 
@@ -206,7 +209,7 @@ namespace FlaxEditor.Content.Settings
             if (Editor.SaveJsonAsset(path, obj))
                 return true;
             asset = FlaxEngine.Content.LoadAsync<JsonAsset>(path);
-            return Editor.SaveJsonAsset(GameSettignsAssetPath, gameSettings);
+            return Editor.SaveJsonAsset(GameSettingsAssetPath, gameSettings);
         }
 
         /// <summary>
@@ -228,7 +231,7 @@ namespace FlaxEditor.Content.Settings
 
             if (type == typeof(GameSettings))
             {
-                return Editor.SaveJsonAsset(GameSettignsAssetPath, obj);
+                return Editor.SaveJsonAsset(GameSettingsAssetPath, obj);
             }
 
             var gameSettings = Load();
@@ -249,10 +252,37 @@ namespace FlaxEditor.Content.Settings
                 return SaveAsset(gameSettings, ref gameSettings.WindowsPlatform, obj);
             if (type == typeof(UWPPlatformSettings))
                 return SaveAsset(gameSettings, ref gameSettings.UWPPlatform, obj);
-	        if (type == typeof(AudioSettings))
+            if (type == typeof(AudioSettings))
                 return SaveAsset(gameSettings, ref gameSettings.Audio, obj);
 
             return true;
+        }
+
+        /// <summary>
+        /// Sets the custom settings (or unsets if provided asset is null).
+        /// </summary>
+        /// <param name="key">The custom key (must be unique per context).</param>
+        /// <param name="customSettingsAsset">The custom settings asset.</param>
+        /// <returns>True if failed otherwise false.</returns>
+        public static bool SetCustomSettings(string key, JsonAsset customSettingsAsset)
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+
+            var gameSettings = Load();
+
+            if (customSettingsAsset == null && gameSettings.CustomSettings != null)
+            {
+                gameSettings.CustomSettings.Remove(key);
+            }
+            else
+            {
+                if (gameSettings.CustomSettings == null)
+                    gameSettings.CustomSettings = new Dictionary<string, JsonAsset>();
+                gameSettings.CustomSettings[key] = customSettingsAsset;
+            }
+
+            return Editor.SaveJsonAsset(GameSettingsAssetPath, gameSettings);
         }
 
         /// <summary>

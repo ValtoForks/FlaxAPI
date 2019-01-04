@@ -1,19 +1,17 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content;
 using FlaxEngine;
 using FlaxEngine.GUI;
-using FlaxEngine.GUI.Docking;
+using DockWindow = FlaxEditor.GUI.Docking.DockWindow;
 
 namespace FlaxEditor.Windows
 {
     /// <summary>
     ///  Base class for all windows in Editor.
     /// </summary>
-    /// <seealso cref="FlaxEngine.GUI.Docking.DockWindow" />
+    /// <seealso cref="DockWindow" />
     public abstract class EditorWindow : DockWindow
     {
         /// <summary>
@@ -28,7 +26,7 @@ namespace FlaxEditor.Windows
         /// <param name="hideOnClose">True if hide window on closing, otherwise it will be destroyed.</param>
         /// <param name="scrollBars">The scroll bars.</param>
         protected EditorWindow(Editor editor, bool hideOnClose, ScrollBars scrollBars)
-            : base(editor.UI.MasterPanel, hideOnClose, scrollBars)
+        : base(editor.UI.MasterPanel, hideOnClose, scrollBars)
         {
             Editor = editor;
 
@@ -137,7 +135,7 @@ namespace FlaxEditor.Windows
         }
 
         /// <summary>
-        /// Called when window should be initializated.
+        /// Called when window should be initialized.
         /// At this point, main window, content database, default editor windows are ready.
         /// </summary>
         public virtual void OnInit()

@@ -14,7 +14,7 @@ namespace FlaxEngine.Assertions
         public const float Epsilon = 1E-05f;
 
         /// <summary>
-        /// Default instance of a comparer class with deafult error epsilon and absolute error check.
+        /// Default instance of a comparer class with default error epsilon and absolute error check.
         /// </summary>
         public static readonly FloatComparer ComparerWithDefaultTolerance;
 
@@ -30,7 +30,7 @@ namespace FlaxEngine.Assertions
         /// Creates an instance of the comparer.
         /// </summary>
         public FloatComparer()
-            : this(Epsilon, false)
+        : this(Epsilon, false)
         {
         }
 
@@ -42,7 +42,7 @@ namespace FlaxEngine.Assertions
         /// used.
         /// </param>
         public FloatComparer(bool relative)
-            : this(Epsilon, relative)
+        : this(Epsilon, relative)
         {
         }
 
@@ -51,7 +51,7 @@ namespace FlaxEngine.Assertions
         /// </summary>
         /// <param name="error">Allowed comparison error. By default, the FloatComparer.Epsilon is used.</param>
         public FloatComparer(float error)
-            : this(error, false)
+        : this(error, false)
         {
         }
 

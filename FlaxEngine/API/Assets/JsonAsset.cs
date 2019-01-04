@@ -1,39 +1,33 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine.Json;
 
 namespace FlaxEngine
 {
-	public partial class JsonAsset
-	{
+    public partial class JsonAsset
+    {
         /// <summary>
-        /// The asset type content domain.
+        /// Creates the serialized object instance from the json asset data.
         /// </summary>
-        public const ContentDomain Domain = ContentDomain.Document;
+        /// <returns>The created object or null.</returns>
+        public T CreateInstance<T>()
+        {
+            return (T)CreateInstance();
+        }
 
         /// <summary>
-        /// Creates the serialized object instance from the json asset data. Asset must be loaded.
+        /// Creates the serialized object instance from the json asset data.
         /// </summary>
         /// <returns>The created object or null.</returns>
         public object CreateInstance()
         {
-            if(!IsLoaded)
-                throw new InvalidOperationException("Cannot use unloaded asset.");
+            if (WaitForLoaded())
+                return null;
 
-            var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var assemblies = new[]
-            {
-                Utils.GetAssemblyByName("Assembly", allAssemblies),
-                Utils.GetAssemblyByName("Assembly.Editor", allAssemblies),
-                Utils.GetAssemblyByName("FlaxEditor", allAssemblies),
-                Utils.GetAssemblyByName("FlaxEngine", allAssemblies),
-            };
-
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var dataTypeName = DataTypeName;
-            
+
             for (int i = 0; i < assemblies.Length; i++)
             {
                 var assembly = assemblies[i];
@@ -48,7 +42,7 @@ namespace FlaxEngine
                             // Create instance
                             obj = Activator.CreateInstance(type);
 
-                            // Deserialzie object
+                            // Deserialize object
                             var data = Data;
                             JsonSerializer.Deserialize(obj, data);
                         }
@@ -61,6 +55,7 @@ namespace FlaxEngine
                     }
                 }
             }
+
             return null;
         }
     }

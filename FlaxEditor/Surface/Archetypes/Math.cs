@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -30,31 +28,47 @@ namespace FlaxEditor.Surface.Archetypes
             };
         }
 
-        private static NodeArchetype Op2(ushort id, string title, string desc, ConnectionType inputType = ConnectionType.Variable, ConnectionType outputType = ConnectionType.Variable, bool isOutputDependant = true)
+        private static NodeArchetype Op2(ushort id, string title, string desc, ConnectionType inputType = ConnectionType.Variable, ConnectionType outputType = ConnectionType.Variable, bool isOutputDependant = true, object[] defaultValues = null)
+        {
+            return Op2(id, title, desc, null, inputType, outputType, isOutputDependant, defaultValues);
+        }
+
+        private static NodeArchetype Op2(ushort id, string title, string desc, string[] altTitles, ConnectionType inputType = ConnectionType.Variable, ConnectionType outputType = ConnectionType.Variable, bool isOutputDependant = true, object[] defaultValues = null)
         {
             return new NodeArchetype
             {
                 TypeID = id,
                 Title = title,
                 Description = desc,
+                AlternativeTitles = altTitles,
                 Size = new Vector2(110, 40),
                 DefaultType = inputType,
-                IndependentBoxes = new[] { 0, 1 },
+                IndependentBoxes = new[]
+                {
+                    0,
+                    1
+                },
                 DependentBoxes = isOutputDependant ? new[] { 2 } : null,
+                DefaultValues = defaultValues ?? new object[]
+                {
+                    0.0f,
+                    0.0f,
+                },
                 Elements = new[]
                 {
-                    NodeElementArchetype.Factory.Input(0, "A", true, inputType, 0),
-                    NodeElementArchetype.Factory.Input(1, "B", true, inputType, 1),
+                    NodeElementArchetype.Factory.Input(0, "A", true, inputType, 0, 0),
+                    NodeElementArchetype.Factory.Input(1, "B", true, inputType, 1, 1),
                     NodeElementArchetype.Factory.Output(0, "Result", outputType, 2)
                 }
             };
         }
 
-        private static string[] _vectorTransformSpaces =
+        private static readonly string[] VectorTransformSpaces =
         {
             "World",
             "Tangent",
             "View",
+            "Local",
         };
 
         /// <summary>
@@ -62,11 +76,11 @@ namespace FlaxEditor.Surface.Archetypes
         /// </summary>
         public static NodeArchetype[] Nodes =
         {
-            Op2(1, "Add", "Result is sum A and B"),
-            Op2(2, "Substract", "Result is difference A and B"),
-            Op2(3, "Multiply", "Result is A times B"),
-            Op2(4, "Modulo", "Result is remainder A from A divided by B B"),
-            Op2(5, "Divide", "Result is A divided by B"),
+            Op2(1, "Add", "Result is sum A and B", new[] { "+" }),
+            Op2(2, "Subtract", "Result is difference A and B", new[] { "-" }),
+            Op2(3, "Multiply", "Result is A times B", new[] { "*" }, defaultValues: new object[] { 1.0f, 1.0f }),
+            Op2(4, "Modulo", "Result is remainder A from A divided by B B", new[] { "%" }),
+            Op2(5, "Divide", "Result is A divided by B", new[] { "/" }, defaultValues: new object[] { 1.0f, 1.0f }),
             Op1(7, "Absolute", "Result is absolute value of A"),
             Op1(8, "Ceil", "Returns the smallest integer value greater than or equal to A"),
             Op1(9, "Cosine", "Returns cosine of A"),
@@ -96,7 +110,11 @@ namespace FlaxEditor.Surface.Archetypes
             Op2(20, "Dot", "Returns the dot product of A and B", ConnectionType.Vector, ConnectionType.Float, false),
             Op2(21, "Max", "Selects the greater of A and B"),
             Op2(22, "Min", "Selects the lesser of A and B"),
-            Op2(23, "Power", "Returns A raised to the specified at B power"),
+            Op2(23, "Power", "Returns A raised to the specified at B power", new[]
+            {
+                "^",
+                "**"
+            }),
             //
             new NodeArchetype
             {
@@ -106,12 +124,22 @@ namespace FlaxEditor.Surface.Archetypes
                 Size = new Vector2(110, 60),
                 DefaultType = ConnectionType.Variable,
                 IndependentBoxes = new[] { 0 },
-                DependentBoxes = new[] { 1, 2, 3 },
+                DependentBoxes = new[]
+                {
+                    1,
+                    2,
+                    3
+                },
+                DefaultValues = new object[]
+                {
+                    0.0f,
+                    0.0f,
+                },
                 Elements = new[]
                 {
                     NodeElementArchetype.Factory.Input(0, "Input", true, ConnectionType.Variable, 0),
-                    NodeElementArchetype.Factory.Input(1, "Min", true, ConnectionType.Variable, 1),
-                    NodeElementArchetype.Factory.Input(2, "Max", true, ConnectionType.Variable, 2),
+                    NodeElementArchetype.Factory.Input(1, "Min", true, ConnectionType.Variable, 1, 0),
+                    NodeElementArchetype.Factory.Input(2, "Max", true, ConnectionType.Variable, 2, 1),
                     NodeElementArchetype.Factory.Output(0, "Result", ConnectionType.Variable, 3)
                 }
             },
@@ -122,13 +150,23 @@ namespace FlaxEditor.Surface.Archetypes
                 Description = "Performs a linear interpolation",
                 Size = new Vector2(110, 60),
                 DefaultType = ConnectionType.Variable,
-                IndependentBoxes = new[] { 0, 1 },
+                IndependentBoxes = new[]
+                {
+                    0,
+                    1
+                },
                 DependentBoxes = new[] { 3 },
+                DefaultValues = new object[]
+                {
+                    0.0f,
+                    1.0f,
+                    0.5f,
+                },
                 Elements = new[]
                 {
-                    NodeElementArchetype.Factory.Input(0, "A", true, ConnectionType.Variable, 0),
-                    NodeElementArchetype.Factory.Input(1, "B", true, ConnectionType.Variable, 1),
-                    NodeElementArchetype.Factory.Input(2, "Alpha", true, ConnectionType.Float, 2),
+                    NodeElementArchetype.Factory.Input(0, "A", true, ConnectionType.Variable, 0, 0),
+                    NodeElementArchetype.Factory.Input(1, "B", true, ConnectionType.Variable, 1, 1),
+                    NodeElementArchetype.Factory.Input(2, "Alpha", true, ConnectionType.Float, 2, 2),
                     NodeElementArchetype.Factory.Output(0, "Result", ConnectionType.Variable, 3)
                 }
             },
@@ -139,7 +177,11 @@ namespace FlaxEditor.Surface.Archetypes
                 Description = "Returns reflected vector over the normal",
                 Size = new Vector2(110, 40),
                 DefaultType = ConnectionType.Variable,
-                IndependentBoxes = new[] { 0, 1 },
+                IndependentBoxes = new[]
+                {
+                    0,
+                    1
+                },
                 DependentBoxes = new[] { 2 },
                 Elements = new[]
                 {
@@ -181,8 +223,8 @@ namespace FlaxEditor.Surface.Archetypes
                 {
                     NodeElementArchetype.Factory.Input(0, "Input", true, ConnectionType.Vector3, 0),
                     NodeElementArchetype.Factory.Output(0, "Output", ConnectionType.Vector3, 1),
-                    NodeElementArchetype.Factory.ComboBox(0, 22, 70, 0, _vectorTransformSpaces),
-                    NodeElementArchetype.Factory.ComboBox(100, 22, 70, 1, _vectorTransformSpaces),
+                    NodeElementArchetype.Factory.ComboBox(0, 22, 70, 0, VectorTransformSpaces),
+                    NodeElementArchetype.Factory.ComboBox(100, 22, 70, 1, VectorTransformSpaces),
                 }
             },
             new NodeArchetype
@@ -192,13 +234,23 @@ namespace FlaxEditor.Surface.Archetypes
                 Description = "Performs value multiplication and addition at once",
                 Size = new Vector2(110, 60),
                 DefaultType = ConnectionType.Variable,
-                IndependentBoxes = new[] { 0, 1, 2 },
+                IndependentBoxes = new[]
+                {
+                    0,
+                    1,
+                    2
+                },
                 DependentBoxes = new[] { 3 },
+                DefaultValues = new object[]
+                {
+                    1.0f,
+                    0.0f,
+                },
                 Elements = new[]
                 {
                     NodeElementArchetype.Factory.Input(0, "Value", true, ConnectionType.Variable, 0),
-                    NodeElementArchetype.Factory.Input(1, "Multiply", true, ConnectionType.Variable, 1),
-                    NodeElementArchetype.Factory.Input(2, "Add", true, ConnectionType.Variable, 2),
+                    NodeElementArchetype.Factory.Input(1, "Multiply", true, ConnectionType.Variable, 1, 0),
+                    NodeElementArchetype.Factory.Input(2, "Add", true, ConnectionType.Variable, 2, 1),
                     NodeElementArchetype.Factory.Output(0, "Result", ConnectionType.Variable, 3)
                 }
             },
@@ -214,9 +266,9 @@ namespace FlaxEditor.Surface.Archetypes
                     NodeElementArchetype.Factory.Output(0, "Mask", ConnectionType.Vector3, 1)
                 }
             },
-            Op1(33, "asin", "Returns arcus sine of A"),
-            Op1(34, "acos", "Returns arcus cosinus of A"),
-            Op1(35, "atan", "Returns arcus tangent of A"),
+            Op1(33, "Asin", "Returns arcus sine of A"),
+            Op1(34, "Acos", "Returns arcus cosinus of A"),
+            Op1(35, "Atan", "Returns arcus tangent of A"),
             new NodeArchetype
             {
                 TypeID = 36,
@@ -259,6 +311,34 @@ namespace FlaxEditor.Surface.Archetypes
             Op1(38, "Trunc", "Truncates a floating-point value to the integer component"),
             Op1(39, "Frac", "Returns fractional part of the value"),
             Op2(40, "Fmod", "Returns the floating-point remainder of A/B"),
+            Op2(41, "Atan2", "Returns arctangent tangent of two values (A, B)"),
+            new NodeArchetype
+            {
+                TypeID = 42,
+                Flags = NodeFlags.AnimGraphOnly,
+                Title = "Near Equal",
+                Description = "Determines if two values are nearly equal within a given epsilon",
+                Size = new Vector2(200, 80),
+                IndependentBoxes = new[]
+                {
+                    0,
+                    1,
+                },
+                DefaultType = ConnectionType.Variable,
+                DefaultValues = new object[]
+                {
+                    0.0f,
+                    0.0f,
+                    0.0001f
+                },
+                Elements = new[]
+                {
+                    NodeElementArchetype.Factory.Input(0, "A", true, ConnectionType.Variable, 0, 0),
+                    NodeElementArchetype.Factory.Input(1, "B", true, ConnectionType.Variable, 1, 1),
+                    NodeElementArchetype.Factory.Input(2, "Epsilon", true, ConnectionType.Float, 2, 2),
+                    NodeElementArchetype.Factory.Output(0, "", ConnectionType.Bool, 3),
+                }
+            },
         };
     }
 }

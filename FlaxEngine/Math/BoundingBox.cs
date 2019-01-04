@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -69,11 +69,17 @@ namespace FlaxEngine
         public static readonly BoundingBox Empty = new BoundingBox(Vector3.Maximum, Vector3.Minimum);
 
         /// <summary>
+        /// A <see cref="BoundingBox"/> which is located in point (0, 0, 0) and has size equal (0, 0, 0).
+        /// </summary>
+        public static readonly BoundingBox Zero = new BoundingBox(Vector3.Zero, Vector3.Zero);
+
+        /// <summary>
         /// Gets or sets the size.
         /// </summary>
         /// <value>
         /// The size.
         /// </value>
+        [NoSerialize]
         public Vector3 Size
         {
             get => Maximum - Minimum;
@@ -91,6 +97,7 @@ namespace FlaxEngine
         /// <value>
         /// The center.
         /// </value>
+        [NoSerialize]
         public Vector3 Center
         {
             get => Minimum + (Maximum - Minimum) * 0.5f;
@@ -424,7 +431,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Transforms bounding box using the given transformatin matrix.
+        /// Transforms bounding box using the given transformation matrix.
         /// </summary>
         /// <param name="box">The bounding box to transform.</param>
         /// <param name="transform">The transformation matrix.</param>
@@ -437,7 +444,7 @@ namespace FlaxEngine
         }
 
         /// <summary>
-        /// Transforms bounding box using the given transformatin matrix.
+        /// Transforms bounding box using the given transformation matrix.
         /// </summary>
         /// <param name="box">The bounding box to transform.</param>
         /// <param name="transform">The transformation matrix.</param>
@@ -531,7 +538,10 @@ namespace FlaxEngine
         /// </returns>
         public override string ToString()
         {
-            return string.Format(CultureInfo.CurrentCulture, "Minimum:{0} Maximum:{1}", Minimum.ToString(), Maximum.ToString());
+            return string.Format(CultureInfo.CurrentCulture,
+                                 "Minimum:{0} Maximum:{1}",
+                                 Minimum.ToString(),
+                                 Maximum.ToString());
         }
 
         /// <summary>
@@ -546,8 +556,10 @@ namespace FlaxEngine
             if (format == null)
                 return ToString();
 
-            return string.Format(CultureInfo.CurrentCulture, "Minimum:{0} Maximum:{1}", Minimum.ToString(format, CultureInfo.CurrentCulture),
-                Maximum.ToString(format, CultureInfo.CurrentCulture));
+            return string.Format(CultureInfo.CurrentCulture,
+                                 "Minimum:{0} Maximum:{1}",
+                                 Minimum.ToString(format, CultureInfo.CurrentCulture),
+                                 Maximum.ToString(format, CultureInfo.CurrentCulture));
         }
 
         /// <summary>
@@ -559,7 +571,10 @@ namespace FlaxEngine
         /// </returns>
         public string ToString(IFormatProvider formatProvider)
         {
-            return string.Format(formatProvider, "Minimum:{0} Maximum:{1}", Minimum.ToString(), Maximum.ToString());
+            return string.Format(formatProvider,
+                                 "Minimum:{0} Maximum:{1}",
+                                 Minimum.ToString(),
+                                 Maximum.ToString());
         }
 
         /// <summary>
@@ -575,8 +590,10 @@ namespace FlaxEngine
             if (format == null)
                 return ToString(formatProvider);
 
-            return string.Format(formatProvider, "Minimum:{0} Maximum:{1}", Minimum.ToString(format, formatProvider),
-                Maximum.ToString(format, formatProvider));
+            return string.Format(formatProvider,
+                                 "Minimum:{0} Maximum:{1}",
+                                 Minimum.ToString(format, formatProvider),
+                                 Maximum.ToString(format, formatProvider));
         }
 
         /// <summary>

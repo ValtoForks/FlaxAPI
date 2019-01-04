@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.CustomEditors.Elements;
 using FlaxEngine;
@@ -23,13 +21,21 @@ namespace FlaxEditor.CustomEditors.Editors
         public override void Initialize(LayoutElementsContainer layout)
         {
             element = layout.Custom<ColorValueBox>();
-            element.CustomControl.ValueChanged += () => SetValue(element.CustomControl.Value);
+            element.CustomControl.ValueChanged += OnValueChanged;
+        }
+
+        private void OnValueChanged()
+        {
+            var token = element.CustomControl.IsSliding ? this : null;
+            SetValue(element.CustomControl.Value, token);
         }
 
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (HasDiffrentValues)
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 // TODO: support different values on ColorValueBox
             }

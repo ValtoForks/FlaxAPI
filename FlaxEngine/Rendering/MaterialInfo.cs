@@ -1,31 +1,43 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.InteropServices;
 
 namespace FlaxEngine.Rendering
 {
-
     /// <summary>
-    /// Material Domain Type
+    /// Material domain type. Material domain defines the target usage of the material shader.
     /// </summary>
     public enum MaterialDomain : byte
     {
         /// <summary>
-        /// The surface material.
+        /// The surface material. Can be used to render the scene geometry including models and skinned models.
         /// </summary>
         Surface = 0,
 
         /// <summary>
-        /// The post process material.
+        /// The post process material. Can be used to perform custom post-processing of the rendered frame.
         /// </summary>
-        PostProcess = 1
+        PostProcess = 1,
+
+        /// <summary>
+        /// The deferred decal material. Can be used to apply custom overlay or surface modifications to the object surfaces in the world.
+        /// </summary>
+        Decal = 2,
+
+        /// <summary>
+        /// The GUI shader. Can be used to draw custom control interface elements or to add custom effects to the GUI.
+        /// </summary>
+        GUI = 3,
+
+        /// <summary>
+        /// The terrain shader. Can be used only with landscape chunks geometry that use optimized vertex data and support multi-layered blending.
+        /// </summary>
+        Terrain = 4,
     }
 
     /// <summary>
-    /// Material Blending Mode
+    /// Material blending modes.
     /// </summary>
     public enum MaterialBlendMode : byte
     {
@@ -39,14 +51,40 @@ namespace FlaxEngine.Rendering
         /// </summary>
         Transparent = 1,
 
-		/// <summary>
-		/// The unlit material. Emissive channel is used as an output color. Can perform custom lighting operations or just glow. Won't be affected by the lighting pipeline
-		/// </summary>
-		Unlit = 2,
+        /// <summary>
+        /// The additive blend. Material color is used to add to color of the objects behind the surface. Used during Forward pass rendering.
+        /// </summary>
+        Additive = 2,
+
+        /// <summary>
+        /// The multiply blend. Material color is used to multiply color of the objects behind the surface. Used during Forward pass rendering.
+        /// </summary>
+        Multiply = 3,
     }
 
     /// <summary>
-    /// Material Transparent Lighting Mode
+    /// Material shading models. Defines how material inputs and properties are combined to result the final surface color.
+    /// </summary>
+    public enum MaterialShadingModel : byte
+    {
+        /// <summary>
+        /// The unlit material. Emissive channel is used as an output color. Can perform custom lighting operations or just glow. Won't be affected by the lighting pipeline.
+        /// </summary>
+        Unlit = 0,
+
+        /// <summary>
+        /// The default lit material. The most common choice for the material surfaces.
+        /// </summary>
+        Lit = 1,
+
+        /// <summary>
+        /// The subsurface material. Intended for materials like vax or skin that need light scattering to transport simulation through the object.
+        /// </summary>
+        Subsurface = 2,
+    }
+
+    /// <summary>
+    /// Material transparent lighting modes.
     /// </summary>
     public enum MaterialTransparentLighting : byte
     {
@@ -62,7 +100,7 @@ namespace FlaxEngine.Rendering
     }
 
     /// <summary>
-    /// Material usage flags
+    /// Material usage flags.
     /// </summary>
     [Flags]
     public enum MaterialFlags : uint
@@ -119,15 +157,35 @@ namespace FlaxEngine.Rendering
         TransparentDisableDistortion = 1 << 8,
 
         /// <summary>
-        /// The material is using world position offset (it may be animated insie a shader).
+        /// The material is using world position offset (it may be animated inside a shader).
         /// </summary>
         UsePositionOffset = 1 << 9,
 
-		/// <summary>
-		/// The material is using vertex colors. The render will try to feed the pipeline with a proper buffer so material can gather valid data.
-		/// </summary>
-		UseVertexColor = 1 << 10,
-	}
+        /// <summary>
+        /// The material is using vertex colors. The render will try to feed the pipeline with a proper buffer so material can gather valid data.
+        /// </summary>
+        UseVertexColor = 1 << 10,
+
+        /// <summary>
+        /// The material is using per-pixel normal mapping.
+        /// </summary>
+        UseNormal = 1 << 11,
+
+        /// <summary>
+        /// The material is using position displacement (in domain shader).
+        /// </summary>
+        UseDisplacement = 1 << 12,
+
+        /// <summary>
+        /// The flag used to indicate that material input normal vector is defined in the world space rather than tangent space.
+        /// </summary>
+        InputWorldSpaceNormal = 1 << 13,
+
+        /// <summary>
+        /// The flag used to indicate that material uses dithered model LOD transition for smoother LODs switching.
+        /// </summary>
+        UseDitheredLODTransition = 1 << 14,
+    }
 
     /// <summary>
     /// Post Fx material rendering locations.
@@ -153,6 +211,42 @@ namespace FlaxEngine.Rendering
         /// The after custom post effects.
         /// </summary>
         AfterCustomPostEffects = 3,
+
+        /// <summary>
+        /// The 'before' Reflections pass. After the Light pass. Can be used to implement a custom light types that accumulate lighting to the light buffer.
+        /// </summary>
+        BeforeReflectionsPass = 4,
+
+        /// <summary>
+        /// The 'after' AA filter pass. Rendering is done to the output backbuffer.
+        /// </summary>
+        AfterAntiAliasingPass = 5,
+    }
+
+    /// <summary>
+    /// Decal material blending modes.
+    /// </summary>
+    public enum MaterialDecalBlendingMode : byte
+    {
+        /// <summary>
+        /// Decal will be fully blended with the material surface.
+        /// </summary>
+        Translucent = 0,
+
+        /// <summary>
+        /// Decal color will be blended with the material surface color (using multiplication).
+        /// </summary>
+        Stain = 1,
+
+        /// <summary>
+        /// Decal will blend the normal vector only.
+        /// </summary>
+        Normal = 2,
+
+        /// <summary>
+        /// Decal will apply the emissive light only.
+        /// </summary>
+        Emissive = 3,
     }
 
     /// <summary>
@@ -234,6 +328,11 @@ namespace FlaxEngine.Rendering
         public MaterialBlendMode BlendMode;
 
         /// <summary>
+        /// The shading mode.
+        /// </summary>
+        public MaterialShadingModel ShadingModel;
+
+        /// <summary>
         /// The flags.
         /// </summary>
         public MaterialFlags Flags;
@@ -242,6 +341,11 @@ namespace FlaxEngine.Rendering
         /// The transparent lighting mode.
         /// </summary>
         public MaterialTransparentLighting TransparentLighting;
+
+        /// <summary>
+        /// The decal material blending mode.
+        /// </summary>
+        public MaterialDecalBlendingMode DecalBlendingMode;
 
         /// <summary>
         /// The post fx material rendering location.
@@ -259,6 +363,16 @@ namespace FlaxEngine.Rendering
         public float OpacityThreshold;
 
         /// <summary>
+        /// The tessellation mode.
+        /// </summary>
+        public TessellationMethod TessellationMode;
+
+        /// <summary>
+        /// The maximum tessellation factor (used only if material uses tessellation).
+        /// </summary>
+        public int MaxTessellationFactor;
+
+        /// <summary>
         /// Creates the default <see cref="MaterialInfo"/>.
         /// </summary>
         /// <returns>The result.</returns>
@@ -266,13 +380,17 @@ namespace FlaxEngine.Rendering
         {
             return new MaterialInfo
             {
-                Flags = MaterialFlags.None,
-                BlendMode = MaterialBlendMode.Opaque,
                 Domain = MaterialDomain.Surface,
+                BlendMode = MaterialBlendMode.Opaque,
+                ShadingModel = MaterialShadingModel.Lit,
+                Flags = MaterialFlags.None,
                 TransparentLighting = MaterialTransparentLighting.None,
+                DecalBlendingMode = MaterialDecalBlendingMode.Translucent,
                 PostFxLocation = MaterialPostFxLocation.AfterPostProcessingPass,
                 MaskThreshold = 0.3f,
                 OpacityThreshold = 0.004f,
+                TessellationMode = TessellationMethod.None,
+                MaxTessellationFactor = 15,
             };
         }
 
@@ -302,14 +420,24 @@ namespace FlaxEngine.Rendering
             return !a.Equals(b);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Compares with the other material info and returns true if both values are equal.
+        /// </summary>
+        /// <param name="other">The other info.</param>
+        /// <returns>True if both objects are equal, otherwise false.</returns>
         public bool Equals(MaterialInfo other)
         {
             return Domain == other.Domain
                    && BlendMode == other.BlendMode
+                   && ShadingModel == other.ShadingModel
                    && Flags == other.Flags
                    && TransparentLighting == other.TransparentLighting
-                   && PostFxLocation == other.PostFxLocation;
+                   && DecalBlendingMode == other.DecalBlendingMode
+                   && PostFxLocation == other.PostFxLocation
+                   && Mathf.NearEqual(MaskThreshold, other.MaskThreshold)
+                   && Mathf.NearEqual(OpacityThreshold, other.OpacityThreshold)
+                   && TessellationMode == other.TessellationMode
+                   && MaxTessellationFactor == other.MaxTessellationFactor;
         }
 
         /// <inheritdoc />
@@ -325,11 +453,15 @@ namespace FlaxEngine.Rendering
             {
                 var hashCode = (int)Domain;
                 hashCode = (hashCode * 397) ^ (int)BlendMode;
+                hashCode = (hashCode * 397) ^ (int)ShadingModel;
                 hashCode = (hashCode * 397) ^ (int)Flags;
                 hashCode = (hashCode * 397) ^ (int)TransparentLighting;
                 hashCode = (hashCode * 397) ^ (int)PostFxLocation;
-                hashCode = (hashCode * 397) ^ (int)MaskThreshold;
-                hashCode = (hashCode * 397) ^ (int)OpacityThreshold;
+                hashCode = (hashCode * 397) ^ (int)DecalBlendingMode;
+                hashCode = (hashCode * 397) ^ (int)(MaskThreshold * 1000.0f);
+                hashCode = (hashCode * 397) ^ (int)(OpacityThreshold * 1000.0f);
+                hashCode = (hashCode * 397) ^ (int)TessellationMode;
+                hashCode = (hashCode * 397) ^ MaxTessellationFactor;
                 return hashCode;
             }
         }

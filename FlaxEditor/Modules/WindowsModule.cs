@@ -1,20 +1,27 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Xml;
 using FlaxEditor.Content;
+using FlaxEditor.GUI.Dialogs;
+using FlaxEditor.GUI.Docking;
+using FlaxEditor.Scripting;
 using FlaxEditor.Windows;
 using FlaxEditor.Windows.Assets;
 using FlaxEditor.Windows.Profiler;
 using FlaxEngine;
 using FlaxEngine.Assertions;
-using FlaxEngine.GUI.Docking;
+using FlaxEngine.GUI;
 using FlaxEngine.Rendering;
 using FlaxEngine.Utilities;
+using DockPanel = FlaxEditor.GUI.Docking.DockPanel;
+using DockState = FlaxEditor.GUI.Docking.DockState;
+using FloatWindowDockPanel = FlaxEditor.GUI.Docking.FloatWindowDockPanel;
 using Window = FlaxEngine.Window;
 
 namespace FlaxEditor.Modules
@@ -29,6 +36,14 @@ namespace FlaxEditor.Modules
         private float _projectIconScreenshotTimeout = -1;
         private string _windowsLayoutPath;
 
+        private struct WindowRestoreData
+        {
+            public string AssemblyName;
+            public string TypeName;
+        }
+
+        private readonly List<WindowRestoreData> _restoreWindows = new List<WindowRestoreData>();
+
         /// <summary>
         /// The main editor window.
         /// </summary>
@@ -37,7 +52,7 @@ namespace FlaxEditor.Modules
         /// <summary>
         /// Occurs when main editor window is being closed.
         /// </summary>
-        public event Action OnMainWindowClosing;
+        public event Action MainWindowClosing;
 
         /// <summary>
         /// The content window.
@@ -73,12 +88,12 @@ namespace FlaxEditor.Modules
         /// The toolbox window.
         /// </summary>
         public ToolboxWindow ToolboxWin;
-        
+
         /// <summary>
         /// The graphics quality window.
         /// </summary>
         public GraphicsQualityWindow GraphicsQualityWin;
-        
+
         /// <summary>
         /// The game cooker window.
         /// </summary>
@@ -90,12 +105,22 @@ namespace FlaxEditor.Modules
         public ProfilerWindow ProfilerWin;
 
         /// <summary>
+        /// The editor options window.
+        /// </summary>
+        public EditorOptionsWindow EditorOptionsWin;
+
+        /// <summary>
+        /// The plugins manager window.
+        /// </summary>
+        public PluginsWindow PluginsWin;
+
+        /// <summary>
         /// List with all created editor windows.
         /// </summary>
         public readonly List<EditorWindow> Windows = new List<EditorWindow>(32);
 
         internal WindowsModule(Editor editor)
-            : base(editor)
+        : base(editor)
         {
             // Init windows module first
             InitOrder = -100;
@@ -209,6 +234,8 @@ namespace FlaxEditor.Modules
             if (Editor.IsHeadlessMode)
                 return false;
 
+            Editor.Log(string.Format("Loading editor windows layout from \'{0}\'", path));
+
             if (!File.Exists(path))
             {
                 Editor.LogWarning("Cannot load windows layout. File is missing.");
@@ -233,30 +260,34 @@ namespace FlaxEditor.Modules
 
                 // Get metadata
                 int version = int.Parse(root.Attributes["Version"].Value, CultureInfo.InvariantCulture);
-                var virtualDesktopSize = Application.VirtualDesktopSize;
-                var virtualDesktopSafeLefttCorner = new Vector2(0, 23); // 23 is a window strip size
-                var virtualDesktopSafeRightCorner = virtualDesktopSize - new Vector2(50, 50); // apply some safe area
+                var virtualDesktopBounds = Application.VirtualDesktopBounds;
+                var virtualDesktopSafeLeftCorner = virtualDesktopBounds.Location + new Vector2(0, 23); // 23 is a window strip size
+                var virtualDesktopSafeRightCorner = virtualDesktopBounds.BottomRight - new Vector2(50, 50); // apply some safe area
 
                 switch (version)
                 {
-                    case 4:
+                case 4:
+                {
+                    // Main window info
+                    if (MainWindow)
                     {
-                        // Main window info
-                        if (MainWindow)
+                        var mainWindowNode = root["MainWindow"];
+                        Rectangle bounds = LoadBounds(mainWindowNode["Bounds"]);
+                        bool isMaximized = bool.Parse(mainWindowNode.GetAttribute("IsMaximized"));
+
+                        // Clamp position to match current desktop dimensions (if window was on desktop that is now inactive)
+                        if (bounds.X < virtualDesktopSafeLeftCorner.X || bounds.Y < virtualDesktopSafeLeftCorner.Y || bounds.X > virtualDesktopSafeRightCorner.X || bounds.Y > virtualDesktopSafeRightCorner.Y)
+                            bounds.Location = virtualDesktopSafeLeftCorner;
+
+                        if (isMaximized)
                         {
-                            var mainWindowNode = root["MainWindow"];
-                            Rectangle bounds = LoadBounds(mainWindowNode["Bounds"]);
-                            bool isMaximized = bool.Parse(mainWindowNode.GetAttribute("IsMaximized"));
+                            MainWindow.ClientPosition = bounds.Location;
 
-                            // Clamp position to match current destop dimensions (if window was on desktop that is now inactive)
-                            if (bounds.X < 0 || bounds.Y < 0 || bounds.X > virtualDesktopSafeRightCorner.X || bounds.Y > virtualDesktopSafeRightCorner.Y)
-                                bounds.Location = virtualDesktopSafeLefttCorner;
-
-                            if (isMaximized)
-                            {
-                                MainWindow.Maximize();
-                            }
-                            else if (Mathf.Min(bounds.Size.X, bounds.Size.Y) >= 1)
+                            MainWindow.Maximize();
+                        }
+                        else
+                        {
+                            if (Mathf.Min(bounds.Size.X, bounds.Size.Y) >= 1)
                             {
                                 MainWindow.ClientBounds = bounds;
                             }
@@ -265,65 +296,66 @@ namespace FlaxEditor.Modules
                                 MainWindow.ClientPosition = bounds.Location;
                             }
                         }
+                    }
 
-                        // Load master panel structure
-                        var masterPanelNode = root["MasterPanel"];
-                        if (masterPanelNode != null)
-                        {
-                            LoadPanel(masterPanelNode, masterPanel);
-                        }
+                    // Load master panel structure
+                    var masterPanelNode = root["MasterPanel"];
+                    if (masterPanelNode != null)
+                    {
+                        LoadPanel(masterPanelNode, masterPanel);
+                    }
 
-                        // Load all floating windows structure
-                        var floating = root.SelectNodes("Float");
-                        if (floating != null)
+                    // Load all floating windows structure
+                    var floating = root.SelectNodes("Float");
+                    if (floating != null)
+                    {
+                        foreach (XmlElement child in floating)
                         {
-                            foreach (XmlElement child in floating)
+                            if (child == null)
+                                continue;
+
+                            // Get window properties
+                            Rectangle bounds = LoadBounds(child["Bounds"]);
+
+                            // Create window and floating dock panel
+                            var window = FloatWindowDockPanel.CreateFloatWindow(MainWindow.GUI, bounds.Location, bounds.Size, WindowStartPosition.Manual, string.Empty);
+                            var panel = new FloatWindowDockPanel(masterPanel, window.GUI);
+
+                            // Load structure
+                            LoadPanel(child, panel);
+
+                            // Check if no child windows loaded (due to file errors or loading problems)
+                            if (panel.TabsCount == 0 && panel.ChildPanelsCount == 0)
                             {
-                                if (child == null)
-                                    continue;
+                                // Close empty window
+                                Editor.LogWarning("Empty floating window inside layout.");
+                                window.Close();
+                            }
+                            else
+                            {
+                                // Perform layout
+                                var windowGUI = window.GUI;
+                                windowGUI.UnlockChildrenRecursive();
+                                windowGUI.PerformLayout();
 
-                                // Get window properties
-                                Rectangle bounds = LoadBounds(child["Bounds"]);
+                                // Show
+                                window.Show();
+                                window.Focus();
 
-                                // Create window and floating dock panel
-                                var window = FloatWindowDockPanel.CreateFloatWindow(MainWindow.GUI, bounds.Location, bounds.Size, WindowStartPosition.Manual, string.Empty);
-                                var panel = new FloatWindowDockPanel(masterPanel, window.GUI);
-
-                                // Load structure
-                                LoadPanel(child, panel);
-
-                                // Check if no child windows loaded (due to file errors or loading problems)
-                                if (panel.TabsCount == 0 && panel.ChildPanelsCount == 0)
-                                {
-                                    // Close empty window
-                                    Editor.LogWarning("Empty floating window inside layout.");
-                                    window.Close();
-                                }
-                                else
-                                {
-                                    // Perform layout
-                                    var windowGUI = window.GUI;
-                                    windowGUI.UnlockChildrenRecursive();
-                                    windowGUI.PerformLayout();
-
-                                    // Show
-                                    window.Show();
-                                    window.Focus();
-
-                                    // Perform layout again
-                                    windowGUI.PerformLayout();
-                                }
+                                // Perform layout again
+                                windowGUI.PerformLayout();
                             }
                         }
-
-                        break;
                     }
 
-                    default:
-                    {
-                        Editor.LogWarning("Unsupported windows layout version");
-                        return false;
-                    }
+                    break;
+                }
+
+                default:
+                {
+                    Editor.LogWarning("Unsupported windows layout version");
+                    return false;
+                }
                 }
             }
             catch (Exception ex)
@@ -347,14 +379,14 @@ namespace FlaxEditor.Modules
 
                 writer.WriteAttributeString("Typename", win.SerializationTypename);
 
-	            if (win.UseLayoutData)
-	            {
-		            writer.WriteStartElement("Data");
-		            win.OnLayoutSerialize(writer);
-		            writer.WriteEndElement();
-	            }
-				
-	            writer.WriteEndElement();
+                if (win.UseLayoutData)
+                {
+                    writer.WriteStartElement("Data");
+                    win.OnLayoutSerialize(writer);
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
             }
 
             for (int i = 0; i < panel.ChildPanelsCount; i++)
@@ -387,27 +419,27 @@ namespace FlaxEditor.Modules
             var windows = node.SelectNodes("Window");
             if (windows != null)
             {
-	            foreach (XmlElement child in windows)
-	            {
-		            if (child == null)
-			            continue;
+                foreach (XmlElement child in windows)
+                {
+                    if (child == null)
+                        continue;
 
-		            var typename = child.GetAttribute("Typename");
-		            var window = GetWindow(typename);
-		            if (window != null)
-		            {
-			            if (child.SelectSingleNode("Data") is XmlElement data)
-			            {
-				            window.OnLayoutDeserialize(data);
-			            }
-			            else
-			            {
-							window.OnLayoutDeserialize();
-			            }
+                    var typename = child.GetAttribute("Typename");
+                    var window = GetWindow(typename);
+                    if (window != null)
+                    {
+                        if (child.SelectSingleNode("Data") is XmlElement data)
+                        {
+                            window.OnLayoutDeserialize(data);
+                        }
+                        else
+                        {
+                            window.OnLayoutDeserialize();
+                        }
 
-			            window.Show(DockState.DockFill, panel);
-		            }
-	            }
+                        window.Show(DockState.DockFill, panel);
+                    }
+                }
             }
 
             // Load child panels
@@ -458,6 +490,90 @@ namespace FlaxEditor.Modules
             return new Rectangle(x, y, width, height);
         }
 
+        private class LayoutNameDialog : Dialog
+        {
+            private TextBox _textbox;
+
+            public LayoutNameDialog()
+            : base("Enter Layout Name")
+            {
+                var name = new TextBox(false, 8, 8, 200)
+                {
+                    WatermarkText = "Enter layout slot name",
+                    Parent = this,
+                };
+                _textbox = name;
+
+                var okButton = new Button(name.Right - 50, name.Bottom + 4, 50)
+                {
+                    Text = "OK",
+                    Parent = this,
+                };
+                okButton.Clicked += OnOk;
+
+                var cancelButton = new Button(okButton.Left - 54, okButton.Y, 50)
+                {
+                    Text = "Cancel",
+                    Parent = this,
+                };
+                cancelButton.Clicked += OnCancel;
+
+                Size = okButton.BottomRight + new Vector2(8);
+            }
+
+            private void OnOk()
+            {
+                var name = _textbox.Text;
+                if (name.Length == 0)
+                {
+                    MessageBox.Show("Cannot use the empty name.");
+                    return;
+                }
+                if (Utilities.Utils.HasInvalidPathChar(name))
+                {
+                    MessageBox.Show("Cannot use this name. It contains one or more invalid characters.");
+                    return;
+                }
+
+                Close(DialogResult.OK);
+
+                var path = StringUtils.CombinePaths(Globals.ProjectCacheFolder, "Layout_" + name + ".xml");
+                Editor.Instance.Windows.SaveLayout(path);
+            }
+
+            private void OnCancel()
+            {
+                Close(DialogResult.Cancel);
+            }
+
+            /// <inheritdoc />
+            public override bool OnKeyDown(Keys key)
+            {
+                switch (key)
+                {
+                case Keys.Escape:
+                    OnCancel();
+                    return true;
+                case Keys.Return:
+                    OnOk();
+                    return true;
+                }
+
+                return base.OnKeyDown(key);
+            }
+        }
+
+        /// <summary>
+        /// Asks user for the layout name and saves the current windows layout in the current project cache folder.
+        /// </summary>
+        public void SaveLayout()
+        {
+            if (Editor.IsHeadlessMode)
+                return;
+
+            new LayoutNameDialog().Show();
+        }
+
         /// <summary>
         /// Saves the layout to the file.
         /// </summary>
@@ -466,6 +582,8 @@ namespace FlaxEditor.Modules
         {
             if (Editor.IsHeadlessMode)
                 return;
+
+            Editor.Log(string.Format("Saving editor windows layout to \'{0}\'", path));
 
             var settings = new XmlWriterSettings
             {
@@ -476,6 +594,8 @@ namespace FlaxEditor.Modules
             };
 
             var masterPanel = Editor.UI.MasterPanel;
+            if (masterPanel == null)
+                return;
 
             using (XmlWriter writer = XmlWriter.Create(path, settings))
             {
@@ -484,7 +604,7 @@ namespace FlaxEditor.Modules
 
                 // Metadata
                 writer.WriteAttributeString("Version", "4");
-                
+
                 // Main window info
                 if (MainWindow)
                 {
@@ -520,7 +640,7 @@ namespace FlaxEditor.Modules
                     SavePanel(writer, panel);
 
                     writer.WriteStartElement("Bounds");
-                    SaveBounds(writer, window.NativeWindow);
+                    SaveBounds(writer, window.Window);
                     writer.WriteEndElement();
 
                     writer.WriteEndElement();
@@ -578,14 +698,14 @@ namespace FlaxEditor.Modules
             if (MainWindow == null)
             {
                 // Error
-                Debug.LogError("Failed to create editor main window!");
+                Editor.LogError("Failed to create editor main window!");
                 return;
             }
             UpdateWindowTitle();
 
             // Link for main window events
-            MainWindow.OnClosing += MainWindow_OnClosing;
-            MainWindow.OnClosed += MainWindow_OnClosed;
+            MainWindow.Closing += MainWindow_OnClosing;
+            MainWindow.Closed += MainWindow_OnClosed;
 
             // Create default editor windows
             ContentWin = new ContentWindow(Editor);
@@ -598,16 +718,63 @@ namespace FlaxEditor.Modules
             GraphicsQualityWin = new GraphicsQualityWindow(Editor);
             GameCookerWin = new GameCookerWindow(Editor);
             ProfilerWin = new ProfilerWindow(Editor);
+            EditorOptionsWin = new EditorOptionsWindow(Editor);
+            PluginsWin = new PluginsWindow(Editor);
 
             // Bind events
-            SceneManager.OnSceneSaveError += OnSceneSaveError;
-            SceneManager.OnSceneLoaded += OnSceneLoaded;
-            SceneManager.OnSceneLoadError += OnSceneLoadError;
-            SceneManager.OnSceneLoading += OnSceneLoading;
-            SceneManager.OnSceneSaved += OnSceneSaved;
-            SceneManager.OnSceneSaving += OnSceneSaving;
-            SceneManager.OnSceneUnloaded += OnSceneUnloaded;
-            SceneManager.OnSceneUnloading += OnSceneUnloading;
+            SceneManager.SceneSaveError += OnSceneSaveError;
+            SceneManager.SceneLoaded += OnSceneLoaded;
+            SceneManager.SceneLoadError += OnSceneLoadError;
+            SceneManager.SceneLoading += OnSceneLoading;
+            SceneManager.SceneSaved += OnSceneSaved;
+            SceneManager.SceneSaving += OnSceneSaving;
+            SceneManager.SceneUnloaded += OnSceneUnloaded;
+            SceneManager.SceneUnloading += OnSceneUnloading;
+            ScriptsBuilder.ScriptsReloadEnd += OnScriptsReloadEnd;
+        }
+
+        internal void AddToRestore(CustomEditorWindow win)
+        {
+            var type = win.GetType();
+
+            // Validate if can restore type
+            var constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+            if (constructor == null || type.IsGenericType)
+                return;
+
+            WindowRestoreData winData;
+            winData.AssemblyName = type.Assembly.GetName().Name;
+            winData.TypeName = type.FullName;
+            // TODO: cache and restore docking info
+            _restoreWindows.Add(winData);
+        }
+
+        private void OnScriptsReloadEnd()
+        {
+            for (int i = 0; i < _restoreWindows.Count; i++)
+            {
+                var winData = _restoreWindows[i];
+
+                try
+                {
+                    var assembly = Utils.GetAssemblyByName(winData.AssemblyName);
+                    if (assembly != null)
+                    {
+                        var type = assembly.GetType(winData.TypeName);
+                        if (type != null)
+                        {
+                            var win = (CustomEditorWindow)Activator.CreateInstance(type);
+                            win.Show();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Editor.LogWarning(ex);
+                    Editor.LogWarning(string.Format("Failed to restore window {0} (assembly: {1})", winData.TypeName, winData.AssemblyName));
+                }
+            }
+            _restoreWindows.Clear();
         }
 
         private void MainWindow_OnClosing(ClosingReason reason, ref bool cancel)
@@ -616,15 +783,15 @@ namespace FlaxEditor.Modules
 
             if (Editor.StateMachine.IsPlayMode)
             {
-                // Cancel closing buut leave the play mode
+                // Cancel closing but leave the play mode
                 cancel = true;
-                Editor.Log("Skip closing ediotr and leave the play mode");
+                Editor.Log("Skip closing editor and leave the play mode");
                 Editor.Simulation.RequestStopPlay();
                 return;
             }
 
             SaveCurrentLayout();
-            
+
             // Block closing only on user events
             if (reason == ClosingReason.User)
             {
@@ -655,7 +822,7 @@ namespace FlaxEditor.Modules
                 }
             }
 
-            OnMainWindowClosing?.Invoke();
+            MainWindowClosing?.Invoke();
         }
 
         private void MainWindow_OnClosed()
@@ -684,7 +851,17 @@ namespace FlaxEditor.Modules
 
             // Initialize windows
             for (int i = 0; i < Windows.Count; i++)
-                Windows[i].OnInit();
+            {
+                try
+                {
+                    Windows[i].OnInit();
+                }
+                catch (Exception ex)
+                {
+                    Editor.LogWarning(ex);
+                    Editor.LogError("Failed to init window " + Windows[i]);
+                }
+            }
 
             // Load current workspace layout
             if (!LoadLayout(_windowsLayoutPath))
@@ -699,7 +876,7 @@ namespace FlaxEditor.Modules
         {
             // Auto save workspace layout every few seconds
             var now = DateTime.UtcNow;
-            if (_lastLayoutSaveTime.Ticks > 10 && now - _lastLayoutSaveTime >= TimeSpan.FromSeconds(5))
+            if (_lastLayoutSaveTime.Ticks > 10 && now - _lastLayoutSaveTime >= TimeSpan.FromSeconds(10))
             {
                 SaveCurrentLayout();
             }
@@ -727,14 +904,15 @@ namespace FlaxEditor.Modules
                 Windows[i].OnExit();
 
             // Unbind events
-            SceneManager.OnSceneSaveError -= OnSceneSaveError;
-            SceneManager.OnSceneLoaded -= OnSceneLoaded;
-            SceneManager.OnSceneLoadError -= OnSceneLoadError;
-            SceneManager.OnSceneLoading -= OnSceneLoading;
-            SceneManager.OnSceneSaved -= OnSceneSaved;
-            SceneManager.OnSceneSaving -= OnSceneSaving;
-            SceneManager.OnSceneUnloaded -= OnSceneUnloaded;
-            SceneManager.OnSceneUnloading -= OnSceneUnloading;
+            SceneManager.SceneSaveError -= OnSceneSaveError;
+            SceneManager.SceneLoaded -= OnSceneLoaded;
+            SceneManager.SceneLoadError -= OnSceneLoadError;
+            SceneManager.SceneLoading -= OnSceneLoading;
+            SceneManager.SceneSaved -= OnSceneSaved;
+            SceneManager.SceneSaving -= OnSceneSaving;
+            SceneManager.SceneUnloaded -= OnSceneUnloaded;
+            SceneManager.SceneUnloading -= OnSceneUnloading;
+            ScriptsBuilder.ScriptsReloadEnd -= OnScriptsReloadEnd;
 
             // Close main window
             MainWindow?.Close(ClosingReason.EngineExit);
@@ -744,7 +922,7 @@ namespace FlaxEditor.Modules
             var windows = Window.Windows.ToArray();
             for (int i = 0; i < windows.Length; i++)
             {
-                if (windows[i].IsVisible)
+                if (windows[i] && windows[i].IsVisible)
                     windows[i].Close(ClosingReason.EngineExit);
             }
         }

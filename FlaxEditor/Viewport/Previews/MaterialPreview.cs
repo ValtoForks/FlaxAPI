@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEngine;
 using FlaxEngine.GUI;
 using FlaxEngine.Rendering;
@@ -12,23 +11,28 @@ namespace FlaxEditor.Viewport.Previews
     /// <summary>
     /// Material or Material Instance asset preview editor viewport.
     /// </summary>
-    /// <seealso cref="FlaxEditor.Viewport.EditorViewportArcBallCam" />
-    public class MaterialPreview : EditorViewportArcBallCam
+    /// <seealso cref="AssetPreview" />
+    public class MaterialPreview : AssetPreview
     {
-        private ModelActor _previewModel;
-        private DirectionalLight _previewLight;
-        private EnvironmentProbe _envProbe;
-        private Sky _sky;
-        private SkyLight _skyLight;
-        private PostFxVolume _postFxVolume;
+        private string[] Models =
+        {
+            "Sphere",
+            "Cube",
+            "Plane",
+            "Cylinder",
+            "Cone"
+        };
+
+        private StaticModel _previewModel;
+        private Decal _decal;
         private MaterialBase _material;
+        private int _selectedModelIndex;
+        private Image _guiMaterialControl;
+        private readonly MaterialBase[] _postFxMaterialsCache = new MaterialBase[1];
 
         /// <summary>
         /// Gets or sets the material asset to preview. It can be <see cref="FlaxEngine.Material"/> or <see cref="FlaxEngine.MaterialInstance"/>.
         /// </summary>
-        /// <value>
-        /// The model.
-        /// </value>
         public MaterialBase Material
         {
             get => _material;
@@ -43,64 +47,60 @@ namespace FlaxEditor.Viewport.Previews
         }
 
         /// <summary>
-        /// Gets the post fx volume. Allows to modify rendering settings.
+        /// Gets or sets the selected preview model index.
         /// </summary>
-        public PostFxVolume PostFxVolume => _postFxVolume;
+        public int SelectedModelIndex
+        {
+            get => _selectedModelIndex;
+            set
+            {
+                if (value < 0 || value > Models.Length)
+                    throw new ArgumentOutOfRangeException();
+
+                _selectedModelIndex = value;
+                _previewModel.Model = FlaxEngine.Content.LoadAsyncInternal<Model>("Editor/Primitives/" + Models[value]);
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MaterialPreview"/> class.
         /// </summary>
         /// <param name="useWidgets">if set to <c>true</c> use widgets.</param>
         public MaterialPreview(bool useWidgets)
-            : base(RenderTask.Create<SceneRenderTask>(), useWidgets, 50, Vector3.Zero)
+        : base(useWidgets)
         {
-            DockStyle = DockStyle.Fill;
-
-            Task.Flags = ViewFlags.DefaultMaterialPreview;
-
-            SetView(new Quaternion(0.424461186f, -0.0940724313f, 0.0443938486f, 0.899451137f));
-
             // Setup preview scene
-            _previewModel = ModelActor.New();
-            _previewModel.Transform = new Transform(Vector3.Zero, Quaternion.Identity, new Vector3(0.45f));
-            _previewModel.Model = FlaxEngine.Content.LoadAsyncInternal<Model>("Editor/Primitives/Sphere");
-            //
-            _previewLight = DirectionalLight.New();
-            _previewLight.ShadowsMode = ShadowsCastingMode.None;
-            _previewLight.Orientation = Quaternion.Euler(new Vector3(52.1477f, -109.109f, -111.739f));
-            //
-            _envProbe = EnvironmentProbe.New();
-            _envProbe.AutoUpdate = false;
-            _envProbe.CustomProbe = FlaxEngine.Content.LoadAsyncInternal<CubeTexture>(EditorAssets.DefaultSkyCubeTexture);
-            //
-            _sky = Sky.New();
-            _sky.SunLight = _previewLight;
-            //
-            _skyLight = SkyLight.New();
-            _skyLight.Mode = SkyLight.Modes.CustomTexture;
-            _skyLight.Brightness = 0.8f;
-            _skyLight.CustomTexture = _envProbe.CustomProbe;
-            //
-            _postFxVolume = PostFxVolume.New();
-            _postFxVolume.IsBounded = false;
-            _postFxVolume.Settings.Eye_MinLuminance = 0.1f;
-            
+            _previewModel = StaticModel.New();
+            _previewModel.Transform = new Transform(Vector3.Zero, Quaternion.RotationY(Mathf.Pi), new Vector3(0.45f));
+            SelectedModelIndex = 0;
+
             // Link actors for rendering
-            Task.ActorsSource = ActorsSources.CustomActors;
             Task.CustomActors.Add(_previewModel);
-            Task.CustomActors.Add(_previewLight);
-            Task.CustomActors.Add(_envProbe);
-            Task.CustomActors.Add(_sky);
-            Task.CustomActors.Add(_skyLight);
-            Task.CustomActors.Add(_postFxVolume);
 
             // TODO: don't wait for model but assign material in async on task begin or sth?
             // do it like in c++ editor
             _previewModel.Model?.WaitForLoaded();
+
+            // Create context menu for primitive switching
+            if (useWidgets && ViewWidgetButtonMenu != null)
+            {
+                ViewWidgetButtonMenu.AddSeparator();
+                var modelSelect = ViewWidgetButtonMenu.AddChildMenu("Model").ContextMenu;
+
+                // Fill out all models 
+                for (int i = 0; i < Models.Length; i++)
+                {
+                    var button = modelSelect.AddButton(Models[i]);
+                    button.Tag = i;
+                }
+
+                // Link the action
+                modelSelect.ButtonClicked += (button) => SelectedModelIndex = (int)button.Tag;
+            }
         }
 
         /// <inheritdoc />
-        public override bool HasLoadedAssets => base.HasLoadedAssets && _sky.HasContentLoaded && _previewModel.Model.IsLoaded && _envProbe.Probe.IsLoaded && _postFxVolume.HasContentLoaded;
+        public override bool HasLoadedAssets => base.HasLoadedAssets && _previewModel.Model.IsLoaded;
 
         /// <inheritdoc />
         public override void Update(float deltaTime)
@@ -116,6 +116,8 @@ namespace FlaxEditor.Viewport.Previews
             // Otherwise use postFx volume to render custom postFx material.
             MaterialBase surfaceMaterial = null;
             MaterialBase postFxMaterial = null;
+            MaterialBase decalMaterial = null;
+            MaterialBase guiMaterial = null;
             if (_material != null)
             {
                 if (_material is MaterialInstance materialInstance && materialInstance.BaseMaterial == null)
@@ -124,16 +126,66 @@ namespace FlaxEditor.Viewport.Previews
                 }
                 else
                 {
-                    if (_material.IsPostFx)
-                        postFxMaterial = _material;
-                    else
+                    switch (_material.Info.Domain)
+                    {
+                    case MaterialDomain.Surface:
                         surfaceMaterial = _material;
+                        break;
+                    case MaterialDomain.PostProcess:
+                        postFxMaterial = _material;
+                        break;
+                    case MaterialDomain.Decal:
+                        decalMaterial = _material;
+                        break;
+                    case MaterialDomain.GUI:
+                        guiMaterial = _material;
+                        break;
+                    case MaterialDomain.Terrain:
+                        break;
+                    default: throw new ArgumentOutOfRangeException();
+                    }
                 }
             }
+
+            // PostFx
+            if (_previewModel.Model == null)
+                throw new Exception("Missing preview model asset.");
+            if (_previewModel.Model.WaitForLoaded())
+                throw new Exception("Preview model asset failed to load.");
             var entries = _previewModel.Entries;
             if (entries.Length == 1)
                 entries[0].Material = surfaceMaterial;
-            _postFxVolume.Settings.PostFxMaterials = new [] { postFxMaterial };
+            _postFxMaterialsCache[0] = postFxMaterial;
+            PostFxVolume.Settings.PostFxMaterials = _postFxMaterialsCache;
+
+            // Decal
+            if (decalMaterial && _decal == null)
+            {
+                _decal = Decal.New();
+                _decal.Size = new Vector3(100.0f);
+                _decal.LocalOrientation = Quaternion.RotationZ(Mathf.PiOverTwo);
+                Task.CustomActors.Add(_decal);
+            }
+            if (_decal)
+                _decal.Material = decalMaterial;
+
+            // GUI
+            if (guiMaterial && _guiMaterialControl == null)
+            {
+                _guiMaterialControl = new Image
+                {
+                    DockStyle = DockStyle.Fill,
+                    KeepAspectRatio = false,
+                    Brush = new MaterialBrush(),
+                    Parent = this,
+                    IndexInParent = 0,
+                };
+            }
+            if (_guiMaterialControl != null)
+            {
+                ((MaterialBrush)_guiMaterialControl.Brush).Material = guiMaterial;
+                _guiMaterialControl.Enabled = _guiMaterialControl.Visible = guiMaterial != null;
+            }
         }
 
         /// <inheritdoc />
@@ -141,13 +193,15 @@ namespace FlaxEditor.Viewport.Previews
         {
             _material = null;
 
+            if (_guiMaterialControl != null)
+            {
+                _guiMaterialControl.Dispose();
+                _guiMaterialControl = null;
+            }
+
             // Ensure to cleanup created actor objects
             Object.Destroy(ref _previewModel);
-            Object.Destroy(ref _previewLight);
-            Object.Destroy(ref _envProbe);
-            Object.Destroy(ref _sky);
-            Object.Destroy(ref _skyLight);
-            Object.Destroy(ref _postFxVolume);
+            Object.Destroy(ref _decal);
 
             base.OnDestroy();
         }

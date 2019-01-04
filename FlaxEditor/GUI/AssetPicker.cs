@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content;
@@ -21,37 +19,50 @@ namespace FlaxEditor.GUI
         private const float ButtonsOffset = 2;
         private const float ButtonsSize = 12;
 
-        private AssetItem _selected;
-        private ContentDomain _domain;
+        private Asset _selected;
+        private AssetItem _selectedItem;
+        private Type _type;
 
-        private bool _isMosueDown;
-        private Vector2 _mosueDownPos;
+        private bool _isMouseDown;
+        private Vector2 _mouseDownPos;
         private Vector2 _mousePos;
-        private readonly DragAssets _dragOverElement = new DragAssets();
+        private readonly DragAssets _dragOverElement;
 
         /// <summary>
         /// Gets or sets the selected item.
         /// </summary>
         public AssetItem SelectedItem
         {
-            get => _selected;
+            get => _selectedItem;
             set
             {
-                // Check if value won't change
-                if (value == _selected)
-                    return;
-                if (value != null && !IsValid(value))
-                    throw new ArgumentException("Invalid asset domain.");
+                if (value == null)
+                {
+                    // Deselect
+                    SelectedAsset = null;
+                }
+                else if (value is SceneItem item)
+                {
+                    if (_selectedItem == item)
+                        return;
+                    if (!IsValid(item))
+                        throw new ArgumentException("Invalid asset type.");
 
-                // Change value
-                _selected?.RemoveReference(this);
-                _selected = value;
-                _selected?.AddReference(this);
-                
-                // Update tooltip
-                TooltipText = _selected?.NamePath;
-                
-                OnSelectedItemChanged();
+                    // Change value to scene reference (cannot load asset because scene can be already loaded - duplicated ID issue)
+                    _selectedItem?.RemoveReference(this);
+                    _selectedItem = item;
+                    _selected = null;
+                    _selectedItem?.AddReference(this);
+
+                    // Update tooltip
+                    TooltipText = _selectedItem?.NamePath;
+
+                    OnSelectedItemChanged();
+                }
+                else
+                {
+                    SelectedAsset = FlaxEngine.Content.LoadAsync(value.ID);
+                }
             }
         }
 
@@ -61,13 +72,7 @@ namespace FlaxEditor.GUI
         public Guid SelectedID
         {
             get => _selected?.ID ?? Guid.Empty;
-            set
-            {
-                if (value != SelectedID)
-                {
-                    SelectedItem = Editor.Instance.ContentDatabase.Find(value) as AssetItem;
-                }
-            }
+            set => SelectedAsset = FlaxEngine.Content.LoadAsync(value);
         }
 
         /// <summary>
@@ -75,33 +80,45 @@ namespace FlaxEditor.GUI
         /// </summary>
         public Asset SelectedAsset
         {
-            get => _selected != null ? FlaxEngine.Content.Load(_selected.ID) : null;
+            get => _selected;
             set
             {
-                if (value == null)
-                {
-                    SelectedItem = null;
-                }
-                else if (value.ID != SelectedID)
-                {
-                    SelectedItem = Editor.Instance.ContentDatabase.Find(value.ID) as AssetItem;
-                }
+                // Check if value won't change
+                if (value == _selected)
+                    return;
+
+                // Find item from content database and check it
+                var item = value ? Editor.Instance.ContentDatabase.FindAsset(value.ID) : null;
+                if (item != null && !IsValid(item))
+                    throw new ArgumentException("Invalid asset type.");
+
+                // Change value
+                _selectedItem?.RemoveReference(this);
+                _selectedItem = item;
+                _selected = value;
+                _selectedItem?.AddReference(this);
+
+                // Update tooltip
+                TooltipText = _selectedItem?.NamePath;
+
+                OnSelectedItemChanged();
             }
         }
 
         /// <summary>
-        /// Gets or sets the assets domain that this picker acepts.
+        /// Gets or sets the assets types that this picker accepts (it supports types derived from the given type).
         /// </summary>
-        public ContentDomain Domain
+        public Type AssetType
         {
-            get => _domain;
+            get => _type;
             set
             {
-                if (_domain != value)
+                if (_type != value)
                 {
-                    _domain = value;
+                    _type = value;
 
-                    if (_selected != null && _selected.ItemDomain != _domain)
+                    // Auto deselect if the current value is invalid
+                    if (_selectedItem != null && !IsValid(_selectedItem))
                         SelectedItem = null;
                 }
             }
@@ -112,52 +129,45 @@ namespace FlaxEditor.GUI
         /// </summary>
         public event Action SelectedItemChanged;
 
-        /// <summary>
-        /// Checks if given value is valid and can be assigned to the picker.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <returns>True if is valid, otherwise false.</returns>
-        public delegate bool IsValueValid(AssetItem item);
-
-        /// <summary>
-        /// The performs value validation before assigment.
-        /// </summary>
-        public IsValueValid ValidateValue;
-
         private bool IsValid(AssetItem item)
         {
-            return item.ItemDomain == _domain && (ValidateValue == null || ValidateValue(item));
+            // Type filter
+            var type = Utilities.Utils.GetType(item.TypeName);
+            if (_type.IsAssignableFrom(type))
+                return true;
+
+            // Json assets can contain any type of the object defined by the C# type (data oriented design)
+            if (_type == typeof(JsonAsset) && item is JsonAssetItem)
+                return true;
+
+            // Special case for scene asset references
+            if (_type == typeof(SceneReference) && item is SceneItem)
+                return true;
+
+            return false;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AssetPicker"/> class.
         /// </summary>
         public AssetPicker()
-            : this(ContentDomain.Invalid, Vector2.Zero)
+        : this(typeof(Asset), Vector2.Zero)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AssetPicker"/> class.
         /// </summary>
-        /// <param name="contentDomain">The assets content domain.</param>
-        public AssetPicker(ContentDomain contentDomain)
-            : this(contentDomain, Vector2.Zero)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AssetPicker"/> class.
-        /// </summary>
-        /// <param name="contentDomain">The assets content domain.</param>
+        /// <param name="assetType">The assets types that this picker accepts.</param>
         /// <param name="location">The control location.</param>
-        public AssetPicker(ContentDomain contentDomain, Vector2 location)
-            : base(location, new Vector2(DefaultIconSize + ButtonsOffset + ButtonsSize, DefaultIconSize))
+        public AssetPicker(Type assetType, Vector2 location)
+        : base(location, new Vector2(DefaultIconSize + ButtonsOffset + ButtonsSize, DefaultIconSize))
         {
-            _domain = contentDomain;
+            _type = assetType;
             _mousePos = Vector2.Minimum;
+            _dragOverElement = new DragAssets(IsValid);
         }
-        
+
         /// <summary>
         /// Called when selected item gets changed.
         /// </summary>
@@ -169,7 +179,7 @@ namespace FlaxEditor.GUI
         private void DoDrag()
         {
             // Do the drag drop operation if has selected element
-            if (_selected != null && new Rectangle(Vector2.Zero, Size).Contains(ref _mosueDownPos))
+            if (_selected != null && new Rectangle(Vector2.Zero, Size).Contains(ref _mouseDownPos))
             {
                 DoDragDrop(DragAssets.GetDragData(_selected));
             }
@@ -205,6 +215,8 @@ namespace FlaxEditor.GUI
 
         private Rectangle Button2Rect => new Rectangle(Height + ButtonsOffset, ButtonsSize, ButtonsSize, ButtonsSize);
 
+        private Rectangle Button3Rect => new Rectangle(Height + ButtonsOffset, ButtonsSize * 2, ButtonsSize, ButtonsSize);
+
         /// <inheritdoc />
         public override void Draw()
         {
@@ -213,18 +225,22 @@ namespace FlaxEditor.GUI
             var iconRect = IconRect;
             var button1Rect = Button1Rect;
             var button2Rect = Button2Rect;
+            var button3Rect = Button3Rect;
+
+            // Draw asset picker button
+            Render2D.DrawSprite(style.ArrowDown, button1Rect, new Color(button1Rect.Contains(_mousePos) ? 1.0f : 0.7f));
 
             // Check if has item selected
-            if (_selected != null)
+            if (_selectedItem != null)
             {
                 // Draw item preview
-                _selected.DrawThumbnail(ref iconRect);
+                _selectedItem.DrawThumbnail(ref iconRect);
 
                 // Draw find button
-                Render2D.DrawSprite(style.Search, button1Rect, new Color(button1Rect.Contains(_mousePos) ? 1.0f : 0.7f));
+                Render2D.DrawSprite(style.Search, button2Rect, new Color(button2Rect.Contains(_mousePos) ? 1.0f : 0.7f));
 
                 // Draw remove button
-                Render2D.DrawSprite(style.Cross, button2Rect, new Color(button2Rect.Contains(_mousePos) ? 1.0f : 0.7f));
+                Render2D.DrawSprite(style.Cross, button3Rect, new Color(button3Rect.Contains(_mousePos) ? 1.0f : 0.7f));
 
                 // Draw name
                 float sizeForTextLeft = Width - button1Rect.Right;
@@ -232,7 +248,29 @@ namespace FlaxEditor.GUI
                 {
                     Render2D.DrawText(
                         style.FontSmall,
-                        _selected.ShortName,
+                        _selectedItem.ShortName,
+                        new Rectangle(button1Rect.Right + 2, 0, sizeForTextLeft, ButtonsSize),
+                        Color.White,
+                        TextAlignment.Near,
+                        TextAlignment.Center);
+                }
+            }
+            // Check if has no item but has an asset (eg. virtual asset)
+            else if (_selected)
+            {
+                // Draw remove button
+                Render2D.DrawSprite(style.Cross, button3Rect, new Color(button3Rect.Contains(_mousePos) ? 1.0f : 0.7f));
+
+                // Draw name
+                float sizeForTextLeft = Width - button1Rect.Right;
+                if (sizeForTextLeft > 30)
+                {
+                    var name = _selected.GetType().Name;
+                    if (_selected.IsVirtual)
+                        name += " (virtual)";
+                    Render2D.DrawText(
+                        style.FontSmall,
+                        name,
                         new Rectangle(button1Rect.Right + 2, 0, sizeForTextLeft, ButtonsSize),
                         Color.White,
                         TextAlignment.Near,
@@ -248,13 +286,14 @@ namespace FlaxEditor.GUI
 
             // Check if drag is over
             if (IsDragOver && _dragOverElement.HasValidDrag)
-                Render2D.FillRectangle(iconRect, style.BackgroundSelected * 0.4f, true);
+                Render2D.FillRectangle(iconRect, style.BackgroundSelected * 0.4f);
         }
 
         /// <inheritdoc />
         public override void OnDestroy()
         {
-            _selected?.RemoveReference(this);
+            _selectedItem?.RemoveReference(this);
+            _selectedItem = null;
             _selected = null;
 
             base.OnDestroy();
@@ -266,10 +305,10 @@ namespace FlaxEditor.GUI
             _mousePos = Vector2.Minimum;
 
             // Check if start drag drop
-            if (_isMosueDown)
+            if (_isMouseDown)
             {
                 // Clear flag
-                _isMosueDown = false;
+                _isMouseDown = false;
 
                 // Do the drag
                 DoDrag();
@@ -282,7 +321,7 @@ namespace FlaxEditor.GUI
         public override void OnMouseEnter(Vector2 location)
         {
             _mousePos = location;
-            _mosueDownPos = Vector2.Minimum;
+            _mouseDownPos = Vector2.Minimum;
 
             base.OnMouseEnter(location);
         }
@@ -293,10 +332,10 @@ namespace FlaxEditor.GUI
             _mousePos = location;
 
             // Check if start drag drop
-            if (_isMosueDown && Vector2.Distance(location, _mosueDownPos) > 10.0f)
+            if (_isMouseDown && Vector2.Distance(location, _mouseDownPos) > 10.0f)
             {
                 // Clear flag
-                _isMosueDown = false;
+                _isMouseDown = false;
 
                 // Do the drag
                 DoDrag();
@@ -310,21 +349,28 @@ namespace FlaxEditor.GUI
         {
             if (buttons == MouseButton.Left)
             {
-                _isMosueDown = false;
+                _isMouseDown = false;
             }
 
             // Buttons logic
-            if (_selected != null)
+            if (Button1Rect.Contains(location))
             {
-                if (Button1Rect.Contains(location))
+                // Show asset picker popup
+                Focus();
+                AssetSearchPopup.Show(this, Button1Rect.BottomLeft, IsValid, (assetItem) => SelectedItem = assetItem);
+            }
+            else if (_selected != null)
+            {
+                if (Button2Rect.Contains(location) && _selectedItem != null)
                 {
                     // Select asset
-                    Editor.Instance.Windows.ContentWin.Select(_selected);
+                    Editor.Instance.Windows.ContentWin.Select(_selectedItem);
                 }
-                else if (Button2Rect.Contains(location))
+                else if (Button3Rect.Contains(location))
                 {
                     // Deselect asset
-                    SelectedItem = null;
+                    Focus();
+                    SelectedAsset = null;
                 }
             }
 
@@ -338,8 +384,8 @@ namespace FlaxEditor.GUI
             // Set flag for dragging asset
             if (buttons == MouseButton.Left && IconRect.Contains(location))
             {
-                _isMosueDown = true;
-                _mosueDownPos = location;
+                _isMouseDown = true;
+                _mouseDownPos = location;
             }
 
             // Handled
@@ -353,23 +399,23 @@ namespace FlaxEditor.GUI
             Focus();
 
             // Check if has element selected
-            if (_selected != null && IconRect.Contains(location))
+            if (_selectedItem != null && IconRect.Contains(location))
             {
                 // Open it
-                Editor.Instance.ContentEditing.Open(_selected);
+                Editor.Instance.ContentEditing.Open(_selectedItem);
             }
 
             // Handled
             return true;
         }
-        
+
         /// <inheritdoc />
         public override DragDropEffect OnDragEnter(ref Vector2 location, DragData data)
         {
             base.OnDragEnter(ref location, data);
 
             // Check if drop asset
-            if (_dragOverElement.OnDragEnter(data, IsValid))
+            if (_dragOverElement.OnDragEnter(data))
             {
             }
 

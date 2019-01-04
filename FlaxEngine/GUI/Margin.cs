@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.GUI
 {
@@ -43,7 +41,7 @@ namespace FlaxEngine.GUI
         /// Gets the height (top + bottom).
         /// </summary>
         public float Height => Top + Bottom;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Margin"/> struct.
         /// </summary>

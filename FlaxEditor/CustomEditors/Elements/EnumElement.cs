@@ -1,11 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using FlaxEditor.GUI;
 using FlaxEngine;
 using FlaxEngine.GUI;
 
@@ -72,7 +69,7 @@ namespace FlaxEditor.CustomEditors.Elements
         }
 
         /// <summary>
-        /// The custom conbobox for enum editing. Supports some special cases for flag enums.
+        /// The custom combobox for enum editing. Supports some special cases for flag enums.
         /// </summary>
         /// <seealso cref="FlaxEngine.GUI.ComboBox" />
         protected class EnumComboBox : ComboBox
@@ -104,13 +101,13 @@ namespace FlaxEditor.CustomEditors.Elements
 
                     // Calculate value that will be set after change
                     int valueAfter = 0;
-                    for (int i = 0; i < _selectedIndicies.Count; i++)
+                    for (int i = 0; i < _selectedIndices.Count; i++)
                     {
-                        int selectedIndex = _selectedIndicies[i];
+                        int selectedIndex = _selectedIndices[i];
                         if (selectedIndex != index)
                             valueAfter |= entries[selectedIndex].Value;
                     }
-                    bool contains = _selectedIndicies.Contains(index);
+                    bool contains = _selectedIndices.Contains(index);
                     if (!contains)
                         valueAfter |= entries[index].Value;
 
@@ -129,13 +126,13 @@ namespace FlaxEditor.CustomEditors.Elements
                             return;
                         }
                     }
-                    _selectedIndicies.Clear();
+                    _selectedIndices.Clear();
                     for (int i = 0; i < entries.Count; i++)
                     {
                         var e = entries[i].Value;
                         if (e != 0 && (e & valueAfter) == e)
                         {
-                            _selectedIndicies.Add(i);
+                            _selectedIndices.Add(i);
                         }
                     }
                     OnSelectedIndexChanged();
@@ -253,8 +250,9 @@ namespace FlaxEditor.CustomEditors.Elements
         /// Initializes a new instance of the <see cref="EnumElement"/> class.
         /// </summary>
         /// <param name="type">The enum type.</param>
-        /// <param name="cusstomBuildEntriesDelegate">The custom entries layout builder. Allows to hide existing or add diffrent enum values to editor.</param>
-        public EnumElement(Type type, BuildEntriesDelegate cusstomBuildEntriesDelegate = null)
+        /// <param name="customBuildEntriesDelegate">The custom entries layout builder. Allows to hide existing or add different enum values to editor.</param>
+        /// <param name="formatMode">The formatting mode.</param>
+        public EnumElement(Type type, BuildEntriesDelegate customBuildEntriesDelegate = null, EnumDisplayAttribute.FormatMode formatMode = EnumDisplayAttribute.FormatMode.Default)
         {
             if (type == null || !type.IsEnum)
                 throw new ArgumentException("Invalid enum type.");
@@ -269,10 +267,10 @@ namespace FlaxEditor.CustomEditors.Elements
             };
             _comboBox.SelectedIndexChanged += ComboBoxOnSelectedIndexChanged;
 
-            if (cusstomBuildEntriesDelegate != null)
-                cusstomBuildEntriesDelegate(type, _entries);
+            if (customBuildEntriesDelegate != null)
+                customBuildEntriesDelegate(type, _entries);
             else
-                BuildEntriesDefault(type, _entries);
+                BuildEntriesDefault(type, _entries, formatMode);
 
             for (int i = 0; i < _entries.Count; i++)
             {
@@ -291,7 +289,8 @@ namespace FlaxEditor.CustomEditors.Elements
         /// </summary>
         /// <param name="type">The type.</param>
         /// <param name="entries">The output entries.</param>
-        public static void BuildEntriesDefault(Type type, List<Entry> entries)
+        /// <param name="formatMode">The formatting mode.</param>
+        public static void BuildEntriesDefault(Type type, List<Entry> entries, EnumDisplayAttribute.FormatMode formatMode = EnumDisplayAttribute.FormatMode.Default)
         {
             FieldInfo[] fields = type.GetFields();
             entries.Capacity = fields.Length - 1;
@@ -301,7 +300,17 @@ namespace FlaxEditor.CustomEditors.Elements
                 if (field.Name.Equals("value__"))
                     continue;
 
-                var name = CustomEditorsUtil.GetPropertyNameUI(field.Name);
+                string name;
+                switch (formatMode)
+                {
+                case EnumDisplayAttribute.FormatMode.Default:
+                    name = CustomEditorsUtil.GetPropertyNameUI(field.Name);
+                    break;
+                case EnumDisplayAttribute.FormatMode.None:
+                    name = field.Name;
+                    break;
+                default: throw new ArgumentOutOfRangeException(nameof(formatMode), formatMode, null);
+                }
                 entries.Add(new Entry(name, Convert.ToInt32(field.GetRawConstantValue())));
             }
         }

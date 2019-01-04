@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -16,7 +14,7 @@ namespace FlaxEditor.Content.Settings
         /// </summary>
         [EditorOrder(1), Limit(0, 240), EditorDisplay(null, "Update FPS"), Tooltip("Target amount of the game logic updates per second (script updates frequency). Use 0 for infinity.")]
         public float UpdateFPS = 30.0f;
-        
+
         /// <summary>
         /// The target amount of the physics simulation updates per second (also fixed updates frequency).
         /// </summary>

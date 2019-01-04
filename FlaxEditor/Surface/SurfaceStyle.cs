@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -8,7 +6,7 @@ using FlaxEngine;
 namespace FlaxEditor.Surface
 {
     /// <summary>
-    /// Describies GUI style used by the surface.
+    /// Describes GUI style used by the surface.
     /// </summary>
     public class SurfaceStyle
     {
@@ -83,6 +81,11 @@ namespace FlaxEditor.Surface
             public Color Box;
 
             /// <summary>
+            /// The impulse (secondary) boxes color.
+            /// </summary>
+            public Color ImpulseSecondary;
+
+            /// <summary>
             /// The default boxes color.
             /// </summary>
             public Color Default;
@@ -106,12 +109,12 @@ namespace FlaxEditor.Surface
             /// <summary>
             /// Icon for impulse boxes without connections.
             /// </summary>
-            public Sprite ArowOpen;
+            public Sprite ArrowOpen;
 
             /// <summary>
             /// Icon for impulse boxes with connections.
             /// </summary>
-            public Sprite ArowClose;
+            public Sprite ArrowClose;
         }
 
         /// <summary>
@@ -125,6 +128,11 @@ namespace FlaxEditor.Surface
         public IconsData Icons;
 
         /// <summary>
+        /// The background image (tiled).
+        /// </summary>
+        public Texture Background;
+
+        /// <summary>
         /// Gets the color for the connection.
         /// </summary>
         /// <param name="type">The connection type.</param>
@@ -133,49 +141,59 @@ namespace FlaxEditor.Surface
         {
             switch (type)
             {
-                case ConnectionType.Impulse: color = Colors.Impulse; break;
-                case ConnectionType.Bool: color = Colors.Box; break;
-                case ConnectionType.Integer: color = Colors.Integer; break;
-                case ConnectionType.Float: color = Colors.Float; break;
-                case ConnectionType.Vector2:
-                case ConnectionType.Vector3:
-                case ConnectionType.Vector4:
-                case ConnectionType.Vector: color = Colors.Vector; break;
-                case ConnectionType.String: color = Colors.String; break;
-                case ConnectionType.Object: color = Colors.Object; break;
-                case ConnectionType.Rotation: color = Colors.Rotation; break;
-                case ConnectionType.Transform: color = Colors.Transform; break;
-                case ConnectionType.Box: color = Colors.Box; break;
-                default: color = Colors.Default; break;
+            case ConnectionType.Impulse:
+                color = Colors.Impulse;
+                break;
+            case ConnectionType.Bool:
+                color = Colors.Bool;
+                break;
+            case ConnectionType.Integer:
+                color = Colors.Integer;
+                break;
+            case ConnectionType.Float:
+                color = Colors.Float;
+                break;
+            case ConnectionType.Vector2:
+            case ConnectionType.Vector3:
+            case ConnectionType.Vector4:
+            case ConnectionType.Vector:
+                color = Colors.Vector;
+                break;
+            case ConnectionType.String:
+                color = Colors.String;
+                break;
+            case ConnectionType.Object:
+                color = Colors.Object;
+                break;
+            case ConnectionType.Rotation:
+                color = Colors.Rotation;
+                break;
+            case ConnectionType.Transform:
+                color = Colors.Transform;
+                break;
+            case ConnectionType.Box:
+                color = Colors.Box;
+                break;
+            case ConnectionType.ImpulseSecondary:
+                color = Colors.ImpulseSecondary;
+                break;
+            default:
+                color = Colors.Default;
+                break;
             }
         }
 
         /// <summary>
         ///  Function used to create style for the given surface type. Can be overriden to provide some customization via user plugin.
         /// </summary>
-        public static Func<Editor, SurfaceType, SurfaceStyle> CreateStyleHandler = CreateDefault;
+        public static Func<Editor, SurfaceStyle> CreateStyleHandler = CreateDefault;
 
         /// <summary>
         /// Creates the default style.
         /// </summary>
         /// <param name="editor">The editor.</param>
-        /// <param name="surfaceType">Type of the surface.</param>
         /// <returns>Created style.</returns>
-        public static SurfaceStyle CreateDefault(Editor editor, SurfaceType surfaceType)
-        {
-            switch (surfaceType)
-            {
-                case SurfaceType.Material: return CreateDefaultMaterial(editor);
-                default: throw new NotSupportedException();
-            }
-        }
-
-        /// <summary>
-        /// Creates the material surface style.
-        /// </summary>
-        /// <param name="editor">The editor instance.</param>
-        /// <returns>Created style descriptor.</returns>
-        public static SurfaceStyle CreateDefaultMaterial(Editor editor)
+        public static SurfaceStyle CreateDefault(Editor editor)
         {
             return new SurfaceStyle
             {
@@ -198,14 +216,16 @@ namespace FlaxEditor.Surface
                     Transform = new Color(255, 127, 39),
                     Box = new Color(34, 117, 76),
                     Default = new Color(200, 200, 200),
+                    ImpulseSecondary = new Color(40, 130, 50),
                 },
                 Icons =
                 {
-                    BoxOpen = editor.UI.GetIcon("VisjectBoxOpen"),
-                    BoxClose = editor.UI.GetIcon("VisjectBoxClose"),
-                    ArowOpen = editor.UI.GetIcon("VisjectArrowOpen"),
-                    ArowClose = editor.UI.GetIcon("VisjectArrowClose"),
-                }
+                    BoxOpen = editor.Icons.VisjectBoxOpen,
+                    BoxClose = editor.Icons.VisjectBoxClose,
+                    ArrowOpen = editor.Icons.VisjectArrowOpen,
+                    ArrowClose = editor.Icons.VisjectArrowClose,
+                },
+                Background = editor.UI.VisjectSurfaceBackground,
             };
         }
     }

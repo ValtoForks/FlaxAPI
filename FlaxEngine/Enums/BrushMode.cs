@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine
 {
@@ -15,8 +13,8 @@ namespace FlaxEngine
         Additive = 0,
 
         /// <summary>
-        /// Brush substracts
+        /// Brush subtracts
         /// </summary>
-        Substractive = 1,
+        Subtractive = 1,
     }
 }

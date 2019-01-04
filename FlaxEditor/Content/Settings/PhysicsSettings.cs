@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 
@@ -48,21 +46,21 @@ namespace FlaxEditor.Content.Settings
         public PhysicsCombineMode RestitutionCombineMode = PhysicsCombineMode.Average;
 
         /// <summary>
-        /// If true CCD will be ignored. This is an optimization when CCD is never used which removes the need for physx to check it internally.
+        /// If true CCD will be ignored. This is an optimization when CCD is never used which removes the need for PhysX to check it internally.
         /// </summary>
-        [EditorOrder(70), EditorDisplay("Simulation", "Disable CCD"), Tooltip("If true CCD will be ignored. This is an optimization when CCD is never used which removes the need for physx to check it internally.")]
+        [EditorOrder(70), EditorDisplay("Simulation", "Disable CCD"), Tooltip("If true CCD will be ignored. This is an optimization when CCD is never used which removes the need for PhysX to check it internally.")]
         public bool DisableCCD;
 
-		/// <summary>
-		/// Enables adaptive forces to accelerate convergence of the solver. Can improve physics simulation performance but lead to artifacts.
-		/// </summary>
-		[EditorOrder(80), EditorDisplay("Simulation"), Tooltip("Enables adaptive forces to accelerate convergence of the solver. Can improve physics simulation performance but lead to artifacts.")]
+        /// <summary>
+        /// Enables adaptive forces to accelerate convergence of the solver. Can improve physics simulation performance but lead to artifacts.
+        /// </summary>
+        [EditorOrder(80), EditorDisplay("Simulation"), Tooltip("Enables adaptive forces to accelerate convergence of the solver. Can improve physics simulation performance but lead to artifacts.")]
         public bool EnableAdaptiveForce;
 
-		/// <summary>
-		/// The maximum allowed delta time (in seconds) for the physics simulation step.
-		/// </summary>
-		[EditorOrder(1000), EditorDisplay("Framerate"), Limit(0.0013f, 2.0f), Tooltip("The maximum allowed delta time (in seconds) for the physics simulation step.")]
+        /// <summary>
+        /// The maximum allowed delta time (in seconds) for the physics simulation step.
+        /// </summary>
+        [EditorOrder(1000), EditorDisplay("Framerate"), Limit(0.0013f, 2.0f), Tooltip("The maximum allowed delta time (in seconds) for the physics simulation step.")]
         public float MaxDeltaTime = 1.0f / 10.0f;
 
         /// <summary>
@@ -88,7 +86,13 @@ namespace FlaxEditor.Content.Settings
         /// </summary>
         [EditorOrder(1040), EditorDisplay("Layers Matrix"), CustomEditor(typeof(FlaxEditor.CustomEditors.Dedicated.LayersMatrixEditor))]
         public uint[] LayerMasks = new uint[32];
-        
+
+        /// <summary>
+        /// Enables support for cooking physical collision shapes geometry at runtime. Use it to enable generating runtime terrain collision or convex mesh colliders.
+        /// </summary>
+        [EditorOrder(1100), EditorDisplay("Other", "Support Cooking At Runtime"), Tooltip("Enables support for cooking physical collision shapes geometry at runtime. Use it to enable generating runtime terrain collision or convex mesh colliders.")]
+        public bool SupportCookingAtRuntime;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PhysicsSettings"/> class.
         /// </summary>

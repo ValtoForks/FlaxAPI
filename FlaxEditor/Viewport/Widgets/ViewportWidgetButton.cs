@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -58,7 +56,7 @@ namespace FlaxEditor.Viewport.Widgets
         /// <param name="contextMenu">The context menu.</param>
         /// <param name="autoCheck">if set to <c>true</c> will be automatic checked on mouse click.</param>
         public ViewportWidgetButton(string text, Sprite icon, ContextMenu contextMenu = null, bool autoCheck = false)
-            : base(0, 0, calculateButtonWidth(0, icon.IsValid), ViewportWidgetsContainer.WidgetsHeight)
+        : base(0, 0, calculateButtonWidth(0, icon.IsValid), ViewportWidgetsContainer.WidgetsHeight)
         {
             _text = text;
             _icon = icon;
@@ -95,9 +93,9 @@ namespace FlaxEditor.Viewport.Widgets
             var iconRect = new Rectangle(0, (Height - iconSize) / 2, iconSize, iconSize);
             var textRect = new Rectangle(0, 0, Width + 1, Height + 1);
 
-            // Check if is checked or mosue is over and auto check feature is enabled
+            // Check if is checked or mouse is over and auto check feature is enabled
             if (_checked)
-                Render2D.FillRectangle(textRect, style.BackgroundSelected * (IsMouseOver ? 0.8f : 0.4f), true);
+                Render2D.FillRectangle(textRect, style.BackgroundSelected * (IsMouseOver ? 0.9f : 0.6f));
             else if (_autoCheck && IsMouseOver)
                 Render2D.FillRectangle(textRect, style.BackgroundHighlighted);
 
@@ -113,7 +111,7 @@ namespace FlaxEditor.Viewport.Widgets
             }
 
             // Draw text
-            Render2D.DrawText(style.FontMedium, _text, textRect, style.Foreground * (IsMouseOver ? 0.8f : 1.0f), TextAlignment.Center, TextAlignment.Center);
+            Render2D.DrawText(style.FontMedium, _text, textRect, style.Foreground * (IsMouseOver ? 1.0f : 0.9f), TextAlignment.Center, TextAlignment.Center);
         }
 
         /// <inheritdoc />
@@ -136,12 +134,11 @@ namespace FlaxEditor.Viewport.Widgets
                 _cm.Show(this, new Vector2(-1, Height + 2));
             }
 
-
             return base.OnMouseDown(location, buttons);
         }
-		
-	    /// <inheritdoc />
-	    public override void PerformLayout(bool force = false)
+
+        /// <inheritdoc />
+        public override void PerformLayout(bool force = false)
         {
             var style = Style.Current;
 

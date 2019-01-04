@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -91,7 +89,7 @@ namespace FlaxEditor.Content
         /// <param name="path">The path to the item.</param>
         /// <param name="node">The folder parent node.</param>
         internal ContentFolder(ContentFolderType type, string path, ContentTreeNode node)
-            : base(path)
+        : base(path)
         {
             FolderType = type;
             Node = node;
@@ -127,16 +125,19 @@ namespace FlaxEditor.Content
         public override ContentItemType ItemType => ContentItemType.Folder;
 
         /// <inheritdoc />
-        public override bool CanRename => ParentFolder != null;// Deny rename action for root folders
+        public override ContentItemSearchFilter SearchFilter => ContentItemSearchFilter.Other;
 
         /// <inheritdoc />
-        public override bool CanDrag => ParentFolder != null;// Deny rename action for root folders
+        public override bool CanRename => ParentFolder != null; // Deny rename action for root folders
+
+        /// <inheritdoc />
+        public override bool CanDrag => ParentFolder != null; // Deny rename action for root folders
 
         /// <inheritdoc />
         public override bool Exists => System.IO.Directory.Exists(Path);
 
         /// <inheritdoc />
-        public override string DefaultThumbnailName => "Folder64";
+        public override Sprite DefaultThumbnail => Editor.Instance.Icons.Folder64;
 
         /// <inheritdoc />
         internal override void UpdatePath(string value)
@@ -159,7 +160,7 @@ namespace FlaxEditor.Content
         /// <inheritdoc />
         public override ContentItem Find(string path)
         {
-            // TODO: split name into parts and check each going tree sructure level down - make it faster
+            // TODO: split name into parts and check each going tree structure level down - make it faster
 
             if (Path == path)
                 return this;
@@ -235,7 +236,7 @@ namespace FlaxEditor.Content
 
             // Check if drag is over
             if (IsDragOver && _validDragOver)
-                Render2D.FillRectangle(new Rectangle(Vector2.Zero, Size), Style.Current.BackgroundSelected * 0.4f, true);
+                Render2D.FillRectangle(new Rectangle(Vector2.Zero, Size), Style.Current.BackgroundSelected * 0.6f);
         }
 
         private bool ValidateDragItem(ContentItem item)
@@ -258,8 +259,8 @@ namespace FlaxEditor.Content
 
             // Check if drop asset(s)
             if (_dragOverItems == null)
-                _dragOverItems = new DragItems();
-            _dragOverItems.OnDragEnter(data, ValidateDragItem);
+                _dragOverItems = new DragItems(ValidateDragItem);
+            _dragOverItems.OnDragEnter(data);
             _validDragOver = _dragOverItems.HasValidDrag;
             return _dragOverItems.Effect;
         }

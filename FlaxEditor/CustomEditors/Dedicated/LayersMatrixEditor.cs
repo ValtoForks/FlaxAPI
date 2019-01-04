@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -126,7 +124,7 @@ namespace FlaxEditor.CustomEditors.Dedicated
                         Parent = grid
                     };
                     box.Checked = GetBit(column, row);
-                    box.CheckChanged += OnCheckBoxChanged;
+                    box.StateChanged += OnCheckBoxChanged;
                     _checkBoxs.Add(box);
                 }
                 for (; column < layersCount; column++)
@@ -166,10 +164,10 @@ namespace FlaxEditor.CustomEditors.Dedicated
         private void SetBit(int column, int row, bool flag)
         {
             var values = (int[])((int[])Values[0]).Clone();
-            
+
             values[row] = SetMaskBit(values[row], 1 << column, flag);
             values[column] = SetMaskBit(values[column], 1 << row, flag);
-            
+
             SetValue(values);
         }
 

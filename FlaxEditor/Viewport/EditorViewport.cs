@@ -1,8 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
+using FlaxEditor.Viewport.Cameras;
 using FlaxEditor.Viewport.Widgets;
 using FlaxEngine;
 using FlaxEngine.GUI;
@@ -17,12 +16,10 @@ namespace FlaxEditor.Viewport
     /// <seealso cref="FlaxEngine.GUI.RenderOutputControl" />
     public class EditorViewport : RenderOutputControl
     {
-        // TODO: maybe cache view/projection matricies to reuse them
-
         /// <summary>
         /// Gathered input data.
         /// </summary>
-        protected struct Input
+        public struct Input
         {
             /// <summary>
             /// The is panning state.
@@ -93,7 +90,7 @@ namespace FlaxEditor.Viewport
             /// Gathers input from the specified window.
             /// </summary>
             /// <param name="window">The window.</param>
-            public void Gather(FlaxEngine.Window window)
+            public void Gather(Window window)
             {
                 IsControlDown = window.GetKey(Keys.Control);
                 IsShiftDown = window.GetKey(Keys.Shift);
@@ -129,6 +126,7 @@ namespace FlaxEditor.Viewport
         /// </summary>
         protected ViewportWidgetButton _speedWidget;
 
+
         private float _movementSpeed;
         private float _mouseAccelerationScale;
         private bool _useMouseFiltering;
@@ -137,24 +135,45 @@ namespace FlaxEditor.Viewport
         // Input
 
         private bool _isControllingMouse;
+        private int _deltaFilteringStep;
+        private Vector2 _startPosRight;
+        private Vector2 _startPosLeft;
+        private Vector2 _mouseDeltaRightLast;
+        private Vector2[] _deltaFilteringBuffer = new Vector2[FpsCameraFilteringFrames];
+
+        /// <summary>
+        /// The previous input (from the previous update).
+        /// </summary>
         protected Input _prevInput;
+
+        /// <summary>
+        /// The input data (from the current frame).
+        /// </summary>
         protected Input _input;
-        protected int _deltaFilteringStep;
+
+        /// <summary>
+        /// The view mouse position.
+        /// </summary>
         protected Vector2 _viewMousePos;
+
+        /// <summary>
+        /// The mouse delta (right button down).
+        /// </summary>
         protected Vector2 _mouseDeltaRight;
+
+        /// <summary>
+        /// The mouse delta (left button down).
+        /// </summary>
         protected Vector2 _mouseDeltaLeft;
-        protected Vector2 _startPosRight;
-        protected Vector2 _startPosLeft;
-        protected Vector2 _mouseDeltaRightLast;
-        protected Vector2[] _deltaFilteringBuffer = new Vector2[FpsCameraFilteringFrames];
 
         // Camera
 
-        protected float _yaw;
-        protected float _pitch;
-        protected float _fieldOfView = 60.0f;
-        protected float _nearPlane = 2.0f;
-        protected float _farPlane = 10000.0f;
+        private ViewportCamera _camera;
+        private float _yaw;
+        private float _pitch;
+        private float _fieldOfView = 60.0f;
+        private float _nearPlane = 8.0f;
+        private float _farPlane = 10000.0f;
 
         /// <summary>
         /// Speed of the mouse.
@@ -188,6 +207,16 @@ namespace FlaxEditor.Viewport
         }
 
         /// <summary>
+        /// Gets the mouse movement delta for the right button (user press and move).
+        /// </summary>
+        public Vector2 MouseDeltaRight => _mouseDeltaRight;
+
+        /// <summary>
+        /// Gets the mouse movement delta for the left button (user press and move).
+        /// </summary>
+        public Vector2 MouseDeltaLeft => _mouseDeltaLeft;
+
+        /// <summary>
         /// Camera's pitch angle clamp range (in degrees).
         /// </summary>
         public Vector2 CamPitchAngles = new Vector2(-88, 88);
@@ -208,7 +237,7 @@ namespace FlaxEditor.Viewport
         public Quaternion ViewOrientation
         {
             get => Quaternion.RotationYawPitchRoll(_yaw * Mathf.DegreesToRadians, _pitch * Mathf.DegreesToRadians, 0);
-            protected set => EulerAngles = value.EulerAngles;
+            set => EulerAngles = value.EulerAngles;
         }
 
         /// <summary>
@@ -216,8 +245,8 @@ namespace FlaxEditor.Viewport
         /// </summary>
         public Vector3 ViewDirection
         {
-            get => Vector3.ForwardLH * ViewOrientation;
-	        set
+            get => Vector3.Forward * ViewOrientation;
+            set
             {
                 Vector3 right = Vector3.Cross(value, Vector3.Up);
                 Vector3 up = Vector3.Cross(right, value);
@@ -226,9 +255,22 @@ namespace FlaxEditor.Viewport
         }
 
         /// <summary>
+        /// Gets or sets the view ray (position and direction).
+        /// </summary>
+        public Ray ViewRay
+        {
+            get => new Ray(ViewPosition, ViewDirection);
+            set
+            {
+                ViewPosition = value.Position;
+                ViewDirection = value.Direction;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the yaw angle (in degrees).
         /// </summary>
-        protected float Yaw
+        public float Yaw
         {
             get => _yaw;
             set => _yaw = value;
@@ -237,7 +279,7 @@ namespace FlaxEditor.Viewport
         /// <summary>
         /// Gets or sets the pitch angle (in degrees).
         /// </summary>
-        protected float Pitch
+        public float Pitch
         {
             get => _pitch;
             set => _pitch = Mathf.Clamp(value, CamPitchAngles.X, CamPitchAngles.Y);
@@ -246,7 +288,7 @@ namespace FlaxEditor.Viewport
         /// <summary>
         /// Gets or sets the absolute mouse position (normalized, not in pixels). Yaw is X, Pitch is Y.
         /// </summary>
-        protected Vector2 YawPitch
+        public Vector2 YawPitch
         {
             get => new Vector2(_yaw, _pitch);
             set
@@ -259,7 +301,7 @@ namespace FlaxEditor.Viewport
         /// <summary>
         /// Gets or sets the euler angles (pitch, yaw, roll).
         /// </summary>
-        protected Vector3 EulerAngles
+        public Vector3 EulerAngles
         {
             get => new Vector3(_pitch, _yaw, 0);
             set
@@ -280,17 +322,66 @@ namespace FlaxEditor.Viewport
         public ContextMenu ViewWidgetButtonMenu;
 
         /// <summary>
+        /// Gets or sets the viewport camera controller.
+        /// </summary>
+        public ViewportCamera ViewportCamera
+        {
+            get => _camera;
+            set
+            {
+                if (_camera != null)
+                    _camera.Viewport = null;
+
+                _camera = value;
+
+                if (_camera != null)
+                    _camera.Viewport = this;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the camera near clipping plane.
+        /// </summary>
+        public float NearPlane
+        {
+            get => _nearPlane;
+            set => _nearPlane = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the camera far clipping plane.
+        /// </summary>
+        public float FarPlane
+        {
+            get => _farPlane;
+            set => _farPlane = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the camera field of view (in degrees).
+        /// </summary>
+        public float FieldOfView
+        {
+            get => _fieldOfView;
+            set => _fieldOfView = value;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="EditorViewport"/> class.
         /// </summary>
         /// <param name="task">The task.</param>
+        /// <param name="camera">The camera controller.</param>
         /// <param name="useWidgets">Enable/disable viewport widgets.</param>
-        public EditorViewport(SceneRenderTask task, bool useWidgets)
-            : base(task)
+        public EditorViewport(SceneRenderTask task, ViewportCamera camera, bool useWidgets)
+        : base(task)
         {
             _movementSpeed = 1;
             _mouseAccelerationScale = 0.1f;
             _useMouseFiltering = false;
             _useMouseAcceleration = false;
+            _camera = camera;
+            if (_camera != null)
+                _camera.Viewport = this;
 
             DockStyle = DockStyle.Fill;
 
@@ -299,18 +390,18 @@ namespace FlaxEditor.Viewport
                 // Camera speed widget
                 var camSpeed = new ViewportWidgetsContainer(ViewportWidgetLocation.UpperRight);
                 var camSpeedCM = new ContextMenu();
-                var camSpeedButton = new ViewportWidgetButton("1", Editor.Instance.UI.GetIcon("ArrowRightBorder16"), camSpeedCM);
-	            camSpeedButton.Tag = this;
-				camSpeedButton.TooltipText = "Camera speed scale";
+                var camSpeedButton = new ViewportWidgetButton("1", Editor.Instance.Icons.ArrowRightBorder16, camSpeedCM);
+                camSpeedButton.Tag = this;
+                camSpeedButton.TooltipText = "Camera speed scale";
                 _speedWidget = camSpeedButton;
                 for (int i = 0; i < EditorViewportCameraSpeedValues.Length; i++)
                 {
-	                var v = EditorViewportCameraSpeedValues[i];
-					var button = camSpeedCM.AddButton(v.ToString());
+                    var v = EditorViewportCameraSpeedValues[i];
+                    var button = camSpeedCM.AddButton(v.ToString());
                     button.Tag = v;
                 }
                 camSpeedCM.ButtonClicked += (button) => MovementSpeed = (float)button.Tag;
-                camSpeedCM.VisibleChanged += widgetCamSpeedShowHide;
+                camSpeedCM.VisibleChanged += WidgetCamSpeedShowHide;
                 camSpeedButton.Parent = camSpeed;
                 camSpeed.Parent = this;
 
@@ -333,12 +424,12 @@ namespace FlaxEditor.Viewport
                     var viewFlags = ViewWidgetButtonMenu.AddChildMenu("View Flags").ContextMenu;
                     for (int i = 0; i < EditorViewportViewFlagsValues.Length; i++)
                     {
-						var v = EditorViewportViewFlagsValues[i];
-						var button = viewFlags.AddButton(v.Name);
-	                    button.Tag = v.Mode;
-					}
+                        var v = EditorViewportViewFlagsValues[i];
+                        var button = viewFlags.AddButton(v.Name);
+                        button.Tag = v.Mode;
+                    }
                     viewFlags.ButtonClicked += (button) => Task.Flags ^= (ViewFlags)button.Tag;
-                    viewFlags.VisibleChanged += widgetViewFlagsShowHide;
+                    viewFlags.VisibleChanged += WidgetViewFlagsShowHide;
                 }
 
                 // Debug View
@@ -346,14 +437,14 @@ namespace FlaxEditor.Viewport
                     var debugView = ViewWidgetButtonMenu.AddChildMenu("Debug View").ContextMenu;
                     for (int i = 0; i < EditorViewportViewModeValues.Length; i++)
                     {
-	                    var v = EditorViewportViewModeValues[i];
-						var button = debugView.AddButton(v.Name);
-	                    button.Tag = v.Mode;
+                        var v = EditorViewportViewModeValues[i];
+                        var button = debugView.AddButton(v.Name);
+                        button.Tag = v.Mode;
                     }
                     debugView.ButtonClicked += (button) => Task.Mode = (ViewMode)button.Tag;
-                    debugView.VisibleChanged += widgetViewModeShowHide;
+                    debugView.VisibleChanged += WidgetViewModeShowHide;
                 }
-                
+
                 ViewWidgetButtonMenu.AddSeparator();
 
                 // Field of View
@@ -364,19 +455,42 @@ namespace FlaxEditor.Viewport
                     fovValue.ValueChanged += () => _fieldOfView = fovValue.Value;
                     ViewWidgetButtonMenu.VisibleChanged += control => fovValue.Value = _fieldOfView;
                 }
-                
+
+                // Near Plane
+                {
+                    var nearPlane = ViewWidgetButtonMenu.AddButton("Near Plane");
+                    var nearPlaneValue = new FloatValueBox(2.0f, 75, 2, 50.0f, 0.001f, 1000.0f);
+                    nearPlaneValue.Parent = nearPlane;
+                    nearPlaneValue.ValueChanged += () => _nearPlane = nearPlaneValue.Value;
+                    ViewWidgetButtonMenu.VisibleChanged += control => nearPlaneValue.Value = _nearPlane;
+                }
+
                 // Far Plane
                 {
                     var farPlane = ViewWidgetButtonMenu.AddButton("Far Plane");
-                    var farPlaneValue = new FloatValueBox(1000, 75, 2, 50.0f, 10.0f, 100000.0f);
+                    var farPlaneValue = new FloatValueBox(1000, 75, 2, 50.0f, 10.0f);
                     farPlaneValue.Parent = farPlane;
                     farPlaneValue.ValueChanged += () => _farPlane = farPlaneValue.Value;
                     ViewWidgetButtonMenu.VisibleChanged += control => farPlaneValue.Value = _farPlane;
                 }
+
+                // Brightness
+                {
+                    var brightness = ViewWidgetButtonMenu.AddButton("Brightness");
+                    var brightnessValue = new FloatValueBox(1.0f, 75, 2, 50.0f, 0.001f, 10.0f, 0.001f);
+                    brightnessValue.Parent = brightness;
+                    brightnessValue.ValueChanged += () => Brightness = brightnessValue.Value;
+                    ViewWidgetButtonMenu.VisibleChanged += control => brightnessValue.Value = Brightness;
+                }
             }
 
             // Link for task event
-            task.Begin += x => CopyViewData(ref x.View);
+            task.Begin += OnRenderBegin;
+        }
+
+        private void OnRenderBegin(SceneRenderTask task, GPUContext context)
+        {
+            CopyViewData(ref task.View);
         }
 
         #region FPS Counter
@@ -384,7 +498,7 @@ namespace FlaxEditor.Viewport
         private class FpsCounter : Control
         {
             public FpsCounter(float x, float y)
-                : base(x, y, 64, 32)
+            : base(x, y, 64, 32)
             {
             }
 
@@ -415,6 +529,7 @@ namespace FlaxEditor.Viewport
             set
             {
                 _fpsCounter.Visible = value;
+                _fpsCounter.Enabled = value;
                 _showFpsButon.Icon = value ? Style.Current.CheckBoxTick : Sprite.Invalid;
             }
         }
@@ -423,6 +538,7 @@ namespace FlaxEditor.Viewport
         {
             _fpsCounter = new FpsCounter(10, ViewportWidgetsContainer.WidgetsHeight + 14);
             _fpsCounter.Visible = false;
+            _fpsCounter.Enabled = false;
             _fpsCounter.Parent = this;
         }
 
@@ -443,7 +559,7 @@ namespace FlaxEditor.Viewport
         /// <param name="view">The view.</param>
         public void CopyViewData(ref RenderView view)
         {
-            // Ceate matricies
+            // Create matrices
             CreateProjectionMatrix(out view.Projection);
             CreateViewMatrix(out view.View);
 
@@ -455,6 +571,15 @@ namespace FlaxEditor.Viewport
         }
 
         /// <summary>
+        /// Gets the input state data.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        public void GetInput(out Input input)
+        {
+            input = _input;
+        }
+
+        /// <summary>
         /// Creates the projection matrix.
         /// </summary>
         /// <param name="result">The result.</param>
@@ -462,7 +587,7 @@ namespace FlaxEditor.Viewport
         {
             // Create projection matrix
             float aspect = Width / Height;
-            Matrix.PerspectiveFovLH(_fieldOfView * Mathf.DegreesToRadians, aspect, _nearPlane, _farPlane, out result);
+            Matrix.PerspectiveFov(_fieldOfView * Mathf.DegreesToRadians, aspect, _nearPlane, _farPlane, out result);
         }
 
         /// <summary>
@@ -477,7 +602,7 @@ namespace FlaxEditor.Viewport
             Vector3 target = position + direction;
             Vector3 right = Vector3.Normalize(Vector3.Cross(Vector3.Up, direction));
             Vector3 up = Vector3.Normalize(Vector3.Cross(direction, right));
-            Matrix.LookAtLH(ref position, ref target, ref up, out result);
+            Matrix.LookAt(ref position, ref target, ref up, out result);
         }
 
         /// <summary>
@@ -525,21 +650,24 @@ namespace FlaxEditor.Viewport
         /// Called when mouse control begins.
         /// </summary>
         /// <param name="win">The parent window.</param>
-        protected virtual void OnControlMouseBegin(FlaxEngine.Window win)
+        protected virtual void OnControlMouseBegin(Window win)
         {
+            // Hide cursor and start tracking mouse movement
             win.StartTrackingMouse(false);
             win.Cursor = CursorType.Hidden;
 
-            _viewMousePos = Center;
-            win.MousePosition = PointToWindow(_viewMousePos);
+            // Center mouse position
+            //_viewMousePos = Center;
+            //win.MousePosition = PointToWindow(_viewMousePos);
         }
 
         /// <summary>
         /// Called when mouse control ends.
         /// </summary>
         /// <param name="win">The parent window.</param>
-        protected virtual void OnControlMouseEnd(FlaxEngine.Window win)
+        protected virtual void OnControlMouseEnd(Window win)
         {
+            // Restore cursor and stop tracking mouse movement
             win.Cursor = CursorType.Default;
             win.EndTrackingMouse();
         }
@@ -580,8 +708,11 @@ namespace FlaxEditor.Viewport
         /// <param name="dt">The delta time (in seconds).</param>
         /// <param name="moveDelta">The move delta (scaled).</param>
         /// <param name="mouseDelta">The mouse delta (scaled).</param>
-        protected virtual void UpdateView(float dt, ref Vector3 moveDelta, ref Vector2 mouseDelta)
+        /// <param name="centerMouse">True if center mouse after the update.</param>
+        protected virtual void UpdateView(float dt, ref Vector3 moveDelta, ref Vector2 mouseDelta, out bool centerMouse)
         {
+            centerMouse = true;
+            _camera?.UpdateView(dt, ref moveDelta, ref mouseDelta, out centerMouse);
         }
 
         /// <inheritdoc />
@@ -589,18 +720,20 @@ namespace FlaxEditor.Viewport
         {
             base.Update(deltaTime);
 
+            _camera?.Update(deltaTime);
+
             // Get parent window
-            var win = ParentWindow;
+            var win = (WindowRootControl)Root;
 
             // Get current mouse position in the view
             _viewMousePos = PointFromWindow(win.MousePosition);
 
             // Update input
             {
-                // Get input buttons and keys (skip if viewort has no focus or mouse is over a child control)
+                // Get input buttons and keys (skip if viewport has no focus or mouse is over a child control)
                 _prevInput = _input;
-                if (ContainsFocus && GetChildAt(_viewMousePos) == null)
-                    _input.Gather(win.NativeWindow);
+                if (ContainsFocus && GetChildAt(_viewMousePos, c => c.Visible) == null)
+                    _input.Gather(win.Window);
                 else
                     _input.Clear();
 
@@ -610,9 +743,9 @@ namespace FlaxEditor.Viewport
                 if (wasControllingMouse != _isControllingMouse)
                 {
                     if (_isControllingMouse)
-                        OnControlMouseBegin(win.NativeWindow);
+                        OnControlMouseBegin(win.Window);
                     else
-                        OnControlMouseEnd(win.NativeWindow);
+                        OnControlMouseEnd(win.Window);
                 }
 
                 // Track mouse buttons state change
@@ -626,6 +759,9 @@ namespace FlaxEditor.Viewport
                 else if (_prevInput.IsMouseRightDown && !_input.IsMouseRightDown)
                     OnRightMouseButtonUp();
             }
+
+            // Get clamped delta time (more stable during lags)
+            var dt = Math.Min(Time.UnscaledDeltaTime, 1.0f);
 
             // Check if update mouse
             Vector2 size = Size;
@@ -651,11 +787,11 @@ namespace FlaxEditor.Viewport
                 Vector3 moveDelta = Vector3.Zero;
                 if (win.GetKey(Keys.W))
                 {
-                    moveDelta += Vector3.ForwardLH;
+                    moveDelta += Vector3.Forward;
                 }
                 if (win.GetKey(Keys.S))
                 {
-                    moveDelta += Vector3.BackwardLH;
+                    moveDelta += Vector3.Backward;
                 }
                 if (win.GetKey(Keys.D))
                 {
@@ -673,7 +809,7 @@ namespace FlaxEditor.Viewport
                 {
                     moveDelta += Vector3.Down;
                 }
-                moveDelta.Normalize();// normalize direction
+                moveDelta.Normalize(); // normalize direction
                 moveDelta *= _movementSpeed;
 
                 // Speed up or speed down
@@ -690,13 +826,13 @@ namespace FlaxEditor.Viewport
                 _mouseDeltaRight.Y *= size.Y / size.X;
 
                 Vector2 mouseDelta = Vector2.Zero;
-                if (_useMouseFiltering)// mouse filtering
+                if (_useMouseFiltering) // mouse filtering
                 {
                     // update delta filtering buffer
                     _deltaFilteringBuffer[_deltaFilteringStep] = _mouseDeltaRight;
                     _deltaFilteringStep++;
 
-                    // if the step is too far, zeroe
+                    // if the step is too far, zero
                     if (_deltaFilteringStep == FpsCameraFilteringFrames)
                         _deltaFilteringStep = 0;
 
@@ -709,7 +845,7 @@ namespace FlaxEditor.Viewport
                 else
                     mouseDelta = _mouseDeltaRight;
 
-                if (_useMouseAcceleration)// mouse acceleration
+                if (_useMouseAcceleration) // mouse acceleration
                 {
                     // accelerate the delta
                     var currentDelta = mouseDelta;
@@ -717,21 +853,57 @@ namespace FlaxEditor.Viewport
                     _mouseDeltaRightLast = currentDelta;
                 }
 
-                // Get clamped delta time (more stable during lags)
-                var dt = Math.Min(Time.UnscaledDeltaTime, 1.0f);
-
                 // Update
                 moveDelta *= dt * (60.0f * 4.0f);
                 mouseDelta *= 200.0f * MouseSpeed;
-                UpdateView(dt, ref moveDelta, ref mouseDelta);
+                bool centerMouse;
+                UpdateView(dt, ref moveDelta, ref mouseDelta, out centerMouse);
 
                 // Move mouse back to the root position
-                Vector2 center = PointToWindow(_startPosRight);
-                win.MousePosition = center;
+                if (centerMouse)
+                {
+                    Vector2 center = PointToWindow(_startPosRight);
+                    win.MousePosition = center;
+                }
             }
             else
             {
                 _mouseDeltaRight = _mouseDeltaRightLast = Vector2.Zero;
+
+                if (ContainsFocus)
+                {
+                    _input.IsPanning = false;
+                    _input.IsRotating = false;
+                    _input.IsMoving = true;
+                    _input.IsZooming = false;
+                    _input.IsOrbiting = false;
+
+                    // Get input movement
+                    Vector3 moveDelta = Vector3.Zero;
+                    if (win.GetKey(Keys.ArrowRight))
+                    {
+                        moveDelta += Vector3.Right;
+                    }
+                    if (win.GetKey(Keys.ArrowLeft))
+                    {
+                        moveDelta += Vector3.Left;
+                    }
+                    if (win.GetKey(Keys.ArrowUp))
+                    {
+                        moveDelta += Vector3.Up;
+                    }
+                    if (win.GetKey(Keys.ArrowDown))
+                    {
+                        moveDelta += Vector3.Down;
+                    }
+                    moveDelta.Normalize(); // normalize direction
+                    moveDelta *= _movementSpeed;
+
+                    // Update
+                    moveDelta *= dt * (60.0f * 4.0f);
+                    Vector2 mouseDelta = Vector2.Zero;
+                    UpdateView(dt, ref moveDelta, ref mouseDelta, out _);
+                }
             }
             if (_input.IsMouseLeftDown)
             {
@@ -792,13 +964,27 @@ namespace FlaxEditor.Viewport
             4.0f,
             6.0f,
             8.0f,
+            16.0f,
+            32.0f,
         };
 
         private struct ViewModeOptions
         {
-            public ViewMode Mode;
-            public string Name;
+            /// <summary>
+            /// The mode.
+            /// </summary>
+            public readonly ViewMode Mode;
 
+            /// <summary>
+            /// The name.
+            /// </summary>
+            public readonly string Name;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ViewModeOptions"/> struct.
+            /// </summary>
+            /// <param name="mode">The mode.</param>
+            /// <param name="name">The name.</param>
             public ViewModeOptions(ViewMode mode, string name)
             {
                 Mode = mode;
@@ -806,11 +992,12 @@ namespace FlaxEditor.Viewport
             }
         }
 
-        private ViewModeOptions[] EditorViewportViewModeValues =
+        private static readonly ViewModeOptions[] EditorViewportViewModeValues =
         {
             new ViewModeOptions(ViewMode.Default, "Default"),
-            new ViewModeOptions(ViewMode.Fast, "No PostFx"),
-            new ViewModeOptions(ViewMode.LightsBuffer, "Light Buffer"),
+            new ViewModeOptions(ViewMode.NoPostFx, "No PostFx"),
+            new ViewModeOptions(ViewMode.Wireframe, "Wireframe"),
+            new ViewModeOptions(ViewMode.LightBuffer, "Light Buffer"),
             new ViewModeOptions(ViewMode.Reflections, "Reflections Buffer"),
             new ViewModeOptions(ViewMode.Depth, "Depth Buffer"),
             new ViewModeOptions(ViewMode.Diffuse, "Diffuse"),
@@ -818,47 +1005,49 @@ namespace FlaxEditor.Viewport
             new ViewModeOptions(ViewMode.Roughness, "Roughness"),
             new ViewModeOptions(ViewMode.Specular, "Specular"),
             new ViewModeOptions(ViewMode.SpecularColor, "Specular Color"),
+            new ViewModeOptions(ViewMode.SubsurfaceColor, "Subsurface Color"),
             new ViewModeOptions(ViewMode.ShadingModel, "Shading Model"),
             new ViewModeOptions(ViewMode.Emissive, "Emissive Light"),
             new ViewModeOptions(ViewMode.Normals, "Normals"),
             new ViewModeOptions(ViewMode.AmbientOcclusion, "Ambient Occlusion"),
+            new ViewModeOptions(ViewMode.MotionVectors, "Motion Vectors"),
         };
-		
-	    private void widgetCamSpeedShowHide(Control cm)
+
+        private void WidgetCamSpeedShowHide(Control cm)
         {
             if (cm.Visible == false)
                 return;
 
             var ccm = (ContextMenu)cm;
-	        foreach (var e in ccm.Items)
-	        {
-		        if (e is ContextMenuButton b)
-		        {
-			        var v = (float)b.Tag;
-			        b.Icon = Mathf.Abs(MovementSpeed - v) < 0.001f
-				        ? Style.Current.CheckBoxTick
-				        : Sprite.Invalid;
-		        }
-	        }
-		}
-		
-        private void widgetViewModeShowHide(Control cm)
+            foreach (var e in ccm.Items)
+            {
+                if (e is ContextMenuButton b)
+                {
+                    var v = (float)b.Tag;
+                    b.Icon = Mathf.Abs(MovementSpeed - v) < 0.001f
+                             ? Style.Current.CheckBoxTick
+                             : Sprite.Invalid;
+                }
+            }
+        }
+
+        private void WidgetViewModeShowHide(Control cm)
         {
             if (cm.Visible == false)
                 return;
-			
+
             var ccm = (ContextMenu)cm;
-	        foreach (var e in ccm.Items)
-	        {
-		        if (e is ContextMenuButton b)
-		        {
-			        var v = (ViewMode)b.Tag;
-			        b.Icon = Task.Mode == v
-				        ? Style.Current.CheckBoxTick
-				        : Sprite.Invalid;
-		        }
-	        }
-		}
+            foreach (var e in ccm.Items)
+            {
+                if (e is ContextMenuButton b)
+                {
+                    var v = (ViewMode)b.Tag;
+                    b.Icon = Task.Mode == v
+                             ? Style.Current.CheckBoxTick
+                             : Sprite.Invalid;
+                }
+            }
+        }
 
         private struct ViewFlagOptions
         {
@@ -872,13 +1061,12 @@ namespace FlaxEditor.Viewport
             }
         }
 
-        private ViewFlagOptions[] EditorViewportViewFlagsValues =
+        private static readonly ViewFlagOptions[] EditorViewportViewFlagsValues =
         {
             new ViewFlagOptions(ViewFlags.AntiAliasing, "Anti Aliasing"),
             new ViewFlagOptions(ViewFlags.Shadows, "Shadows"),
-            new ViewFlagOptions(ViewFlags.DynamicActors, "Dynamic Actors"),
             new ViewFlagOptions(ViewFlags.EditorSprites, "Editor Sprites"),
-            new ViewFlagOptions(ViewFlags.Reflections, "Reflectons"),
+            new ViewFlagOptions(ViewFlags.Reflections, "Reflections"),
             new ViewFlagOptions(ViewFlags.SSR, "Screen Space Reflections"),
             new ViewFlagOptions(ViewFlags.AO, "Ambient Occlusion"),
             new ViewFlagOptions(ViewFlags.GI, "Global Illumination"),
@@ -888,33 +1076,34 @@ namespace FlaxEditor.Viewport
             new ViewFlagOptions(ViewFlags.SkyLights, "Sky Lights"),
             new ViewFlagOptions(ViewFlags.Fog, "Fog"),
             new ViewFlagOptions(ViewFlags.SpecularLight, "Specular Light"),
+            new ViewFlagOptions(ViewFlags.Decals, "Decals"),
             new ViewFlagOptions(ViewFlags.CustomPostProcess, "Custom Post Process"),
             new ViewFlagOptions(ViewFlags.Bloom, "Bloom"),
             new ViewFlagOptions(ViewFlags.ToneMapping, "Tone Mapping"),
-            new ViewFlagOptions(ViewFlags.EyeAdaptation, "Eye Adaptaion"),
+            new ViewFlagOptions(ViewFlags.EyeAdaptation, "Eye Adaptation"),
             new ViewFlagOptions(ViewFlags.CameraArtifacts, "Camera Artifacts"),
             new ViewFlagOptions(ViewFlags.LensFlares, "Lens Flares"),
-            new ViewFlagOptions(ViewFlags.CSG, "CSG Brushes"),
             new ViewFlagOptions(ViewFlags.DepthOfField, "Depth of Field"),
+            new ViewFlagOptions(ViewFlags.MotionBlur, "Motion Blur"),
             new ViewFlagOptions(ViewFlags.PhysicsDebug, "Physics Debug"),
         };
-		
-        private void widgetViewFlagsShowHide(Control cm)
+
+        private void WidgetViewFlagsShowHide(Control cm)
         {
             if (cm.Visible == false)
                 return;
-			
+
             var ccm = (ContextMenu)cm;
             foreach (var e in ccm.Items)
-	        {
-		        if (e is ContextMenuButton b)
-		        {
-			        var v = (ViewFlags)b.Tag;
-			        b.Icon = (Task.Flags & v) != 0
-				        ? Style.Current.CheckBoxTick
-				        : Sprite.Invalid;
-		        }
-	        }
+            {
+                if (e is ContextMenuButton b)
+                {
+                    var v = (ViewFlags)b.Tag;
+                    b.Icon = (Task.Flags & v) != 0
+                             ? Style.Current.CheckBoxTick
+                             : Sprite.Invalid;
+                }
+            }
         }
     }
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEngine;
@@ -18,8 +16,9 @@ namespace FlaxEditor.GUI
         /// The default margin for button parts (icon, text, etc.).
         /// </summary>
         public const int DefaultMargin = 2;
-		
+
         private Sprite _icon;
+        private string _text;
         private bool _mouseDown;
 
         /// <summary>
@@ -36,13 +35,26 @@ namespace FlaxEditor.GUI
         /// The automatic check mode.
         /// </summary>
         public bool AutoCheck;
-		
+
+        /// <summary>
+        /// Gets or sets the button text.
+        /// </summary>
+        public string Text
+        {
+            get => _text;
+            set
+            {
+                _text = value;
+                PerformLayout();
+            }
+        }
+
         /// <summary>
         /// The icon.
         /// </summary>
         public Sprite Icon
         {
-            get { return _icon; }
+            get => _icon;
             set
             {
                 _icon = value;
@@ -56,15 +68,15 @@ namespace FlaxEditor.GUI
         /// <param name="height">The height.</param>
         /// <param name="icon">The icon.</param>
         public ToolStripButton(float height, ref Sprite icon)
-            : base(0, 0, height, height)
+        : base(0, 0, height, height)
         {
             _icon = icon;
         }
-		
+
         /// <summary>
         /// Sets the automatic check mode.
         /// </summary>
-        /// <param name="value">True if use ato check, otherwise false.</param>
+        /// <param name="value">True if use auto check, otherwise false.</param>
         /// <returns>This button.</returns>
         public ToolStripButton SetAutoCheck(bool value)
         {
@@ -108,21 +120,21 @@ namespace FlaxEditor.GUI
             }
 
             // Draw text
-            if (!string.IsNullOrEmpty(Name))
+            if (!string.IsNullOrEmpty(_text))
             {
                 textRect.Size.X = Width - DefaultMargin - textRect.Left;
                 Render2D.DrawText(
                     style.FontMedium,
-                    Name,
+                    _text,
                     textRect,
                     enabled ? style.Foreground : style.ForegroundDisabled,
                     TextAlignment.Near,
                     TextAlignment.Center);
             }
         }
-		
-	    /// <inheritdoc />
-	    public override void PerformLayout(bool force = false)
+
+        /// <inheritdoc />
+        public override void PerformLayout(bool force = false)
         {
             var style = Style.Current;
             float iconSize = Height - DefaultMargin;
@@ -131,8 +143,8 @@ namespace FlaxEditor.GUI
 
             if (hasSprite)
                 width += iconSize;
-            if (!string.IsNullOrEmpty(Name) && style.FontMedium)
-                width += style.FontMedium.MeasureText(Name).X + (hasSprite ? DefaultMargin : 0);
+            if (!string.IsNullOrEmpty(_text) && style.FontMedium)
+                width += style.FontMedium.MeasureText(_text).X + (hasSprite ? DefaultMargin : 0);
 
             Width = width;
         }

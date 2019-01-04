@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 namespace FlaxEngine.GUI
 {
@@ -11,24 +9,9 @@ namespace FlaxEngine.GUI
     public abstract class PanelWithMargins : ContainerControl
     {
         /// <summary>
-        /// The left margin.
+        /// The panel area margins.
         /// </summary>
-        protected float _leftMargin = 2;
-
-        /// <summary>
-        /// The right margin.
-        /// </summary>
-        protected float _rightMargin = 2;
-
-        /// <summary>
-        /// The top margin.
-        /// </summary>
-        protected float _topMargin = 2;
-
-        /// <summary>
-        /// The bottom margin.
-        /// </summary>
-        protected float _bottomMargin = 2;
+        protected Margin _margin = new Margin(2.0f);
 
         /// <summary>
         /// The space between the items.
@@ -36,19 +19,25 @@ namespace FlaxEngine.GUI
         protected float _spacing = 2;
 
         /// <summary>
-        /// The ocontorls ffset.
+        /// The auto size flag.
+        /// </summary>
+        protected bool _autoSize = true;
+
+        /// <summary>
+        /// The control offset.
         /// </summary>
         protected Vector2 _offset;
 
         /// <summary>
         /// Gets or sets the left margin.
         /// </summary>
+        [HideInEditor, NoSerialize]
         public float LeftMargin
         {
-            get => _leftMargin;
+            get => _margin.Left;
             set
             {
-                _leftMargin = value;
+                _margin.Left = value;
                 PerformLayout();
             }
         }
@@ -56,12 +45,13 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the right margin.
         /// </summary>
+        [HideInEditor, NoSerialize]
         public float RightMargin
         {
-            get => _rightMargin;
+            get => _margin.Right;
             set
             {
-                _rightMargin = value;
+                _margin.Right = value;
                 PerformLayout();
             }
         }
@@ -69,12 +59,13 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the top margin.
         /// </summary>
+        [HideInEditor, NoSerialize]
         public float TopMargin
         {
-            get => _topMargin;
+            get => _margin.Top;
             set
             {
-                _topMargin = value;
+                _margin.Top = value;
                 PerformLayout();
             }
         }
@@ -82,12 +73,13 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the bottom margin.
         /// </summary>
+        [HideInEditor, NoSerialize]
         public float BottomMargin
         {
-            get => _bottomMargin;
+            get => _margin.Bottom;
             set
             {
-                _bottomMargin = value;
+                _margin.Bottom = value;
                 PerformLayout();
             }
         }
@@ -95,6 +87,7 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the child controls spacing.
         /// </summary>
+        [EditorOrder(10), Tooltip("The child controls spacing (the space between controls).")]
         public float Spacing
         {
             get => _spacing;
@@ -108,6 +101,7 @@ namespace FlaxEngine.GUI
         /// <summary>
         /// Gets or sets the child controls offset (additive).
         /// </summary>
+        [EditorOrder(20), Tooltip("The child controls offset (additive).")]
         public Vector2 Offset
         {
             get => _offset;
@@ -119,10 +113,38 @@ namespace FlaxEngine.GUI
         }
 
         /// <summary>
+        /// Gets or sets the value indicating whenever the panel size will be based on a children dimensions.
+        /// </summary>
+        [EditorOrder(30), Tooltip("If checked, the panel size will be based on a children dimensions.")]
+        public bool AutoSize
+        {
+            get => _autoSize;
+            set
+            {
+                _autoSize = value;
+                PerformLayout();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the panel area margin.
+        /// </summary>
+        [EditorOrder(40), Tooltip("The panel area margin.")]
+        public Margin Margin
+        {
+            get => _margin;
+            set
+            {
+                _margin = value;
+                PerformLayout();
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PanelWithMargins"/> class.
         /// </summary>
         protected PanelWithMargins()
-            : base(0, 0, 64, 64)
+        : base(0, 0, 64, 64)
         {
             CanFocus = false;
             _performChildrenLayoutFirst = true;

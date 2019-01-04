@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.Content;
 using FlaxEngine;
@@ -21,7 +19,7 @@ namespace FlaxEditor.Windows.Assets
 
         /// <inheritdoc />
         public FontAssetWindow(Editor editor, AssetItem item)
-            : base(editor, item)
+        : base(editor, item)
         {
             var panel = new SplitPanel(Orientation.Vertical, ScrollBars.Vertical)
             {
@@ -56,7 +54,6 @@ namespace FlaxEditor.Windows.Assets
         /// <inheritdoc />
         protected override void UnlinkItem()
         {
-            Object.Destroy(_textPreview.Font);
             _textPreview.Font = null;
 
             base.UnlinkItem();
@@ -66,7 +63,7 @@ namespace FlaxEditor.Windows.Assets
         protected override void OnAssetLinked()
         {
             Asset.WaitForLoaded();
-            _textPreview.Font = Asset.CreateFont(30);
+            _textPreview.Font = new FontReference(Asset.CreateFont(30));
             _inputText.Text = string.Format("This is a sample text using font {0}.", Asset.FamilyName);
 
             base.OnAssetLinked();

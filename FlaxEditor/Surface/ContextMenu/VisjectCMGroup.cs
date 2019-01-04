@@ -1,8 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
-using FlaxEngine;
+using System;
+using System.Collections.Generic;
+using FlaxEditor.Surface.Elements;
 using FlaxEngine.GUI;
 
 namespace FlaxEditor.Surface.ContextMenu
@@ -23,14 +23,22 @@ namespace FlaxEditor.Surface.ContextMenu
         /// </summary>
         public readonly GroupArchetype Archetype;
 
+        // A bit of a hack to make sure that the default group order is preserved
+        internal int DefaultIndex;
+
+        /// <summary>
+        /// A computed score for the context menu order
+        /// </summary>
+        public float SortScore { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VisjectCMGroup"/> class.
         /// </summary>
         /// <param name="cm">The context menu.</param>
         /// <param name="archetype">The group archetype.</param>
         public VisjectCMGroup(VisjectCM cm, GroupArchetype archetype)
-            : base(archetype.Name)
         {
+            HeaderText = archetype.Name;
             ContextMenu = cm;
             Archetype = archetype;
         }
@@ -40,14 +48,21 @@ namespace FlaxEditor.Surface.ContextMenu
         /// </summary>
         public void ResetView()
         {
+            SortScore = 0;
             // Remove filter
             for (int i = 0; i < _children.Count; i++)
             {
                 if (_children[i] is VisjectCMItem item)
+                {
                     item.UpdateFilter(null);
+                    item.UpdateScore(null);
+                }
             }
-
-            Close(false);
+            SortChildren();
+            if (ContextMenu.ShowExpanded)
+                Open(false);
+            else
+                Close(false);
             Visible = true;
         }
 
@@ -79,6 +94,50 @@ namespace FlaxEditor.Surface.ContextMenu
                 // Hide group if none of the items matched the filter
                 Visible = false;
             }
+        }
+
+        /// <summary>
+        /// Updates the sorting of the <see cref="VisjectCMItem"/>s of this <see cref="VisjectCMGroup"/>
+        /// Also updates the <see cref="SortScore"/>
+        /// </summary>
+        /// <param name="selectedBox">The currently user-selected box</param>
+        public void UpdateItemSort(Box selectedBox)
+        {
+            SortScore = 0;
+            for (int i = 0; i < _children.Count; i++)
+            {
+                if (_children[i] is VisjectCMItem item)
+                {
+                    item.UpdateScore(selectedBox);
+
+                    if (item.SortScore > SortScore)
+                    {
+                        SortScore = item.SortScore;
+                    }
+                }
+            }
+
+            if (selectedBox == null)
+            {
+                SortScore = 0;
+            }
+
+            SortChildren();
+        }
+
+        /// <inheritdoc/>
+        public override int Compare(Control other)
+        {
+            if (other is VisjectCMGroup otherGroup)
+            {
+                int order = -1 * SortScore.CompareTo(otherGroup.SortScore);
+                if (order == 0)
+                {
+                    order = DefaultIndex.CompareTo(otherGroup.DefaultIndex);
+                }
+                return order;
+            }
+            return base.Compare(other);
         }
     }
 }

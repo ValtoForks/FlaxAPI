@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -36,12 +34,12 @@ namespace FlaxEditor.Modules
         public bool HasSthSelected => Selection.Count > 0;
 
         /// <summary>
-        /// Occurs when selected objects colelction gets changed.
+        /// Occurs when selected objects collection gets changed.
         /// </summary>
-        public event Action OnSelectionChanged;
+        public event Action SelectionChanged;
 
         internal SceneEditingModule(Editor editor)
-            : base(editor)
+        : base(editor)
         {
         }
 
@@ -50,7 +48,7 @@ namespace FlaxEditor.Modules
         /// </summary>
         public void SelectAllScenes()
         {
-            // Select all sccenes (linked to the root node)
+            // Select all scenes (linked to the root node)
             Select(Editor.Scene.Root.ChildNodes);
         }
 
@@ -158,12 +156,12 @@ namespace FlaxEditor.Modules
 
         private void SelectionChange(SceneGraphNode[] before)
         {
-            Undo.AddAction(new SelectionChangeAction(before, Selection.ToArray()));
+            Undo.AddAction(new SelectionChangeAction(before, Selection.ToArray(), OnSelectionUndo));
 
-            OnSelectionChanged?.Invoke();
+            SelectionChanged?.Invoke();
         }
 
-        internal void OnSelectionUndo(SceneGraphNode[] toSelect)
+        private void OnSelectionUndo(SceneGraphNode[] toSelect)
         {
             Selection.Clear();
             if (toSelect != null)
@@ -176,8 +174,8 @@ namespace FlaxEditor.Modules
                         Editor.LogWarning("Null scene graph node to select");
                 }
             }
-            
-            OnSelectionChanged?.Invoke();
+
+            SelectionChanged?.Invoke();
         }
 
         /// <summary>
@@ -187,27 +185,39 @@ namespace FlaxEditor.Modules
         /// <param name="parent">The parent actor. Set null as default.</param>
         public void Spawn(Actor actor, Actor parent = null)
         {
+            bool isPlayMode = Editor.StateMachine.IsPlayMode;
+
             if (SceneManager.IsAnySceneLoaded == false)
                 throw new InvalidOperationException("Cannot spawn actor when no scene is loaded.");
 
             // Add it
             SceneManager.SpawnActor(actor, parent);
 
-			// Peek spawned node
-	        var actorNode = Editor.Instance.Scene.GetActorNode(actor);
-			if(actorNode == null)
-				throw new InvalidOperationException("Failed to create scene node for the spawned actor.");
+            // Peek spawned node
+            var actorNode = Editor.Instance.Scene.GetActorNode(actor);
+            if (actorNode == null)
+                throw new InvalidOperationException("Failed to create scene node for the spawned actor.");
 
-			// Call post spawn action (can possibly setup custom default values)
-	        actorNode.PostSpawn();
+            // During play in editor mode spawned actors should be dynamic (user can move them)
+            if (isPlayMode)
+                actor.StaticFlags = StaticFlags.None;
 
-			// Create undo action
-			var action = new DeleteActorsAction(new List<SceneGraphNode>(1) { actorNode }, true);
+            // Call post spawn action (can possibly setup custom default values)
+            actorNode.PostSpawn();
+
+            // Create undo action
+            var action = new DeleteActorsAction(new List<SceneGraphNode>(1) { actorNode }, true);
             Undo.AddAction(action);
 
+            // Mark scene as dirty
+            Editor.Scene.MarkSceneEdited(actor.Scene);
+
             // Auto CSG mesh rebuild
-            if (actor is BoxBrush && actor.Scene)
-                actor.Scene.BuildCSG();
+            if (isPlayMode && !Editor.Options.Options.General.AutoRebuildCSG)
+            {
+                if (actor is BoxBrush && actor.Scene)
+                    actor.Scene.BuildCSG(Editor.Options.Options.General.AutoRebuildCSGTimeoutMs);
+            }
         }
 
         /// <summary>
@@ -221,21 +231,29 @@ namespace FlaxEditor.Modules
                 return;
 
             // Change selection
-            var action1 = new SelectionChangeAction(Selection.ToArray(), new SceneGraphNode[0]);
+            var action1 = new SelectionChangeAction(Selection.ToArray(), new SceneGraphNode[0], OnSelectionUndo);
 
             // Delete objects
             var action2 = new DeleteActorsAction(objects);
 
             // Merge two actions and perform them
-            var action = new MultiUndoAction(new IUndoAction[] { action1, action2 }, action2.ActionString);
+            var action = new MultiUndoAction(new IUndoAction[]
+            {
+                action1,
+                action2
+            }, action2.ActionString);
             action.Do();
             Undo.AddAction(action);
 
             // Auto CSG mesh rebuild
-            foreach (var obj in objects)
+            var options = Editor.Options.Options;
+            if (options.General.AutoRebuildCSG)
             {
-                if (obj is ActorNode node && node.Actor is BoxBrush)
-                    node.Actor.Scene.BuildCSG();
+                foreach (var obj in objects)
+                {
+                    if (obj is ActorNode node && node.Actor is BoxBrush)
+                        node.Actor.Scene.BuildCSG(options.General.AutoRebuildCSGTimeoutMs);
+                }
             }
         }
 
@@ -244,7 +262,7 @@ namespace FlaxEditor.Modules
         /// </summary>
         public void Copy()
         {
-            // Peek things that can be copied (copy all acctors)
+            // Peek things that can be copied (copy all actors)
             var objects = Selection.Where(x => x.CanCopyPaste).ToList().BuildAllNodes().Where(x => x.CanCopyPaste && x is ActorNode).ToList();
             if (objects.Count == 0)
                 return;
@@ -257,35 +275,35 @@ namespace FlaxEditor.Modules
                 Editor.LogError("Failed to copy actors data.");
                 return;
             }
-            
+
             // Copy data
             Application.ClipboardRawData = data;
         }
 
 
-	    /// <summary>
-	    /// Pastes the copied objects. Supports undo/redo.
-	    /// </summary>
-	    public void Paste()
-	    {
-		    Paste(null);
-	    }
+        /// <summary>
+        /// Pastes the copied objects. Supports undo/redo.
+        /// </summary>
+        public void Paste()
+        {
+            Paste(null);
+        }
 
-	    /// <summary>
-		/// Pastes the copied objects. Supports undo/redo.
-		/// </summary>
-		/// <param name="pasteTargetActor">The target actor to paste copied data.</param>
-		public void Paste(Actor pasteTargetActor)
-		{
+        /// <summary>
+        /// Pastes the copied objects. Supports undo/redo.
+        /// </summary>
+        /// <param name="pasteTargetActor">The target actor to paste copied data.</param>
+        public void Paste(Actor pasteTargetActor)
+        {
             // Get clipboard data
             var data = Application.ClipboardRawData;
-            
-            // Ser aste target if only one actor is selected and no target provided
+
+            // Set paste target if only one actor is selected and no target provided
             if (pasteTargetActor == null && SelectionCount == 1 && Selection[0] is ActorNode actorNode)
             {
                 pasteTargetActor = actorNode.Actor;
             }
-            
+
             // Create paste action
             var pasteAction = PasteActorsAction.Paste(data, pasteTargetActor?.ID ?? Guid.Empty);
             if (pasteAction != null)
@@ -308,7 +326,7 @@ namespace FlaxEditor.Modules
         /// </summary>
         public void Duplicate()
         {
-            // Peek things that can be copied (copy all acctors)
+            // Peek things that can be copied (copy all actors)
             var objects = Selection.Where(x => x.CanCopyPaste).ToList().BuildAllNodes().Where(x => x.CanCopyPaste && x is ActorNode).ToList();
             if (objects.Count == 0)
                 return;
@@ -335,11 +353,11 @@ namespace FlaxEditor.Modules
             pasteAction.Do(out _, out var nodeParents);
 
             // Select spawned objects
-            var selectAction = new SelectionChangeAction(Selection.ToArray(), nodeParents.Cast<SceneGraphNode>().ToArray());
+            var selectAction = new SelectionChangeAction(Selection.ToArray(), nodeParents.Cast<SceneGraphNode>().ToArray(), OnSelectionUndo);
             selectAction.Do();
-            
+
             Undo.AddAction(new MultiUndoAction(pasteAction, selectAction));
-            OnSelectionChanged?.Invoke();
+            SelectionChanged?.Invoke();
         }
 
         /// <inheritdoc />

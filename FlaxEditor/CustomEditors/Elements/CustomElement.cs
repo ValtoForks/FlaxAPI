@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.GUI;
 
@@ -11,7 +9,7 @@ namespace FlaxEditor.CustomEditors.Elements
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.LayoutElementsContainer" />
     public class CustomElementsContainer<T> : LayoutElementsContainer
-        where T : ContainerControl, new()
+    where T : ContainerControl, new()
     {
         /// <summary>
         /// The custom control.
@@ -27,7 +25,7 @@ namespace FlaxEditor.CustomEditors.Elements
     /// </summary>
     /// <seealso cref="FlaxEditor.CustomEditors.LayoutElement" />
     public class CustomElement<T> : LayoutElement
-        where T : Control, new()
+    where T : Control, new()
     {
         /// <summary>
         /// The custom control.

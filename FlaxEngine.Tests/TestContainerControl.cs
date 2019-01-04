@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
 using FlaxEngine.GUI;
 using NUnit.Framework;
 using Assert = FlaxEngine.Assertions.Assert;
@@ -15,7 +12,7 @@ namespace FlaxEngine.Tests
         public class MyControl : Control
         {
             public MyControl(float x, float y, float width, float height)
-                : base(x, y, width, height)
+            : base(x, y, width, height)
             {
             }
         }
@@ -23,7 +20,7 @@ namespace FlaxEngine.Tests
         public class MyContainerControl : ContainerControl
         {
             public MyContainerControl(float x, float y, float width, float height)
-                : base(x, y, width, height)
+            : base(x, y, width, height)
             {
             }
         }

@@ -16,7 +16,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;FLAX_ASSERTIONS</DefineConstants>
@@ -26,7 +26,7 @@
     <DocumentationFile>bin\Debug\FlaxEditor.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -34,6 +34,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\FlaxEditor.xml</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -53,25 +54,42 @@
     <Compile Include="API\Static\GameCooker.Gen.cs" />
     <Compile Include="API\Static\ScriptsBuilder.cs" />
     <Compile Include="API\Static\ScriptsBuilder.Gen.cs" />
+    <Compile Include="API\Static\TerrainTools.cs" />
+    <Compile Include="API\Static\TerrainTools.Gen.cs" />
     <Compile Include="API\TextureBases\PreviewsCache.cs" />
     <Compile Include="API\TextureBases\PreviewsCache.Gen.cs" />
     <Compile Include="Content\AssetItemConverter.cs" />
     <Compile Include="Content\Create\CreateFileEntry.cs" />
     <Compile Include="Content\Create\CreateFilesDialog.cs" />
     <Compile Include="Content\Create\SettingsCreateEntry.cs" />
+    <Compile Include="Content\GUI\ContentNavigationButton.cs" />
     <Compile Include="Content\GUI\ContentView.cs" />
-    <Compile Include="Content\GUI\NavigationBar.cs" />
-    <Compile Include="Content\GUI\NavigationButton.cs" />
+    <Compile Include="Content\GUI\ContentView.DragDrop.cs" />
+    <Compile Include="Content\Import\Request.cs" />
+    <Compile Include="CustomEditors\Editors\Int2Editor.cs" />
+    <Compile Include="CustomEditors\Editors\Int3Editor.cs" />
+    <Compile Include="CustomEditors\Editors\Int4Editor.cs" />
+    <Compile Include="GUI\NavigationBar.cs" />
+    <Compile Include="GUI\NavigationButton.cs" />
     <Compile Include="Content\IFileEntryAction.cs" />
     <Compile Include="Content\Import\AssetImportEntry.cs" />
     <Compile Include="Content\Import\AudioImportSettings.cs" />
+    <Compile Include="Content\Import\FolderImportEntry.cs" />
     <Compile Include="Content\Import\ImportFileEntry.cs" />
     <Compile Include="Content\Import\ImportFilesDialog.cs" />
     <Compile Include="Content\Import\ModelImportEntry.cs" />
     <Compile Include="Content\Import\TextureImportEntry.cs" />
+    <Compile Include="Content\Items\FileItem.cs" />
+    <Compile Include="Content\Items\PrefabItem.cs" />
+    <Compile Include="Content\Proxy\AnimationGraphProxy.cs" />
+    <Compile Include="Content\Proxy\AnimationProxy.cs" />
     <Compile Include="Content\Proxy\AudioClipProxy.cs" />
     <Compile Include="Content\Proxy\CollisionDataProxy.cs" />
+    <Compile Include="Content\Proxy\FileProxy.cs" />
+    <Compile Include="Content\Proxy\PrefabProxy.cs" />
     <Compile Include="Content\Proxy\SettingsProxy.cs" />
+    <Compile Include="Content\Proxy\SkeletonMaskProxy.cs" />
+    <Compile Include="Content\Proxy\SkinnedModelProxy.cs" />
     <Compile Include="Content\Settings\AudioSettings.cs" />
     <Compile Include="Content\Settings\BuildPreset.cs" />
     <Compile Include="Content\Settings\BuildSettings.cs" />
@@ -90,11 +108,15 @@
     <Compile Include="CustomEditors\CustomEditorsUtil.cs" />
     <Compile Include="CustomEditors\Dedicated\ActorEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\EnvironmentProbeEditor.cs" />
+    <Compile Include="CustomEditors\Dedicated\FontReferenceEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\LayersMatrixEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\PhysicalMaterialEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\PostProcessSettingsEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\RigidBodyEditor.cs" />
+    <Compile Include="CustomEditors\Dedicated\ScriptsEditor.cs" />
     <Compile Include="CustomEditors\Dedicated\SkyLightEditor.cs" />
+    <Compile Include="CustomEditors\Dedicated\TerrainEditor.cs" />
+    <Compile Include="CustomEditors\Dedicated\UIControlEditor.cs" />
     <Compile Include="CustomEditors\Editors\ActorLayerEditor.cs" />
     <Compile Include="CustomEditors\Editors\ActorStaticFlagsEditor.cs" />
     <Compile Include="CustomEditors\Editors\ActorTagEditor.cs" />
@@ -106,20 +128,30 @@
     <Compile Include="CustomEditors\Editors\ColorEditor.cs" />
     <Compile Include="CustomEditors\Editors\ColorTrackball.cs" />
     <Compile Include="CustomEditors\Editors\DictionaryEditor.cs" />
+    <Compile Include="CustomEditors\Editors\DoubleEditor.cs" />
     <Compile Include="CustomEditors\Editors\EnumEditor.cs" />
     <Compile Include="CustomEditors\Editors\FlaxObjectRefEditor.cs" />
     <Compile Include="CustomEditors\Editors\FloatEditor.cs" />
     <Compile Include="CustomEditors\Editors\GenericEditor.cs" />
+    <Compile Include="CustomEditors\Editors\GuidEditor.cs" />
+    <Compile Include="CustomEditors\Editors\IBrushEditor.cs" />
     <Compile Include="CustomEditors\Editors\IntegerEditor.cs" />
     <Compile Include="CustomEditors\Editors\ListEditor.cs" />
+    <Compile Include="CustomEditors\Editors\MatrixEditor.cs" />
+    <Compile Include="CustomEditors\Editors\ModelEntryInfoEditor.cs" />
+    <Compile Include="CustomEditors\Editors\ObjectSwitcherEditor.cs" />
     <Compile Include="CustomEditors\Editors\QuaternionEditor.cs" />
+    <Compile Include="CustomEditors\Editors\SkeletonBoneEditor.cs" />
+    <Compile Include="CustomEditors\Editors\SpriteEditor.cs" />
     <Compile Include="CustomEditors\Editors\StringEditor.cs" />
     <Compile Include="CustomEditors\Editors\Vector2Editor.cs" />
     <Compile Include="CustomEditors\Editors\Vector3Editor.cs" />
     <Compile Include="CustomEditors\Editors\Vector4Editor.cs" />
+    <Compile Include="CustomEditors\Editors\VersionEditor.cs" />
     <Compile Include="CustomEditors\Elements\CheckBoxElement.cs" />
     <Compile Include="CustomEditors\Elements\ComboBoxElement.cs" />
     <Compile Include="CustomEditors\Elements\CustomElement.cs" />
+    <Compile Include="CustomEditors\Elements\DoubleValueElement.cs" />
     <Compile Include="CustomEditors\Elements\EnumElement.cs" />
     <Compile Include="CustomEditors\Elements\FloatValueElement.cs" />
     <Compile Include="CustomEditors\Elements\IFloatValueEditor.cs" />
@@ -129,8 +161,11 @@
     <Compile Include="CustomEditors\Elements\LabelElement.cs" />
     <Compile Include="CustomEditors\Elements\PropertiesListElement.cs" />
     <Compile Include="CustomEditors\Elements\SliderElement.cs" />
+    <Compile Include="CustomEditors\Elements\TreeElement.cs" />
+    <Compile Include="CustomEditors\Elements\TreeNodeElement.cs" />
     <Compile Include="CustomEditors\GUI\CheckablePropertyNameLabel.cs" />
     <Compile Include="CustomEditors\GUI\ClickablePropertyNameLabel.cs" />
+    <Compile Include="CustomEditors\GUI\DragablePropertyNameLabel.cs" />
     <Compile Include="CustomEditors\GUI\PropertiesList.cs" />
     <Compile Include="CustomEditors\GUI\PropertyNameLabel.cs" />
     <Compile Include="CustomEditors\Elements\SpaceElement.cs" />
@@ -144,6 +179,21 @@
     <Compile Include="CustomEditors\Values\ValueContainer.cs" />
     <Compile Include="CustomEditorWindow.cs" />
     <Compile Include="EditorAssets.cs" />
+    <Compile Include="EditorIcons.cs" />
+    <Compile Include="GUI\AssetSearchPopup.cs" />
+    <Compile Include="GUI\ComboBox.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenu.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenuBase.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenuButton.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenuChildMenu.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenuItem.cs" />
+    <Compile Include="GUI\ContextMenu\ContextMenuSeparator.cs" />
+    <Compile Include="GUI\Docking\DockHintWindow.cs" />
+    <Compile Include="GUI\Docking\DockPanel.cs" />
+    <Compile Include="GUI\Docking\DockPanelProxy.cs" />
+    <Compile Include="GUI\Docking\DockWindow.cs" />
+    <Compile Include="GUI\Docking\FloatWindowDockPanel.cs" />
+    <Compile Include="GUI\Docking\MasterDockPanel.cs" />
     <Compile Include="Gizmo\EditorPrimitives.cs" />
     <Compile Include="Gizmo\GridGizmo.cs" />
     <Compile Include="Gizmo\SelectionOutline.cs" />
@@ -151,9 +201,21 @@
     <Compile Include="GUI\ColumnDefinition.cs" />
     <Compile Include="GUI\Drag\DragActors.cs" />
     <Compile Include="GUI\Drag\DragActorType.cs" />
+    <Compile Include="GUI\Drag\DragEventArgs.cs" />
+    <Compile Include="GUI\Drag\DragHandlers.cs" />
     <Compile Include="GUI\Drag\DragScriptItems.cs" />
     <Compile Include="GUI\Drag\DragScripts.cs" />
+    <Compile Include="GUI\Drag\DragSurfaceParameter.cs" />
+    <Compile Include="GUI\Input\ColorValueBox.cs" />
+    <Compile Include="GUI\Input\DoubleValueBox.cs" />
+    <Compile Include="GUI\Input\FloatValueBox.cs" />
+    <Compile Include="GUI\Input\IntValueBox.cs" />
+    <Compile Include="GUI\Input\LongValueBox.cs" />
+    <Compile Include="GUI\Input\SliderControl.cs" />
+    <Compile Include="GUI\Input\ULongValueBox.cs" />
+    <Compile Include="GUI\Input\ValueBox.cs" />
     <Compile Include="GUI\PlatformSelector.cs" />
+    <Compile Include="GUI\PrefabDiffContextMenu.cs" />
     <Compile Include="GUI\RenamePopup.cs" />
     <Compile Include="Content\Proxy\BinaryAssetProxy.cs" />
     <Compile Include="Content\Proxy\ContentProxy.cs" />
@@ -206,25 +268,41 @@
     <Compile Include="GUI\ItemsListContextMenu.cs" />
     <Compile Include="GUI\StatusBar.cs" />
     <Compile Include="GUI\Table.cs" />
+    <Compile Include="GUI\Tabs\Tab.cs" />
+    <Compile Include="GUI\Tabs\Tabs.cs" />
     <Compile Include="GUI\ToolStrip.cs" />
     <Compile Include="GUI\ToolStripButton.cs" />
     <Compile Include="GUI\ToolStripSeparator.cs" />
+    <Compile Include="GUI\Tree\Tree.cs" />
+    <Compile Include="GUI\Tree\TreeNode.cs" />
     <Compile Include="History\HistoryStack.cs" />
     <Compile Include="History\IHistoryAction.cs" />
     <Compile Include="History\UndoActionObject.cs" />
     <Compile Include="IEditable.cs" />
-    <Compile Include="Modules\CodeEditingModule.cs" />
     <Compile Include="Modules\ContentDatabaseModule.cs" />
     <Compile Include="Modules\ContentEditingModule.cs" />
     <Compile Include="Modules\ContentImportingModule.cs" />
     <Compile Include="Modules\EditorModule.cs" />
+    <Compile Include="Modules\PrefabsModule.cs" />
     <Compile Include="Modules\ProgressReportingModule.cs" />
+    <Compile Include="Modules\ProjectCacheModule.cs" />
     <Compile Include="Modules\SceneEditingModule.cs" />
     <Compile Include="Modules\SceneModule.cs" />
     <Compile Include="Modules\SimulationModule.cs" />
     <Compile Include="Content\Thumbnails\ThumbnailsModule.cs" />
+    <Compile Include="Modules\SourceCodeEditing\DefaultSourceCodeEditor.cs" />
+    <Compile Include="Modules\SourceCodeEditing\InBuildSourceCodeEditor.cs" />
     <Compile Include="Modules\UIModule.cs" />
     <Compile Include="Modules\WindowsModule.cs" />
+    <Compile Include="Options\Editor.cs" />
+    <Compile Include="Options\EditorOptions.cs" />
+    <Compile Include="Options\GeneralOptions.cs" />
+    <Compile Include="Options\InterfaceOptions.cs" />
+    <Compile Include="Options\OptionsModule.cs" />
+    <Compile Include="Options\SourceCodeOptions.cs" />
+    <Compile Include="Options\VisualOptions.cs" />
+    <Compile Include="Plugins\EditorPlugin.cs" />
+    <Compile Include="Plugins\PluginUtils.cs" />
     <Compile Include="Progress\Handlers\BakeEnvProbesProgress.cs" />
     <Compile Include="Progress\Handlers\BakeLightmapsProgress.cs" />
     <Compile Include="Progress\Handlers\BuildingGameProgress.cs" />
@@ -237,23 +315,31 @@
     <Compile Include="SceneGraph\ActorChildNode.cs" />
     <Compile Include="SceneGraph\ActorNode.cs" />
     <Compile Include="SceneGraph\ActorNodeWithIcon.cs" />
+    <Compile Include="SceneGraph\Actors\AnimatedModelNode.cs" />
     <Compile Include="SceneGraph\Actors\AudioListenerNode.cs" />
     <Compile Include="SceneGraph\Actors\AudioSourceNode.cs" />
+    <Compile Include="SceneGraph\Actors\BoneSocketNode.cs" />
     <Compile Include="SceneGraph\Actors\BoxBrushNode.cs" />
     <Compile Include="SceneGraph\Actors\CameraNode.cs" />
+    <Compile Include="SceneGraph\Actors\ColliderNode.cs" />
+    <Compile Include="SceneGraph\Actors\DecalNode.cs" />
     <Compile Include="SceneGraph\Actors\DirectionalLightNode.cs" />
     <Compile Include="SceneGraph\Actors\EnvironmentProbeNode.cs" />
     <Compile Include="SceneGraph\Actors\ExponentialHeightFogNode.cs" />
-    <Compile Include="SceneGraph\Actors\ModelActorNode.cs" />
+    <Compile Include="SceneGraph\Actors\StaticModelNode.cs" />
     <Compile Include="SceneGraph\Actors\PointLightNode.cs" />
     <Compile Include="SceneGraph\Actors\PostFxVolumeNode.cs" />
     <Compile Include="SceneGraph\Actors\SkyboxNode.cs" />
     <Compile Include="SceneGraph\Actors\SkyLightNode.cs" />
     <Compile Include="SceneGraph\Actors\SkyNode.cs" />
     <Compile Include="SceneGraph\Actors\SpotLightNode.cs" />
+    <Compile Include="SceneGraph\Actors\TerrainNode.cs" />
     <Compile Include="SceneGraph\Actors\TextRenderNode.cs" />
+    <Compile Include="SceneGraph\Actors\UICanvasNode.cs" />
+    <Compile Include="SceneGraph\Actors\UIControlNode.cs" />
     <Compile Include="SceneGraph\GUI\ActorTreeNode.cs" />
     <Compile Include="SceneGraph\GUI\SceneTreeNode.cs" />
+    <Compile Include="SceneGraph\LocalSceneGraph.cs" />
     <Compile Include="SceneGraph\RootNode.cs" />
     <Compile Include="SceneGraph\SceneGraphFactory.cs" />
     <Compile Include="SceneGraph\Actors\SceneNode.cs" />
@@ -269,6 +355,15 @@
     <Compile Include="States\LoadingState.cs" />
     <Compile Include="States\PlayingState.cs" />
     <Compile Include="States\ReloadingScriptsState.cs" />
+    <Compile Include="Surface\AnimGraphSurface.cs" />
+    <Compile Include="Surface\Archetypes\AlphaBlendMode.cs" />
+    <Compile Include="Surface\Archetypes\Animation.cs" />
+    <Compile Include="Surface\Archetypes\Animation.MultiBlend.cs" />
+    <Compile Include="Surface\Archetypes\Animation.StateMachine.cs" />
+    <Compile Include="Surface\Archetypes\Animation.TransitionEditor.cs" />
+    <Compile Include="Surface\Archetypes\Bitwise.cs" />
+    <Compile Include="Surface\Archetypes\Boolean.cs" />
+    <Compile Include="Surface\Archetypes\Comparisons.cs" />
     <Compile Include="Surface\Archetypes\Constants.cs" />
     <Compile Include="Surface\Archetypes\Layers.cs" />
     <Compile Include="Surface\Archetypes\Material.cs" />
@@ -289,35 +384,72 @@
     <Compile Include="Surface\Elements\ComboBoxElement.cs" />
     <Compile Include="Surface\Elements\FloatValue.cs" />
     <Compile Include="Surface\Elements\InputBox.cs" />
-    <Compile Include="Surface\Elements\InteagerValue.cs" />
+    <Compile Include="Surface\Elements\IntegerValue.cs" />
     <Compile Include="Surface\Elements\OutputBox.cs" />
+    <Compile Include="Surface\Elements\SkeletonNodeSelectElement.cs" />
     <Compile Include="Surface\Elements\TextBoxView.cs" />
     <Compile Include="Surface\Elements\TextView.cs" />
     <Compile Include="Surface\GroupArchetype.cs" />
+    <Compile Include="Surface\GUI\VisjectContextNavigationButton.cs" />
     <Compile Include="Surface\IParametersDependantNode.cs" />
     <Compile Include="Surface\IVisjectSurfaceOwner.cs" />
+    <Compile Include="Surface\MaterialSurface.cs" />
     <Compile Include="Surface\NodeArchetype.cs" />
     <Compile Include="Surface\NodeElementArchetype.cs" />
     <Compile Include="Surface\NodeElementType.cs" />
     <Compile Include="Surface\NodeFactory.cs" />
     <Compile Include="Surface\NodeFlags.cs" />
     <Compile Include="Surface\ParameterType.cs" />
+    <Compile Include="Surface\SurfaceComment.cs" />
+    <Compile Include="Surface\SurfaceControl.cs" />
     <Compile Include="Surface\SurfaceMeta.cs" />
     <Compile Include="Surface\SurfaceNode.cs" />
     <Compile Include="Surface\ISurfaceNodeElement.cs" />
     <Compile Include="Surface\SurfaceNodeElementControl.cs" />
     <Compile Include="Surface\SurfaceParameter.cs" />
+    <Compile Include="Surface\SurfaceRootControl.cs" />
     <Compile Include="Surface\SurfaceStyle.cs" />
-    <Compile Include="Surface\SurfaceType.cs" />
     <Compile Include="Surface\TransformCoordinateSystem.cs" />
     <Compile Include="Surface\VisjectSurface.Connecting.cs" />
+    <Compile Include="Surface\VisjectSurface.Context.cs" />
     <Compile Include="Surface\VisjectSurface.ContextMenu.cs" />
     <Compile Include="Surface\VisjectSurface.cs" />
     <Compile Include="Surface\VisjectSurface.DragDrop.cs" />
-    <Compile Include="Surface\VisjectSurface.Mouse.cs" />
+    <Compile Include="Surface\VisjectSurface.Draw.cs" />
+    <Compile Include="Surface\VisjectSurface.Input.cs" />
     <Compile Include="Surface\VisjectSurface.Paramaters.cs" />
     <Compile Include="Surface\VisjectSurface.Serialization.cs" />
+    <Compile Include="Surface\ISurfaceContext.cs" />
+    <Compile Include="Surface\VisjectSurfaceContext.cs" />
+    <Compile Include="Surface\VisjectSurfaceContext.Serialization.cs" />
+    <Compile Include="Tools\PerlinNoise.cs" />
+    <Compile Include="Tools\Terrain\Brushes\Brush.cs" />
+    <Compile Include="Tools\Terrain\Brushes\CircleBrush.cs" />
+    <Compile Include="Tools\Terrain\CarveTab.cs" />
+    <Compile Include="Tools\Terrain\CreateTerrainDialog.cs" />
+    <Compile Include="Tools\Terrain\EditTab.cs" />
+    <Compile Include="Tools\Terrain\EditTerrainGizmo.cs" />
+    <Compile Include="Tools\Terrain\EditTerrainGizmoMode.cs" />
+    <Compile Include="Tools\Terrain\PaintTab.cs" />
+    <Compile Include="Tools\Terrain\PaintTerrainGizmo.cs" />
+    <Compile Include="Tools\Terrain\PaintTerrainGizmoMode.cs" />
+    <Compile Include="Tools\Terrain\Paint\Mode.cs" />
+    <Compile Include="Tools\Terrain\Paint\SingleLayerMode.cs" />
+    <Compile Include="Tools\Terrain\SculptTab.cs" />
+    <Compile Include="Tools\Terrain\SculptTerrainGizmo.cs" />
+    <Compile Include="Tools\Terrain\SculptTerrainGizmoMode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\FlattenMode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\HolesMode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\Mode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\NoiseMode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\SculptMode.cs" />
+    <Compile Include="Tools\Terrain\Sculpt\SmoothMode.cs" />
+    <Compile Include="Tools\Terrain\Undo\EditTerrainHeightMapAction.cs" />
+    <Compile Include="Tools\Terrain\Undo\EditTerrainMapAction.cs" />
+    <Compile Include="Tools\Terrain\Undo\EditTerrainSplatMapAction.cs" />
+    <Compile Include="Tools\Terrain\Undo\EditTerrainHolesMapAction.cs" />
     <Compile Include="Undo\Actions\AddRemoveScriptAction.cs" />
+    <Compile Include="Undo\Actions\BreakPrefabLinkAction.cs" />
     <Compile Include="Undo\Actions\ChangeScriptAction.cs" />
     <Compile Include="Undo\Actions\DeleteActorsAction.cs" />
     <Compile Include="Undo\Actions\PasteActorsAction.cs" />
@@ -330,25 +462,40 @@
     <Compile Include="Undo\UndoActionBase.cs" />
     <Compile Include="Undo\UndoBlock.cs" />
     <Compile Include="Undo\UndoMultiBlock.cs" />
+    <Compile Include="Utilities\Constants.cs" />
     <Compile Include="Utilities\DuplicateScenes.cs" />
     <Compile Include="Utilities\MemberInfoPath.cs" />
     <Compile Include="Utilities\ObjectSnapshot.cs" />
     <Compile Include="Utilities\QueryFilterHelper.cs" />
+    <Compile Include="Modules\SourceCodeEditing\CodeEditingModule.cs" />
+    <Compile Include="Modules\SourceCodeEditing\ISourceCodeEditor.cs" />
+    <Compile Include="Utilities\SelectionCache.cs" />
+    <Compile Include="Viewport\Cameras\ArcBallCamera.cs" />
+    <Compile Include="Viewport\Cameras\FPSCamera.cs" />
+    <Compile Include="Viewport\Cameras\IViewportCamera.cs" />
+    <Compile Include="Viewport\Cameras\ViewportCamera.cs" />
     <Compile Include="Viewport\EditorGizmoViewport.cs" />
     <Compile Include="Viewport\EditorViewport.cs" />
-    <Compile Include="Viewport\EditorViewportArcBallCam.cs" />
-    <Compile Include="Viewport\EditorViewportFPSCam.cs" />
     <Compile Include="Viewport\MainEditorGizmoViewport.cs" />
+    <Compile Include="Viewport\MainEditorGizmoViewport.Modes.cs" />
+    <Compile Include="Viewport\Modes\EditorGizmoMode.cs" />
+    <Compile Include="Viewport\Modes\TransformGizmoMode.cs" />
+    <Compile Include="Viewport\PrefabWindowViewport.cs" />
+    <Compile Include="Viewport\Previews\AnimatedModelPreview.cs" />
+    <Compile Include="Viewport\Previews\AssetPreview.cs" />
     <Compile Include="Viewport\Previews\AudioClipPreview.cs" />
     <Compile Include="Viewport\Previews\CubeTexturePreview.cs" />
     <Compile Include="Viewport\Previews\IESProfilePreview.cs" />
     <Compile Include="Viewport\Previews\MaterialPreview.cs" />
     <Compile Include="Viewport\Previews\ModelPreview.cs" />
+    <Compile Include="Viewport\Previews\PrefabPreview.cs" />
     <Compile Include="Viewport\Previews\TexturePreview.cs" />
     <Compile Include="ViewportDebugDrawData.cs" />
     <Compile Include="Viewport\Widgets\ViewportWidgetButton.cs" />
     <Compile Include="Viewport\Widgets\ViewportWidgetsContainer.cs" />
     <Compile Include="Windows\AboutDialog.cs" />
+    <Compile Include="Windows\Assets\AnimationGraphWindow.cs" />
+    <Compile Include="Windows\Assets\AnimationWindow.cs" />
     <Compile Include="Windows\Assets\AssetEditorWindow.cs" />
     <Compile Include="Windows\Assets\AudioClipWindow.cs" />
     <Compile Include="Windows\Assets\CollisionDataWindow.cs" />
@@ -359,24 +506,35 @@
     <Compile Include="Windows\Assets\MaterialInstanceWindow.cs" />
     <Compile Include="Windows\Assets\MaterialWindow.cs" />
     <Compile Include="Windows\Assets\ModelWindow.cs" />
+    <Compile Include="Windows\Assets\PrefabWindow.Actions.cs" />
+    <Compile Include="Windows\Assets\PrefabWindow.cs" />
+    <Compile Include="Windows\Assets\PrefabWindow.Hierarchy.cs" />
+    <Compile Include="Windows\Assets\PrefabWindow.Selection.cs" />
     <Compile Include="Windows\Assets\PreviewsCacheWindow.cs" />
+    <Compile Include="Windows\Assets\SkeletonMaskWindow.cs" />
+    <Compile Include="Windows\Assets\SkinnedModelWindow.cs" />
     <Compile Include="Windows\Assets\SpriteAtlasWindow.cs" />
     <Compile Include="Windows\Assets\TextureWindow.cs" />
     <Compile Include="Windows\ContentWindow.ContextMenu.cs" />
     <Compile Include="Windows\ContentWindow.cs" />
     <Compile Include="Windows\ContentWindow.Navigation.cs" />
+    <Compile Include="Windows\ContentWindow.Search.cs" />
     <Compile Include="Windows\DebugLogWindow.cs" />
     <Compile Include="Windows\EditGameWindow.cs" />
+    <Compile Include="Windows\EditorOptionsWindow.cs" />
     <Compile Include="Windows\EditorWindow.cs" />
     <Compile Include="Undo\Undo.cs" />
-    <Compile Include="Utilities\Extenstions.cs" />
+    <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\MemberComparison.cs" />
     <Compile Include="Utilities\Utils.cs" />
     <Compile Include="Windows\GameCookerWindow.cs" />
     <Compile Include="Windows\GameWindow.cs" />
     <Compile Include="Windows\GraphicsQualityWindow.cs" />
+    <Compile Include="Windows\PluginExporterDialog.cs" />
+    <Compile Include="Windows\PluginsWindow.cs" />
     <Compile Include="Windows\Profiler\CPU.cs" />
     <Compile Include="Windows\Profiler\GPU.cs" />
+    <Compile Include="Windows\Profiler\Memory.cs" />
     <Compile Include="Windows\Profiler\Overall.cs" />
     <Compile Include="Windows\Profiler\ProfilerMode.cs" />
     <Compile Include="Windows\Profiler\ProfilerWindow.cs" />
@@ -385,6 +543,8 @@
     <Compile Include="Windows\Profiler\Timeline.cs" />
     <Compile Include="Windows\PropertiesWindow.cs" />
     <Compile Include="Windows\SceneEditorWindow.cs" />
+    <Compile Include="Windows\SceneTreeWindow.Actors.cs" />
+    <Compile Include="Windows\SceneTreeWindow.ContextMenu.cs" />
     <Compile Include="Windows\SceneTreeWindow.cs" />
     <Compile Include="Windows\ToolboxWindow.cs" />
   </ItemGroup>
@@ -394,9 +554,15 @@
       <Name>FlaxEngine</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Surface\VisjectSurface.CopyPaste.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
-    <Exec Command="call &quot;$(SolutionDir)onbuild.bat&quot;" Condition=" '$(OS)' == 'Windows_NT' " />
+    <Exec Command="call &quot;$(SolutionDir)onbuild.bat&quot; -Editor" Condition=" '$(OS)' == 'Windows_NT' " />
   </Target>
 </Project>

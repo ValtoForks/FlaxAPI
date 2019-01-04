@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -91,20 +89,20 @@ namespace FlaxEditor.History
             public DataValue Instance;
         }
 
-		/// <summary>
-		/// Prepared undo data container object.
-		/// </summary>
-		public struct DataPrepared
+        /// <summary>
+        /// Prepared undo data container object.
+        /// </summary>
+        public struct DataPrepared
         {
-			/// <summary>
-			/// The difference data.
-			/// </summary>
-			public MemberComparison[] Diff;
+            /// <summary>
+            /// The difference data.
+            /// </summary>
+            public MemberComparison[] Diff;
 
-			/// <summary>
-			/// The target object instance.
-			/// </summary>
-			public object TargetInstance;
+            /// <summary>
+            /// The target object instance.
+            /// </summary>
+            public object TargetInstance;
         }
 
         // For objects that cannot be referenced in undo action like: FlaxEngine.Object or SceneGraphNode we store them in DataStorage,
@@ -183,7 +181,7 @@ namespace FlaxEditor.History
         public override void Undo()
         {
             var data = PrepareData();
-            for (var i = 0; i < data.Diff.Length; i++)
+            for (var i = data.Diff.Length - 1; i >= 0; i--)
             {
                 var diff = data.Diff[i];
                 diff.SetMemberValue(data.TargetInstance, diff.Value1);

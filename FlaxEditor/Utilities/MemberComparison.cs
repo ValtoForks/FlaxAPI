@@ -1,9 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Reflection;
+using FlaxEngine.Json;
 
 namespace FlaxEditor.Utilities
 {
@@ -79,14 +78,14 @@ namespace FlaxEditor.Utilities
                     value = (float)(double)value;
                 }
             }
-            
+
             finalMember.SetValue(instance, value);
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return MemberPath.Path + ": " + (Value1 ?? "<null>") + (Equals(Value1, Value2) ? " == " : " != ") + (Value2 ?? "<null>");
+            return MemberPath.Path + ": " + (Value1 ?? "<null>") + (JsonSerializer.ValueEquals(Value1, Value2) ? " == " : " != ") + (Value2 ?? "<null>");
         }
     }
 }

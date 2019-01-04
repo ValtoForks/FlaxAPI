@@ -1,13 +1,13 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using FlaxEditor.CustomEditors.Elements;
+using FlaxEditor.CustomEditors.GUI;
 using FlaxEngine;
+using FlaxEngine.GUI;
 
 namespace FlaxEditor.CustomEditors.Editors
 {
@@ -18,7 +18,7 @@ namespace FlaxEditor.CustomEditors.Editors
     public class GenericEditor : CustomEditor
     {
         /// <summary>
-        /// Describies object property/field information for custom editors pipeline.
+        /// Describes object property/field information for custom editors pipeline.
         /// </summary>
         /// <seealso cref="System.IComparable" />
         protected class ItemInfo : IComparable
@@ -64,6 +64,21 @@ namespace FlaxEditor.CustomEditors.Editors
             public HeaderAttribute Header;
 
             /// <summary>
+            /// The visible if attribute.
+            /// </summary>
+            public VisibleIfAttribute VisibleIf;
+
+            /// <summary>
+            /// The read-only attribute usage flag.
+            /// </summary>
+            public bool IsReadOnly;
+
+            /// <summary>
+            /// The expand groups flag.
+            /// </summary>
+            public bool ExpandGroups;
+
+            /// <summary>
             /// Gets the display name.
             /// </summary>
             public string DisplayName { get; }
@@ -74,7 +89,7 @@ namespace FlaxEditor.CustomEditors.Editors
             public bool UseGroup => Display?.Group != null;
 
             /// <summary>
-            /// Gets the overrided custom editor for item editing.
+            /// Gets the overridden custom editor for item editing.
             /// </summary>
             public CustomEditor OverrideEditor
             {
@@ -98,7 +113,7 @@ namespace FlaxEditor.CustomEditors.Editors
             /// </summary>
             /// <param name="info">The reflection information.</param>
             public ItemInfo(MemberInfo info)
-                : this(info, info.GetCustomAttributes(true))
+            : this(info, info.GetCustomAttributes(true))
             {
             }
 
@@ -117,7 +132,10 @@ namespace FlaxEditor.CustomEditors.Editors
                 CustomEditorAlias = (CustomEditorAliasAttribute)attributes.FirstOrDefault(x => x is CustomEditorAliasAttribute);
                 Space = (SpaceAttribute)attributes.FirstOrDefault(x => x is SpaceAttribute);
                 Header = (HeaderAttribute)attributes.FirstOrDefault(x => x is HeaderAttribute);
-                
+                VisibleIf = (VisibleIfAttribute)attributes.FirstOrDefault(x => x is VisibleIfAttribute);
+                IsReadOnly = attributes.FirstOrDefault(x => x is ReadOnlyAttribute) != null;
+                ExpandGroups = attributes.FirstOrDefault(x => x is ExpandGroupsAttribute) != null;
+
                 if (Display?.Name != null)
                 {
                     // Use name provided by the attribute
@@ -191,6 +209,23 @@ namespace FlaxEditor.CustomEditors.Editors
             }
         }
 
+        private struct VisibleIfCache
+        {
+            public MemberInfo Target;
+            public MemberInfo Source;
+            public PropertiesListElement PropertiesList;
+            public int LabelIndex;
+
+            public bool GetValue(object instance)
+            {
+                if (Source is FieldInfo fieldInfo)
+                    return (bool)fieldInfo.GetValue(instance);
+                return (bool)((PropertyInfo)Source).GetValue(instance, null);
+            }
+        }
+
+        private VisibleIfCache[] _visibleIfCaches;
+
         /// <summary>
         /// Gets the items for the type
         /// </summary>
@@ -217,20 +252,21 @@ namespace FlaxEditor.CustomEditors.Editors
                 // TODO: cache properties items array per type?
 
                 // Process properties
-                var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var properties = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
                 items.Capacity = Math.Max(items.Capacity, items.Count + properties.Length);
                 for (int i = 0; i < properties.Length; i++)
                 {
                     var p = properties[i];
 
-                    // Skip hidden properties and only set properties
+                    // Skip only set properties and special cases
                     var getter = p.GetMethod;
-                    if (!p.CanRead || !p.CanWrite || getter == null || !getter.IsPublic || p.GetIndexParameters().GetLength(0) != 0)
+                    if (getter == null || !p.CanWrite || p.GetIndexParameters().GetLength(0) != 0)
                         continue;
 
-                    // Handle HideInEditorAttribute
                     var attributes = p.GetCustomAttributes(true);
-                    if (attributes.Any(x => x is HideInEditorAttribute))
+
+                    // Skip hidden properties, handle special attributes
+                    if ((!getter.IsPublic && !attributes.Any(x => x is ShowInEditorAttribute)) || attributes.Any(x => x is HideInEditorAttribute))
                         continue;
 
                     var item = new ItemInfo(p, attributes);
@@ -243,19 +279,16 @@ namespace FlaxEditor.CustomEditors.Editors
                 // TODO: cache fields items array per type?
 
                 // Process fields
-                var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+                var fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
                 items.Capacity = Math.Max(items.Capacity, items.Count + fields.Length);
                 for (int i = 0; i < fields.Length; i++)
                 {
                     var f = fields[i];
 
-                    // Skip hidden fields
-                    if (!f.IsPublic)
-                        continue;
-
-                    // Handle HideInEditorAttribute
                     var attributes = f.GetCustomAttributes(true);
-                    if (attributes.Any(x => x is HideInEditorAttribute))
+
+                    // Skip hidden fields, handle special attributes
+                    if ((!f.IsPublic && !attributes.Any(x => x is ShowInEditorAttribute)) || attributes.Any(x => x is HideInEditorAttribute))
                         continue;
 
                     var item = new ItemInfo(f, attributes);
@@ -266,6 +299,42 @@ namespace FlaxEditor.CustomEditors.Editors
             return items;
         }
 
+        private static MemberInfo GetVisibleIfSource(Type type, VisibleIfAttribute visibleIf)
+        {
+            var property = type.GetProperty(visibleIf.MemberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (property != null)
+            {
+                if (property.GetMethod == null)
+                {
+                    Debug.LogError("Invalid VisibleIf rule. Property has missing getter " + visibleIf.MemberName);
+                    return null;
+                }
+
+                if (property.GetMethod.ReturnType != typeof(bool))
+                {
+                    Debug.LogError("Invalid VisibleIf rule. Property has to return bool type " + visibleIf.MemberName);
+                    return null;
+                }
+
+                return property;
+            }
+
+            var field = type.GetField(visibleIf.MemberName);
+            if (field != null)
+            {
+                if (field.FieldType != typeof(bool))
+                {
+                    Debug.LogError("Invalid VisibleIf rule. Field has to be bool type " + visibleIf.MemberName);
+                    return null;
+                }
+
+                return field;
+            }
+
+            Debug.LogError("Invalid VisibleIf rule. Cannot find member " + visibleIf.MemberName);
+            return null;
+        }
+
         /// <summary>
         /// Spawns the property for the given item.
         /// </summary>
@@ -274,19 +343,112 @@ namespace FlaxEditor.CustomEditors.Editors
         /// <param name="item">The item.</param>
         protected virtual void SpawnProperty(LayoutElementsContainer itemLayout, ValueContainer itemValues, ItemInfo item)
         {
+            int labelIndex = 0;
+            if ((item.IsReadOnly || item.VisibleIf != null) &&
+                itemLayout.Children.Count > 0 &&
+                itemLayout.Children[itemLayout.Children.Count - 1] is PropertiesListElement propertiesListElement)
+            {
+                labelIndex = propertiesListElement.Labels.Count;
+            }
+
             itemLayout.Property(item.DisplayName, itemValues, item.OverrideEditor, item.TooltipText);
+
+            if (item.IsReadOnly)
+            {
+                PropertiesListElement list;
+                if (itemLayout.Children.Count > 0 && itemLayout.Children[itemLayout.Children.Count - 1] is PropertiesListElement list1)
+                {
+                    list = list1;
+
+                    // Disable controls added to the editor
+                    var label = list.Labels[labelIndex];
+                    for (int j = label.FirstChildControlIndex; j < list.Properties.Children.Count; j++)
+                    {
+                        var child = list.Properties.Children[j];
+                        if (child is PropertyNameLabel)
+                            break;
+
+                        child.Enabled = false;
+                    }
+                }
+            }
+            if (item.VisibleIf != null)
+            {
+                PropertiesListElement list;
+                if (itemLayout.Children.Count > 0 && itemLayout.Children[itemLayout.Children.Count - 1] is PropertiesListElement list1)
+                {
+                    list = list1;
+                }
+                else
+                {
+                    // TODO: support inlined objects hiding?
+                    return;
+                }
+
+                // Get source member used to check rule
+                var sourceMember = GetVisibleIfSource(item.Info.DeclaringType, item.VisibleIf);
+                if (sourceMember == null)
+                    return;
+
+                // Find the target control to show/hide
+
+                // Resize cache
+                if (_visibleIfCaches == null)
+                    _visibleIfCaches = new VisibleIfCache[8];
+                int count = 0;
+                while (count < _visibleIfCaches.Length && _visibleIfCaches[count].Target != null)
+                    count++;
+                if (count >= _visibleIfCaches.Length)
+                    Array.Resize(ref _visibleIfCaches, count * 2);
+
+                // Add item
+                _visibleIfCaches[count] = new VisibleIfCache
+                {
+                    Target = item.Info,
+                    Source = sourceMember,
+                    PropertiesList = list,
+                    LabelIndex = labelIndex,
+                };
+            }
         }
 
         /// <inheritdoc />
         public override void Initialize(LayoutElementsContainer layout)
         {
+            _visibleIfCaches = null;
+
             // Collect items to edit
             List<ItemInfo> items;
-            if (!HasDiffrentTypes)
+            if (!HasDifferentTypes)
             {
                 var value = Values[0];
                 if (value == null)
                 {
+                    // Check if it's an object type that can be created in editor
+                    var type = Values.Type;
+                    if (type != null && type.GetConstructor(Type.EmptyTypes) != null)
+                    {
+                        layout = layout.Space(20);
+
+                        const float ButtonSize = 14.0f;
+                        var button = new Button
+                        {
+                            Text = "+",
+                            TooltipText = "Create a new instance of the object",
+                            Height = ButtonSize,
+                            Width = ButtonSize,
+                            X = layout.ContainerControl.Width - ButtonSize - 4,
+                            AnchorStyle = AnchorStyle.CenterRight,
+                            Parent = layout.ContainerControl
+                        };
+                        button.Clicked += () =>
+                        {
+                            var newType = Values.Type;
+                            SetValue(Activator.CreateInstance(newType));
+                            RebuildLayoutOnRefresh();
+                        };
+                    }
+
                     layout.Label("<null>");
                     return;
                 }
@@ -310,7 +472,7 @@ namespace FlaxEditor.CustomEditors.Editors
                             var a = items[j];
                             var b = otherItems[k];
 
-                            if(ItemInfo.CanMerge(a, b))
+                            if (ItemInfo.CanMerge(a, b))
                             {
                                 isInvalid = false;
                                 break;
@@ -338,7 +500,7 @@ namespace FlaxEditor.CustomEditors.Editors
                 LayoutElementsContainer itemLayout;
                 if (item.UseGroup)
                 {
-                    if (lastGroup == null || lastGroup.Panel.Name != item.Display.Group)
+                    if (lastGroup == null || lastGroup.Panel.HeaderText != item.Display.Group)
                         lastGroup = layout.Group(item.Display.Group);
                     itemLayout = lastGroup;
                 }
@@ -372,7 +534,75 @@ namespace FlaxEditor.CustomEditors.Editors
 
                 // Spawn property editor
                 SpawnProperty(itemLayout, itemValues, item);
+
+                // Expand all parent groups if need to
+                if (item.ExpandGroups)
+                {
+                    var c = itemLayout.ContainerControl;
+                    do
+                    {
+                        if (c is DropPanel dropPanel)
+                            dropPanel.Open(false);
+                        else if (c is CustomEditorPresenter.PresenterPanel)
+                            break;
+                        c = c.Parent;
+                    } while (c != null);
+                }
             }
+        }
+
+        /// <inheritdoc />
+        public override void Refresh()
+        {
+            if (_visibleIfCaches != null)
+            {
+                try
+                {
+                    for (int i = 0; i < _visibleIfCaches.Length; i++)
+                    {
+                        var c = _visibleIfCaches[i];
+
+                        if (c.Target == null)
+                            break;
+
+                        // Check rule (all objects must allow to show this property)
+                        bool visible = true;
+                        for (int j = 0; j < Values.Count; j++)
+                        {
+                            if (Values[j] != null && !c.GetValue(Values[j]))
+                            {
+                                visible = false;
+                                break;
+                            }
+                        }
+
+                        // Apply the visibility (note: there may be no label)
+                        if (c.LabelIndex != -1 && c.PropertiesList.Labels.Count > c.LabelIndex)
+                        {
+                            var label = c.PropertiesList.Labels[c.LabelIndex];
+                            label.Visible = visible;
+                            for (int j = label.FirstChildControlIndex; j < c.PropertiesList.Properties.Children.Count; j++)
+                            {
+                                var child = c.PropertiesList.Properties.Children[j];
+                                if (child is PropertyNameLabel)
+                                    break;
+
+                                child.Visible = visible;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Editor.LogWarning(ex);
+                    Editor.LogError("Failed to update VisibleIf rules. " + ex.Message);
+
+                    // Remove rules to prevent error in loop
+                    _visibleIfCaches = null;
+                }
+            }
+
+            base.Refresh();
         }
     }
 }

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 
@@ -19,62 +17,82 @@ namespace FlaxEngine.Rendering
         /// <summary>
         /// The bool.
         /// </summary>
-        Bool,
+        Bool = 1,
 
         /// <summary>
-        /// The inteager.
+        /// The integer.
         /// </summary>
-        Inteager,
+        Integer = 2,
 
         /// <summary>
         /// The float.
         /// </summary>
-        Float,
+        Float = 3,
 
         /// <summary>
         /// The vector2
         /// </summary>
-        Vector2,
+        Vector2 = 4,
 
         /// <summary>
         /// The vector3.
         /// </summary>
-        Vector3,
+        Vector3 = 5,
 
         /// <summary>
         /// The vector4.
         /// </summary>
-        Vector4,
+        Vector4 = 6,
 
         /// <summary>
         /// The color.
         /// </summary>
-        Color,
+        Color = 7,
 
         /// <summary>
         /// The texture.
         /// </summary>
-        Texture,
+        Texture = 8,
 
         /// <summary>
         /// The cube texture.
         /// </summary>
-        CubeTexture,
+        CubeTexture = 9,
 
         /// <summary>
         /// The normal map texture.
         /// </summary>
-        NormalMap,
+        NormalMap = 10,
 
         /// <summary>
         /// The scene texture.
         /// </summary>
-        SceneTexture,
+        SceneTexture = 11,
 
         /// <summary>
         /// The render target (created from code).
         /// </summary>
-        RenderTarget,
+        RenderTarget = 12,
+
+        /// <summary>
+        /// The matrix.
+        /// </summary>
+        Matrix = 13,
+
+        /// <summary>
+        /// The render target array (created from code).
+        /// </summary>
+        RenderTargetArray = 14,
+
+        /// <summary>
+        /// The volume render target (created from code).
+        /// </summary>
+        RenderTargetVolume = 15,
+
+        /// <summary>
+        /// The cube render target (created from code).
+        /// </summary>
+        RenderTargetCube = 16,
     }
 
     /// <summary>
@@ -91,33 +109,21 @@ namespace FlaxEngine.Rendering
         /// <summary>
         /// Gets the parent material.
         /// </summary>
-        /// <value>
-        /// The material.
-        /// </value>
         public MaterialBase Material => _material;
 
         /// <summary>
         /// Gets the parameter type.
         /// </summary>
-        /// <value>
-        /// The type.
-        /// </value>
         public MaterialParameterType Type => _type;
 
         /// <summary>
         /// Gets a value indicating whether this parameter is public.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if this parameter is public; otherwise, <c>false</c>.
-        /// </value>
         public bool IsPublic => _isPublic;
 
         /// <summary>
         /// Gets the parameter name.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public string Name
         {
             // If your game is using material parameter names a lot (lookups, searching by name, etc.) cache name in the constructor fo better performance
@@ -134,9 +140,6 @@ namespace FlaxEngine.Rendering
         /// <summary>
         /// Gets or sets the parameter value.
         /// </summary>
-        /// <value>
-        /// The value.
-        /// </value>
         public unsafe object Value
         {
             get
@@ -144,7 +147,7 @@ namespace FlaxEngine.Rendering
                 // Validate the hash
                 if (_material._parametersHash != _hash)
                     throw new InvalidOperationException("Cannot use invalid material parameter.");
-                
+
                 IntPtr ptr;
                 bool vBool = false;
                 int vInt = 0;
@@ -154,59 +157,70 @@ namespace FlaxEngine.Rendering
                 Vector4 vVector4 = new Vector4();
                 Color vColor = new Color();
                 Guid vGuid = new Guid();
+                Matrix vMatrix = new Matrix();
 
                 switch (_type)
                 {
-                    case MaterialParameterType.Bool:
-                        ptr = new IntPtr(&vBool);
-                        break;
-                    case MaterialParameterType.Inteager:
-                        ptr = new IntPtr(&vInt);
-                        break;
-                    case MaterialParameterType.Float:
-                        ptr = new IntPtr(&vFloat);
-                        break;
-                    case MaterialParameterType.Vector2:
-                        ptr = new IntPtr(&vVector2);
-                        break;
-                    case MaterialParameterType.Vector3:
-                        ptr = new IntPtr(&vVector3);
-                        break;
-                    case MaterialParameterType.Vector4:
-                        ptr = new IntPtr(&vVector4);
-                        break;
-                    case MaterialParameterType.Color:
-                        ptr = new IntPtr(&vColor);
-                        break;
+                case MaterialParameterType.Bool:
+                    ptr = new IntPtr(&vBool);
+                    break;
+                case MaterialParameterType.Integer:
+                    ptr = new IntPtr(&vInt);
+                    break;
+                case MaterialParameterType.Float:
+                    ptr = new IntPtr(&vFloat);
+                    break;
+                case MaterialParameterType.Vector2:
+                    ptr = new IntPtr(&vVector2);
+                    break;
+                case MaterialParameterType.Vector3:
+                    ptr = new IntPtr(&vVector3);
+                    break;
+                case MaterialParameterType.Vector4:
+                    ptr = new IntPtr(&vVector4);
+                    break;
+                case MaterialParameterType.Color:
+                    ptr = new IntPtr(&vColor);
+                    break;
+                case MaterialParameterType.Matrix:
+                    ptr = new IntPtr(&vMatrix);
+                    break;
 
-                    case MaterialParameterType.CubeTexture:
-                    case MaterialParameterType.Texture:
-                    case MaterialParameterType.NormalMap:
-                    case MaterialParameterType.RenderTarget:
-                        ptr = new IntPtr(&vGuid);
-                        break;
+                case MaterialParameterType.CubeTexture:
+                case MaterialParameterType.Texture:
+                case MaterialParameterType.NormalMap:
+                case MaterialParameterType.RenderTarget:
+                case MaterialParameterType.RenderTargetArray:
+                case MaterialParameterType.RenderTargetCube:
+                case MaterialParameterType.RenderTargetVolume:
+                    ptr = new IntPtr(&vGuid);
+                    break;
 
-                    default: throw new ArgumentOutOfRangeException();
+                default: throw new ArgumentOutOfRangeException();
                 }
 
                 MaterialBase.Internal_GetParamValue(_material.unmanagedPtr, _index, ptr);
 
                 switch (_type)
                 {
-                    case MaterialParameterType.Bool: return vBool;
-                    case MaterialParameterType.Inteager: return vInt;
-                    case MaterialParameterType.Float: return vFloat;
-                    case MaterialParameterType.Vector2: return vVector2;
-                    case MaterialParameterType.Vector3: return vVector3;
-                    case MaterialParameterType.Vector4: return vVector4;
-                    case MaterialParameterType.Color: return vColor;
+                case MaterialParameterType.Bool: return vBool;
+                case MaterialParameterType.Integer: return vInt;
+                case MaterialParameterType.Float: return vFloat;
+                case MaterialParameterType.Vector2: return vVector2;
+                case MaterialParameterType.Vector3: return vVector3;
+                case MaterialParameterType.Vector4: return vVector4;
+                case MaterialParameterType.Color: return vColor;
+                case MaterialParameterType.Matrix: return vMatrix;
 
-                    case MaterialParameterType.CubeTexture:
-                    case MaterialParameterType.Texture:
-                    case MaterialParameterType.NormalMap: 
-                    case MaterialParameterType.RenderTarget: return Object.Find<Object>(ref vGuid);
+                case MaterialParameterType.CubeTexture:
+                case MaterialParameterType.Texture:
+                case MaterialParameterType.NormalMap:
+                case MaterialParameterType.RenderTargetArray:
+                case MaterialParameterType.RenderTargetCube:
+                case MaterialParameterType.RenderTargetVolume:
+                case MaterialParameterType.RenderTarget: return Object.Find<Object>(ref vGuid);
 
-                    default: throw new ArgumentOutOfRangeException();
+                default: throw new ArgumentOutOfRangeException();
                 }
             }
             set
@@ -225,60 +239,58 @@ namespace FlaxEngine.Rendering
                 Vector3 vVector3;
                 Vector4 vVector4;
                 Color vColor;
+                Matrix vMatrix;
 
                 switch (_type)
                 {
-                    case MaterialParameterType.Bool:
-                        vBool = (bool)value;
-                        ptr = new IntPtr(&vBool);
-                        break;
-                    case MaterialParameterType.Inteager:
-                    {
-                        if (value is int)
-                            vInt = (int)value;
-                        else if (value is float)
-                            vInt = (int)(float)value;
-                        else
-                            throw new InvalidCastException();
-                        ptr = new IntPtr(&vInt);
-                        break;
-                    }
-                    case MaterialParameterType.Float:
-                    {
-                        if (value is int)
-                            vFloat = (int)value;
-                        else if (value is float)
-                            vFloat = (float)value;
-                        else
-                            throw new InvalidCastException();
-                        ptr = new IntPtr(&vFloat);
-                        break;
-                    }
-                    case MaterialParameterType.Vector2:
-                        vVector2 = (Vector2)value;
-                        ptr = new IntPtr(&vVector2);
-                        break;
-                    case MaterialParameterType.Vector3:
-                        vVector3 = (Vector3)value;
-                        ptr = new IntPtr(&vVector3);
-                        break;
-                    case MaterialParameterType.Vector4:
-                        vVector4 = (Vector4)value;
-                        ptr = new IntPtr(&vVector4);
-                        break;
-                    case MaterialParameterType.Color:
-                        vColor = (Color)value;
-                        ptr = new IntPtr(&vColor);
-                        break;
+                case MaterialParameterType.Bool:
+                    vBool = Convert.ToBoolean(value);
+                    ptr = new IntPtr(&vBool);
+                    break;
+                case MaterialParameterType.Integer:
+                {
+                    vInt = Convert.ToInt32(value);
+                    ptr = new IntPtr(&vInt);
+                    break;
+                }
+                case MaterialParameterType.Float:
+                {
+                    vFloat = Convert.ToSingle(value);
+                    ptr = new IntPtr(&vFloat);
+                    break;
+                }
+                case MaterialParameterType.Vector2:
+                    vVector2 = (Vector2)value;
+                    ptr = new IntPtr(&vVector2);
+                    break;
+                case MaterialParameterType.Vector3:
+                    vVector3 = (Vector3)value;
+                    ptr = new IntPtr(&vVector3);
+                    break;
+                case MaterialParameterType.Vector4:
+                    vVector4 = (Vector4)value;
+                    ptr = new IntPtr(&vVector4);
+                    break;
+                case MaterialParameterType.Color:
+                    vColor = (Color)value;
+                    ptr = new IntPtr(&vColor);
+                    break;
+                case MaterialParameterType.Matrix:
+                    vMatrix = (Matrix)value;
+                    ptr = new IntPtr(&vMatrix);
+                    break;
 
-                    case MaterialParameterType.CubeTexture:
-                    case MaterialParameterType.Texture:
-                    case MaterialParameterType.NormalMap:
-                    case MaterialParameterType.RenderTarget:
-                        ptr = Object.GetUnmanagedPtr(value as Object);
-                        break;
+                case MaterialParameterType.CubeTexture:
+                case MaterialParameterType.Texture:
+                case MaterialParameterType.NormalMap:
+                case MaterialParameterType.RenderTarget:
+                case MaterialParameterType.RenderTargetArray:
+                case MaterialParameterType.RenderTargetCube:
+                case MaterialParameterType.RenderTargetVolume:
+                    ptr = Object.GetUnmanagedPtr(value as Object);
+                    break;
 
-                    default: throw new ArgumentOutOfRangeException();
+                default: throw new ArgumentOutOfRangeException();
                 }
 
                 MaterialBase.Internal_SetParamValue(_material.unmanagedPtr, _index, ptr);

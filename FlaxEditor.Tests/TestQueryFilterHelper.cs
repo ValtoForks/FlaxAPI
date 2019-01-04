@@ -1,3 +1,5 @@
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
+
 using FlaxEditor.Utilities;
 using NUnit.Framework;
 
@@ -19,7 +21,7 @@ namespace FlaxEditor.Tests
             Assert.IsTrue(QueryFilterHelper.Match("text", "1text1"));
             Assert.IsTrue(QueryFilterHelper.Match("text", "text text"));
 
-            // Excact matching
+            // Exact matching
             QueryFilterHelper.Range[] range;
             Assert.IsTrue(QueryFilterHelper.Match("text", "text", out range));
             Assert.AreEqual(1, range.Length);

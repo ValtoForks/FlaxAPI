@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.GUI;
 
@@ -15,15 +13,15 @@ namespace FlaxEditor.CustomEditors.Elements
         /// <summary>
         /// The drop panel.
         /// </summary>
-        public readonly DropPanel Panel = new DropPanel(string.Empty);
-        
+        public readonly DropPanel Panel = new DropPanel();
+
         /// <summary>
         /// Initializes the element.
         /// </summary>
         /// <param name="text">The text.</param>
         public void Init(string text)
         {
-            Panel.HeaderText = Panel.Name = text;
+            Panel.HeaderText = text;
         }
 
         /// <inheritdoc />

@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
+using System;
 using FlaxEditor.Content;
 using FlaxEngine;
 using FlaxEngine.Assertions;
@@ -11,10 +10,13 @@ namespace FlaxEditor.Windows
 {
     public partial class ContentWindow
     {
-        private void ShowContextMenuForItem(ContentItem item, ref Vector2 location)
-        {
-            // TODO: verify this logic during elements searching
+        /// <summary>
+        /// Occurs when content window wants to show the context menu for the given content item. Allows to add custom options.
+        /// </summary>
+        public event Action<ContextMenu, ContentItem> ContextMenuShow;
 
+        private void ShowContextMenuForItem(ContentItem item, ref Vector2 location, bool isTreeNode)
+        {
             Assert.IsNull(_newElement);
 
             // Cache data
@@ -32,12 +34,23 @@ namespace FlaxEditor.Windows
                 folder = CurrentViewFolder;
             }
             Assert.IsNotNull(folder);
+            bool isRootFolder = CurrentViewFolder == _root.Folder;
 
             // Create context menu
             ContextMenuButton b;
             ContextMenuChildMenu c;
             ContextMenu cm = new ContextMenu();
             cm.Tag = item;
+            if (isTreeNode)
+            {
+                b = cm.AddButton("Expand All", OnExpandAllClicked);
+                b.Enabled = CurrentViewFolder.Node.ChildrenCount != 0;
+
+                b = cm.AddButton("Collapse All", OnCollapseAllClicked);
+                b.Enabled = CurrentViewFolder.Node.ChildrenCount != 0;
+
+                cm.AddSeparator();
+            }
             if (isValidElement)
             {
                 b = cm.AddButton("Open", () => Open(item));
@@ -54,7 +67,7 @@ namespace FlaxEditor.Windows
                 {
                     b = cm.AddButton("Reimport", ReimportSelection);
                     b.Enabled = proxy != null && proxy.CanReimport(item);
-                    
+
                     if (item is BinaryAssetItem binaryAsset)
                     {
                         string importPath;
@@ -63,9 +76,14 @@ namespace FlaxEditor.Windows
                             string importLocation = System.IO.Path.GetDirectoryName(importPath);
                             if (!string.IsNullOrEmpty(importLocation) && System.IO.Directory.Exists(importLocation))
                             {
-	                            cm.AddButton("Show import location", () => Application.StartProcess(importLocation));
+                                cm.AddButton("Show import location", () => Application.StartProcess(importLocation));
                             }
                         }
+                    }
+
+                    if (Editor.CanExport(item.Path))
+                    {
+                        b = cm.AddButton("Export", ExportSelection);
                     }
                 }
 
@@ -73,55 +91,78 @@ namespace FlaxEditor.Windows
 
                 cm.AddSeparator();
 
-                // TODO: exportig assets
-                //b = cm.AddButton(4, "Export");
-                //b.Enabled = proxy != null && proxy.CanExport;
-
-                b = cm.AddButton("Clone", _view.DuplicateSelection);
+                b = cm.AddButton("Clone", _view.Duplicate);
                 b.Enabled = !isFolder;
 
-	            cm.AddButton("Rename", () => Rename(item));
+                cm.AddButton("Copy", _view.Copy);
+
+                cm.AddButton("Paste", _view.Paste);
+                b.Enabled = _view.CanPaste();
+
+                cm.AddButton("Rename", () => Rename(item));
+
+                // Custom options
+                ContextMenuShow?.Invoke(cm, item);
+                proxy?.OnContentWindowContextMenu(cm, item);
 
                 cm.AddButton("Copy name to Clipboard", () => Application.ClipboardText = item.NamePath);
 
                 cm.AddButton("Copy path to Clipboard", () => Application.ClipboardText = item.Path);
             }
-	        else
-	        {
-		        cm.AddButton("Show in explorer", () => Application.StartProcess(CurrentViewFolder.Path));
+            else
+            {
+                cm.AddButton("Show in explorer", () => Application.StartProcess(CurrentViewFolder.Path));
 
-		        cm.AddButton("Refresh", () => Editor.ContentDatabase.RefreshFolder(CurrentViewFolder, true));
+                b = cm.AddButton("Paste", _view.Paste);
+                b.Enabled = _view.CanPaste();
 
-		        cm.AddButton("Refresh all thumbnails", RefreshViewItemsThumbnails);
-	        }
+                cm.AddButton("Refresh", () => Editor.ContentDatabase.RefreshFolder(CurrentViewFolder, true));
 
-	        cm.AddSeparator();
+                cm.AddButton("Refresh all thumbnails", RefreshViewItemsThumbnails);
+            }
 
-            cm.AddButton("New folder", NewFolder);
+            cm.AddSeparator();
+
+            if (!isRootFolder)
+            {
+                cm.AddButton("New folder", NewFolder);
+            }
 
             c = cm.AddChildMenu("New");
             c.ContextMenu.Tag = item;
+            int newItems = 0;
             for (int i = 0; i < Editor.ContentDatabase.Proxy.Count; i++)
             {
                 var p = Editor.ContentDatabase.Proxy[i];
                 if (p.CanCreate(folder))
                 {
-	                c.ContextMenu.AddButton(p.Name, () => NewItem(p));
+                    c.ContextMenu.AddButton(p.Name, () => NewItem(p));
+                    newItems++;
                 }
             }
-            c.Enabled = c.ContextMenu.HasChildren;
+            c.Enabled = newItems > 0;
 
             if (folder.CanHaveAssets)
             {
                 cm.AddButton("Import file", () =>
                 {
-	                _view.ClearSelection();
-	                Editor.ContentImporting.ShowImportFileDialog(CurrentViewFolder);
-				});
+                    _view.ClearSelection();
+                    Editor.ContentImporting.ShowImportFileDialog(CurrentViewFolder);
+                });
             }
 
             // Show it
             cm.Show(this, location);
+        }
+
+        private void OnExpandAllClicked(ContextMenuButton button)
+        {
+            CurrentViewFolder.Node.ExpandAll();
+        }
+
+        private void OnCollapseAllClicked(ContextMenuButton button)
+        {
+            CurrentViewFolder.Node.CollapseAll();
         }
 
         /// <summary>
@@ -144,8 +185,44 @@ namespace FlaxEditor.Windows
             var selection = _view.Selection;
             for (int i = 0; i < selection.Count; i++)
             {
-                if(selection[i] is BinaryAssetItem binaryAssetItem)
+                if (selection[i] is BinaryAssetItem binaryAssetItem)
                     Editor.ContentImporting.Reimport(binaryAssetItem);
+            }
+        }
+
+        private bool Export(ContentItem item, string outputFolder)
+        {
+            if (item is ContentFolder folder)
+            {
+                for (int i = 0; i < folder.Children.Count; i++)
+                {
+                    if (Export(folder.Children[i], outputFolder))
+                        return true;
+                }
+            }
+            else if (item is AssetItem asset && Editor.CanExport(asset.Path))
+            {
+                if (Editor.Export(asset.Path, outputFolder))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Exports the selected items.
+        /// </summary>
+        private void ExportSelection()
+        {
+            string outputFolder = MessageBox.BrowseFolderDialog(Editor.Windows.MainWindow, null, "Select the output folder");
+            if (outputFolder == null)
+                return;
+
+            var selection = _view.Selection;
+            for (int i = 0; i < selection.Count; i++)
+            {
+                if (Export(selection[i], outputFolder))
+                    return;
             }
         }
     }

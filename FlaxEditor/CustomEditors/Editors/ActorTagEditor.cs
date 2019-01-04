@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEditor.Content.Settings;
 using FlaxEditor.CustomEditors.Elements;
@@ -41,7 +39,9 @@ namespace FlaxEditor.CustomEditors.Editors
         /// <inheritdoc />
         public override void Refresh()
         {
-            if (HasDiffrentValues)
+            base.Refresh();
+
+            if (HasDifferentValues)
             {
                 // TODO: support different values on many actor selected
             }

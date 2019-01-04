@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +7,7 @@ using System.Linq;
 namespace FlaxEditor
 {
     /// <summary>
-    /// Implementation of <see cref="IUndoAction"/> that contains one or more child actions performed at once. Allows to merge diffrent actions.
+    /// Implementation of <see cref="IUndoAction"/> that contains one or more child actions performed at once. Allows to merge different actions.
     /// </summary>
     /// <seealso cref="FlaxEditor.IUndoAction" />
     public class MultiUndoAction : IUndoAction
@@ -62,6 +60,15 @@ namespace FlaxEditor
             for (int i = Actions.Length - 1; i >= 0; i--)
             {
                 Actions[i].Undo();
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            for (int i = 0; i < Actions.Length; i++)
+            {
+                Actions[i].Dispose();
             }
         }
     }

@@ -1,26 +1,39 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
-using System;
 using FlaxEngine;
 using FlaxEngine.GUI;
 
 namespace FlaxEditor.GUI.Dialogs
 {
-    public class ColorPickerDialog : Dialog
+    /// <summary>
+    /// The base interface for the color picker dialogs.
+    /// </summary>
+    public interface IColorPickerDialog
+    {
+        /// <summary>
+        /// Closes the picker (similar to value editing cancel).
+        /// </summary>
+        void ClosePicker();
+    }
+
+    /// <summary>
+    /// Color picking dialog.
+    /// </summary>
+    /// <seealso cref="FlaxEditor.GUI.Dialogs.Dialog" />
+    public class ColorPickerDialog : Dialog, IColorPickerDialog
     {
         private const float BUTTONS_WIDTH = 60.0f;
         private const float PICKER_MARGIN = 6.0f;
         private const float RGBA_MARGIN = 12.0f;
-        private const float HSV_MARGIN =  0.0f;
+        private const float HSV_MARGIN = 0.0f;
         private const float CHANNELS_MARGIN = 4.0f;
         private const float CHANNEL_TEXT_WIDTH = 12.0f;
 
         private Color _oldColor;
         private Color _newColor;
         private bool _disableEvents;
-        private Action<Color> _onChangedOk;
+        private bool _useDynamicEditing;
+        private ColorValueBox.ColorPickerEvent _onChangedOk;
 
         private ColorSelectorWithSliders _cSelector;
         private IntValueBox _cRed;
@@ -69,6 +82,12 @@ namespace FlaxEditor.GUI.Dialogs
                 // Hex
                 _cHex.Text = _newColor.ToHexString();
 
+                // Dynamic value
+                if (_useDynamicEditing)
+                {
+                    _onChangedOk?.Invoke(_newColor, true);
+                }
+
                 _disableEvents = false;
             }
         }
@@ -76,18 +95,20 @@ namespace FlaxEditor.GUI.Dialogs
         /// <summary>
         /// Initializes a new instance of the <see cref="ColorPickerDialog"/> class.
         /// </summary>
-        /// <param name="startColor">The start color.</param>
-        /// <param name="onChangedOk">The on changed ok.</param>
-        public ColorPickerDialog(Color startColor, Action<Color> onChangedOk)
-            : base("Pick a color!")
+        /// <param name="initialValue">The initial value.</param>
+        /// <param name="colorChanged">The color changed event.</param>
+        /// <param name="useDynamicEditing">True if allow dynamic value editing (slider-like usage), otherwise will fire color change event only on editing end.</param>
+        public ColorPickerDialog(Color initialValue, ColorValueBox.ColorPickerEvent colorChanged, bool useDynamicEditing)
+        : base("Pick a color!")
         {
-            _oldColor = startColor;
+            _oldColor = initialValue;
+            _useDynamicEditing = useDynamicEditing;
             _newColor = Color.Transparent;
-            _onChangedOk = onChangedOk;
+            _onChangedOk = colorChanged;
 
             // Selector
             _cSelector = new ColorSelectorWithSliders(180, 18);
-            _cSelector.SetLocation(PICKER_MARGIN, PICKER_MARGIN);
+            _cSelector.Location = new Vector2(PICKER_MARGIN, PICKER_MARGIN);
             _cSelector.ColorChanged += x => SelectedColor = x;
             _cSelector.Parent = this;
 
@@ -152,18 +173,22 @@ namespace FlaxEditor.GUI.Dialogs
             _cOK.Clicked += OnOkClicked;
 
             // Set initial color
-            SelectedColor = startColor;
+            SelectedColor = initialValue;
         }
 
         private void OnOkClicked()
         {
             _result = DialogResult.OK;
-            _onChangedOk(_newColor);
+            _onChangedOk?.Invoke(_newColor, false);
             Close();
         }
 
         private void OnCancelClicked()
         {
+            // Restore color
+            if (_useDynamicEditing)
+                _onChangedOk?.Invoke(_oldColor, false);
+
             Close(DialogResult.Cancel);
         }
 
@@ -187,12 +212,12 @@ namespace FlaxEditor.GUI.Dialogs
         {
             if (_disableEvents)
                 return;
-            
+
             Color color;
             if (Color.TryParseHex(_cHex.Text, out color))
                 SelectedColor = color;
         }
-        
+
         /// <inheritdoc />
         public override void Draw()
         {
@@ -200,9 +225,9 @@ namespace FlaxEditor.GUI.Dialogs
             var textColor = Color.White;
 
             base.Draw();
-            
+
             // RGBA
-            var rgbaR = new Rectangle(_cRed.Left -CHANNEL_TEXT_WIDTH, _cRed.Y, 10000, _cRed.Height);
+            var rgbaR = new Rectangle(_cRed.Left - CHANNEL_TEXT_WIDTH, _cRed.Y, 10000, _cRed.Height);
             Render2D.DrawText(style.FontMedium, "R", rgbaR, textColor, TextAlignment.Near, TextAlignment.Center);
             rgbaR.Location.Y = _cGreen.Y;
             Render2D.DrawText(style.FontMedium, "G", rgbaR, textColor, TextAlignment.Near, TextAlignment.Center);
@@ -212,7 +237,7 @@ namespace FlaxEditor.GUI.Dialogs
             Render2D.DrawText(style.FontMedium, "A", rgbaR, textColor, TextAlignment.Near, TextAlignment.Center);
 
             // HSV left
-            var hsvHl = new Rectangle(_cHue.Left -CHANNEL_TEXT_WIDTH, _cHue.Y, 10000, _cHue.Height);
+            var hsvHl = new Rectangle(_cHue.Left - CHANNEL_TEXT_WIDTH, _cHue.Y, 10000, _cHue.Height);
             Render2D.DrawText(style.FontMedium, "H", hsvHl, textColor, TextAlignment.Near, TextAlignment.Center);
             hsvHl.Location.Y = _cSaturation.Y;
             Render2D.DrawText(style.FontMedium, "S", hsvHl, textColor, TextAlignment.Near, TextAlignment.Center);
@@ -220,7 +245,7 @@ namespace FlaxEditor.GUI.Dialogs
             Render2D.DrawText(style.FontMedium, "V", hsvHl, textColor, TextAlignment.Near, TextAlignment.Center);
 
             // HSV right
-            var hsvHr = new Rectangle(_cHue.Right +2, _cHue.Y, 10000, _cHue.Height);
+            var hsvHr = new Rectangle(_cHue.Right + 2, _cHue.Y, 10000, _cHue.Height);
             Render2D.DrawText(style.FontMedium, "°", hsvHr, textColor, TextAlignment.Near, TextAlignment.Center);
             hsvHr.Location.Y = _cSaturation.Y;
             Render2D.DrawText(style.FontMedium, "%", hsvHr, textColor, TextAlignment.Near, TextAlignment.Center);
@@ -228,11 +253,11 @@ namespace FlaxEditor.GUI.Dialogs
             Render2D.DrawText(style.FontMedium, "%", hsvHr, textColor, TextAlignment.Near, TextAlignment.Center);
 
             // Hex
-            var hex = new Rectangle(_cHex.Left -26, _cHex.Y, 10000, _cHex.Height);
+            var hex = new Rectangle(_cHex.Left - 26, _cHex.Y, 10000, _cHex.Height);
             Render2D.DrawText(style.FontMedium, "Hex", hex, textColor, TextAlignment.Near, TextAlignment.Center);
 
-            // Color diffrence
-            var newRect = new Rectangle(_cOK.X, _cHex.Bottom +PICKER_MARGIN, _cCancel.Right - _cOK.Left, 0);
+            // Color difference
+            var newRect = new Rectangle(_cOK.X, _cHex.Bottom + PICKER_MARGIN, _cCancel.Right - _cOK.Left, 0);
             newRect.Size.Y = _cValue.Bottom - newRect.Y;
             Render2D.FillRectangle(newRect, _newColor * _newColor.A);
         }
@@ -241,9 +266,15 @@ namespace FlaxEditor.GUI.Dialogs
         protected override void OnShow()
         {
             // Auto cancel on lost focus
-            ParentWindow.NativeWindow.OnLostFocus += OnCancelClicked;
+            ((WindowRootControl)Root).Window.LostFocus += OnCancelClicked;
 
             base.OnShow();
+        }
+
+        /// <inheritdoc />
+        public void ClosePicker()
+        {
+            OnCancelClicked();
         }
     }
 }

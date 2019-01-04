@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.InteropServices;
@@ -10,8 +10,28 @@ namespace FlaxEngine
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-	public struct Color32
+    public struct Color32
     {
+        /// <summary>
+        /// The size of the <see cref="Color32" /> type, in bytes.
+        /// </summary>
+        public static readonly int SizeInBytes = Marshal.SizeOf(typeof(Color32));
+
+        /// <summary>
+        /// The transparent color.
+        /// </summary>
+        public static readonly Color32 Transparent = new Color32(0, 0, 0, 0);
+
+        /// <summary>
+        /// The black color.
+        /// </summary>
+        public static readonly Color32 Black = new Color32(0, 0, 0, 255);
+
+        /// <summary>
+        /// The white color.
+        /// </summary>
+        public static readonly Color32 White = new Color32(255, 255, 255, 255);
+
         /// <summary>
         /// Red component of the color.
         /// </summary>
@@ -32,14 +52,14 @@ namespace FlaxEngine
         /// </summary>
         public byte A;
 
-		/// <summary>
-		/// Constructs a new Color32 with given r, g, b, a components.
-		/// </summary>
-		/// <param name="r">The red component value.</param>
-		/// <param name="g">The green component value.</param>
-		/// <param name="b">The blue component value.</param>
-		/// <param name="a">The alpha component value.</param>
-		public Color32(byte r, byte g, byte b, byte a)
+        /// <summary>
+        /// Constructs a new Color32 with given r, g, b, a components.
+        /// </summary>
+        /// <param name="r">The red component value.</param>
+        /// <param name="g">The green component value.</param>
+        /// <param name="b">The blue component value.</param>
+        /// <param name="a">The alpha component value.</param>
+        public Color32(byte r, byte g, byte b, byte a)
         {
             R = r;
             G = g;
@@ -92,6 +112,18 @@ namespace FlaxEngine
         public static implicit operator Color(Color32 c)
         {
             return new Color(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f);
+        }
+
+        /// <summary>
+        /// Performs an explicit conversion from <see cref="Color32"/> to <see cref="Vector4"/>.
+        /// </summary>
+        /// <param name="c">The color.</param>
+        /// <returns>
+        /// The result of the conversion.
+        /// </returns>
+        public static explicit operator Vector4(Color32 c)
+        {
+            return new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f);
         }
 
         /// <summary>

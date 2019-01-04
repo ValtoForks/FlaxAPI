@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -129,8 +127,7 @@ namespace FlaxEditor.GUI
         {
             var column = _columns[columnIndex];
 
-            if (column.TitleBackgroundColor.A > 0)
-                Render2D.FillRectangle(rect, column.TitleBackgroundColor, true);
+            Render2D.FillRectangle(rect, column.TitleBackgroundColor);
 
             var style = Style.Current;
             var font = column.TitleFont ?? style.FontMedium;
@@ -189,7 +186,7 @@ namespace FlaxEditor.GUI
 
                 float movingLength = GetColumnWidth(_movingSplit) + GetColumnWidth(nextSplit);
                 float splitsSum = _splits[_movingSplit] + _splits[nextSplit];
-                
+
                 float leftSplit = splitsSum * Mathf.Saturate((location.X - leftPos) / movingLength);
                 _splits[_movingSplit] = _columns[_movingSplit].ClampColumnSize(leftSplit, width);
                 float rightSplit = splitsSum - _splits[_movingSplit];

@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine.GUI;
 
@@ -11,9 +9,12 @@ namespace FlaxEditor.Surface.Elements
     /// </summary>
     /// <seealso cref="ComboBox" />
     /// <seealso cref="ISurfaceNodeElement" />
-    public sealed class ComboBoxElement : ComboBox, ISurfaceNodeElement
+    public class ComboBoxElement : ComboBox, ISurfaceNodeElement
     {
-        private bool _isAutoSelect;
+        /// <summary>
+        /// True if automatic value selecting is active.
+        /// </summary>
+        protected bool _isAutoSelect;
 
         /// <inheritdoc />
         public SurfaceNode ParentNode { get; }
@@ -24,14 +25,11 @@ namespace FlaxEditor.Surface.Elements
         /// <summary>
         /// Gets the surface.
         /// </summary>
-        /// <value>
-        /// The surface.
-        /// </value>
         public VisjectSurface Surface => ParentNode.Surface;
 
         /// <inheritdoc />
         public ComboBoxElement(SurfaceNode parentNode, NodeElementArchetype archetype)
-            : base(archetype.ActualPositionX, archetype.ActualPositionY, archetype.Size.X)
+        : base(archetype.ActualPositionX, archetype.ActualPositionY, archetype.Size.X)
         {
             ParentNode = parentNode;
             Archetype = archetype;
@@ -46,8 +44,8 @@ namespace FlaxEditor.Surface.Elements
                 AddItems(items);
 
                 // Select saved value
-                _selectedIndicies.Clear();
-                _selectedIndicies.Add((int)ParentNode.Values[Archetype.ValueIndex]);
+                _selectedIndices.Clear();
+                _selectedIndices.Add((int)ParentNode.Values[Archetype.ValueIndex]);
             }
         }
 
@@ -57,8 +55,7 @@ namespace FlaxEditor.Surface.Elements
             if (_isAutoSelect)
             {
                 // Edit value
-                ParentNode.Values[Archetype.ValueIndex] = SelectedIndex;
-                ParentNode.Surface.MarkAsEdited();
+                ParentNode.SetValue(Archetype.ValueIndex, SelectedIndex);
             }
 
             base.OnSelectedIndexChanged();

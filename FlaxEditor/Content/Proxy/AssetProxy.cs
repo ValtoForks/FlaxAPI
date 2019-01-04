@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content.Thumbnails;
@@ -23,7 +21,7 @@ namespace FlaxEditor.Content
 
         /// <inheritdoc />
         public override bool IsAsset => true;
-        
+
         /// <summary>
         /// Gets the full name of the asset type (stored data format).
         /// </summary>
@@ -77,9 +75,10 @@ namespace FlaxEditor.Content
         /// <param name="context">GPU context.</param>
         public virtual void OnThumbnailDrawBegin(ThumbnailRequest request, ContainerControl guiRoot, GPUContext context)
         {
-            guiRoot.AddChild(new Label(Vector2.Zero, guiRoot.Size)
+            guiRoot.AddChild(new Label
             {
                 Text = Name,
+                Size = guiRoot.Size,
                 Wrapping = TextWrapping.WrapWords
             });
         }

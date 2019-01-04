@@ -16,7 +16,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;FLAX_ASSERTIONS</DefineConstants>
@@ -26,7 +26,7 @@
     <DocumentationFile>bin\Debug\FlaxEngine.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -35,6 +35,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\FlaxEngine.xml</DocumentationFile>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -42,14 +43,17 @@
       <HintPath>..\Tools\Bin\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Actors\AnimatedModel.cs" />
+    <Compile Include="API\Actors\AnimatedModel.Gen.cs" />
     <Compile Include="API\Actors\AudioListener.cs" />
     <Compile Include="API\Actors\AudioListener.Gen.cs" />
     <Compile Include="API\Actors\AudioSource.cs" />
     <Compile Include="API\Actors\AudioSource.Gen.cs" />
+    <Compile Include="API\Actors\BoneSocket.cs" />
+    <Compile Include="API\Actors\BoneSocket.Gen.cs" />
     <Compile Include="API\Actors\BoxBrush.cs" />
     <Compile Include="API\Actors\BoxBrush.Gen.cs">
       <DependentUpon>BoxBrush.cs</DependentUpon>
@@ -60,6 +64,8 @@
     </Compile>
     <Compile Include="API\Actors\Collider.cs" />
     <Compile Include="API\Actors\Collider.Gen.cs" />
+    <Compile Include="API\Actors\Decal.cs" />
+    <Compile Include="API\Actors\Decal.Gen.cs" />
     <Compile Include="API\Actors\EmptyActor.Gen.cs" />
     <Compile Include="API\Actors\EnvironmentProbe.cs" />
     <Compile Include="API\Actors\EnvironmentProbe.Gen.cs">
@@ -71,10 +77,7 @@
     <Compile Include="API\Actors\Joint.Gen.cs" />
     <Compile Include="API\Actors\Light.cs" />
     <Compile Include="API\Actors\Light.Gen.cs" />
-    <Compile Include="API\Actors\ModelActor.cs" />
-    <Compile Include="API\Actors\ModelActor.Gen.cs">
-      <DependentUpon>ModelActor.cs</DependentUpon>
-    </Compile>
+    <Compile Include="API\Actors\StaticModel.cs" />
     <Compile Include="API\Actors\PostFxVolume.cs" />
     <Compile Include="API\Actors\PostFxVolume.Gen.cs" />
     <Compile Include="API\Actors\RigidBody.cs" />
@@ -89,12 +92,25 @@
     <Compile Include="API\Actors\Skybox.Gen.cs">
       <DependentUpon>Skybox.cs</DependentUpon>
     </Compile>
+    <Compile Include="API\Actors\StaticModel.Gen.cs" />
+    <Compile Include="API\Actors\Terrain.cs" />
+    <Compile Include="API\Actors\Terrain.Gen.cs" />
     <Compile Include="API\Actors\TextRender.cs" />
     <Compile Include="API\Actors\TextRender.Gen.cs" />
+    <Compile Include="API\Actors\UICanvas.cs" />
+    <Compile Include="API\Actors\UICanvas.Gen.cs" />
+    <Compile Include="API\Actors\UIControl.cs" />
+    <Compile Include="API\Actors\UIControl.Gen.cs" />
     <Compile Include="API\Assets\BinaryAsset.cs" />
     <Compile Include="API\Assets\BinaryAsset.Gen.cs" />
     <Compile Include="API\Assets\JsonAsset.cs" />
     <Compile Include="API\Assets\JsonAsset.Gen.cs" />
+    <Compile Include="API\Assets\Prefab.cs" />
+    <Compile Include="API\Assets\Prefab.Gen.cs" />
+    <Compile Include="API\BinaryAssets\Animation.cs" />
+    <Compile Include="API\BinaryAssets\Animation.Gen.cs" />
+    <Compile Include="API\BinaryAssets\AnimationGraph.cs" />
+    <Compile Include="API\BinaryAssets\AnimationGraph.Gen.cs" />
     <Compile Include="API\BinaryAssets\AudioClip.cs" />
     <Compile Include="API\BinaryAssets\AudioClip.Gen.cs" />
     <Compile Include="API\BinaryAssets\CollisionData.cs" />
@@ -105,6 +121,10 @@
     <Compile Include="API\BinaryAssets\Model.Gen.cs" />
     <Compile Include="API\BinaryAssets\RawDataAsset.cs" />
     <Compile Include="API\BinaryAssets\RawDataAsset.Gen.cs" />
+    <Compile Include="API\BinaryAssets\SkeletonMask.cs" />
+    <Compile Include="API\BinaryAssets\SkeletonMask.Gen.cs" />
+    <Compile Include="API\BinaryAssets\SkinnedModel.cs" />
+    <Compile Include="API\BinaryAssets\SkinnedModel.Gen.cs" />
     <Compile Include="API\Colliders\BoxCollider.cs" />
     <Compile Include="API\Colliders\BoxCollider.Gen.cs" />
     <Compile Include="API\Colliders\CapsuleCollider.cs" />
@@ -194,6 +214,10 @@
     <Compile Include="API\Static\MessageBox.Gen.cs" />
     <Compile Include="API\Static\Physics.cs" />
     <Compile Include="API\Static\Physics.Gen.cs" />
+    <Compile Include="API\Static\PluginManager.cs" />
+    <Compile Include="API\Static\PluginManager.Gen.cs" />
+    <Compile Include="API\Static\PrefabManager.cs" />
+    <Compile Include="API\Static\PrefabManager.Gen.cs" />
     <Compile Include="API\Static\Profiler.cs" />
     <Compile Include="API\Static\Profiler.Gen.cs" />
     <Compile Include="API\Static\Render2D.cs" />
@@ -222,11 +246,16 @@
     <Compile Include="Attributes\Editor\CustomEditorAliasAttribute.cs" />
     <Compile Include="Attributes\Editor\DefaultEditorAttribute.cs" />
     <Compile Include="Attributes\Editor\EditorDisplayAttribute.cs" />
+    <Compile Include="Attributes\Editor\EnumDisplayAttribute.cs" />
+    <Compile Include="Attributes\Editor\ExpandGroupsAttribute.cs" />
     <Compile Include="Attributes\Editor\HeaderAttribute.cs" />
     <Compile Include="Attributes\Editor\LimitAttribute.cs" />
     <Compile Include="Attributes\Editor\MultilineTextAttribute.cs" />
     <Compile Include="Attributes\Editor\RangeAttribute.cs" />
+    <Compile Include="Attributes\Editor\ReadOnlyAttribute.cs" />
+    <Compile Include="Attributes\Editor\ShowInEditorAttribute.cs" />
     <Compile Include="Attributes\Editor\SpaceAttribute.cs" />
+    <Compile Include="Attributes\Editor\VisibleIfAttribute.cs" />
     <Compile Include="Attributes\MemberCollectionAttribute.cs" />
     <Compile Include="Attributes\NoSerializeAttribute.cs" />
     <Compile Include="Attributes\PersisitentDataAttribute.cs" />
@@ -234,17 +263,19 @@
     <Compile Include="Attributes\Editor\TooltipAttribute.cs" />
     <Compile Include="Attributes\UnmanagedCallAttribute.cs" />
     <Compile Include="Configurations\PersistentDataConfig.cs" />
+    <Compile Include="Engine\AnimationGraphParameter.cs" />
     <Compile Include="Engine\AudioDevice.cs" />
     <Compile Include="Engine\BrushSurface.cs" />
     <Compile Include="Engine\Collision.cs" />
     <Compile Include="Engine\ContactPoint.cs" />
-    <Compile Include="Engine\Exceptions\MissingActorException.cs" />
+    <Compile Include="Engine\FontReference.cs" />
     <Compile Include="Engine\Gamepad.cs" />
     <Compile Include="Engine\GamepadLayout.cs" />
     <Compile Include="Engine\GamepadVibrationState.cs" />
     <Compile Include="Engine\HideFlags.cs" />
     <Compile Include="Engine\InputAxis.cs" />
     <Compile Include="Engine\InputEvent.cs" />
+    <Compile Include="Engine\ISceneObject.cs" />
     <Compile Include="Engine\ITransformable.cs" />
     <Compile Include="Engine\Limits.cs" />
     <Compile Include="Engine\MaterialSlot.cs" />
@@ -253,6 +284,9 @@
     <Compile Include="Engine\ModelLOD.cs" />
     <Compile Include="Engine\PhysicalMaterial.cs" />
     <Compile Include="Engine\RayCastHit.cs" />
+    <Compile Include="Engine\SceneReference.cs" />
+    <Compile Include="Engine\SkeletonBone.cs" />
+    <Compile Include="Engine\SkinnedMesh.cs" />
     <Compile Include="Engine\SpringParameters.cs" />
     <Compile Include="Enums\ForceMode.cs" />
     <Compile Include="Enums\Keys.cs" />
@@ -268,45 +302,38 @@
       <DependentUpon>IOrderedDictionary.cs</DependentUpon>
     </Compile>
     <Compile Include="Enums\WindowEnums.cs" />
+    <Compile Include="GUI\Brushes\LinearGradientBrush.cs" />
+    <Compile Include="GUI\Brushes\MaterialBrush.cs" />
+    <Compile Include="GUI\Brushes\RenderTargetBrush.cs" />
+    <Compile Include="GUI\Brushes\SolidColorBrush.cs" />
+    <Compile Include="GUI\Brushes\SpriteBrush.cs" />
+    <Compile Include="GUI\Brushes\TextureBrush.cs" />
+    <Compile Include="GUI\CanvasContainer.cs" />
+    <Compile Include="GUI\CanvasRootControl.cs" />
+    <Compile Include="GUI\Common\Border.cs" />
     <Compile Include="GUI\Common\Button.cs" />
     <Compile Include="GUI\Common\CheckBox.cs" />
-    <Compile Include="GUI\Common\ComboBox.cs" />
-    <Compile Include="GUI\Common\IImageSource.cs" />
+    <Compile Include="GUI\Brushes\IBrush.cs" />
+    <Compile Include="GUI\Common\Dropdown.cs" />
     <Compile Include="GUI\Common\Image.cs" />
     <Compile Include="GUI\Common\Label.cs" />
     <Compile Include="GUI\Common\ProgressBar.cs" />
     <Compile Include="GUI\Common\Spacer.cs" />
     <Compile Include="GUI\ContainerControl.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenu.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenuBase.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenuButton.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenuChildMenu.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenuItem.cs" />
-    <Compile Include="GUI\ContextMenu\ContextMenuSeparator.cs" />
     <Compile Include="GUI\Control.Bounds.cs">
       <DependentUpon>Control.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Control.cs" />
-    <Compile Include="GUI\Docking\DockHintWindow.cs" />
-    <Compile Include="GUI\Docking\DockPanel.cs" />
-    <Compile Include="GUI\Docking\DockPanelProxy.cs" />
-    <Compile Include="GUI\Docking\DockWindow.cs" />
-    <Compile Include="GUI\Docking\FloatWindowDockPanel.cs" />
-    <Compile Include="GUI\Docking\MasterDockPanel.cs" />
     <Compile Include="GUI\DragData.cs" />
     <Compile Include="GUI\DragDataFiles.cs" />
     <Compile Include="GUI\DragDataText.cs" />
     <Compile Include="GUI\Enums.cs" />
-    <Compile Include="GUI\Input\ColorValueBox.cs" />
-    <Compile Include="GUI\Input\FloatValueBox.cs" />
-    <Compile Include="GUI\Input\IntValueBox.cs" />
-    <Compile Include="GUI\Input\SliderControl.cs" />
-    <Compile Include="GUI\Input\TextBox.cs" />
-    <Compile Include="GUI\Input\TextBox.Keys.cs">
+    <Compile Include="GUI\Common\TextBox.cs" />
+    <Compile Include="GUI\Common\TextBox.Keys.cs">
       <DependentUpon>TextBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Input\ValueBox.cs" />
     <Compile Include="GUI\Margin.cs" />
+    <Compile Include="GUI\Panels\BlurPanel.cs" />
     <Compile Include="GUI\Panels\DropPanel.cs" />
     <Compile Include="GUI\Panels\GridPanel.cs" />
     <Compile Include="GUI\Panels\HorizontalPanel.cs" />
@@ -322,12 +349,8 @@
     <Compile Include="GUI\RenderOutputControl.cs" />
     <Compile Include="GUI\ScrollableControl.cs" />
     <Compile Include="GUI\Style.cs" />
-    <Compile Include="GUI\Tabs\Tab.cs" />
-    <Compile Include="GUI\Tabs\Tabs.cs" />
     <Compile Include="GUI\Tooltip.cs" />
-    <Compile Include="GUI\Tree\Tree.cs" />
-    <Compile Include="GUI\Tree\TreeNode.cs" />
-    <Compile Include="GUI\Window.cs" />
+    <Compile Include="GUI\RootControl.cs" />
     <Compile Include="API\Actors\EmptyActor.cs" />
     <Compile Include="Assertions\Assert.cs" />
     <Compile Include="Assertions\AssertionException.cs" />
@@ -337,6 +360,7 @@
     <Compile Include="AssetTypes\Shader.cs" />
     <Compile Include="Enums\BrushMode.cs" />
     <Compile Include="Enums\Input.Enums.cs" />
+    <Compile Include="GUI\WindowRootControl.cs" />
     <Compile Include="Json\JsonSerializer.cs" />
     <Compile Include="Json\JsonCustomSerializers\ExtendedDefaultContractResolver.cs" />
     <Compile Include="Math\BoundingBox.cs" />
@@ -367,6 +391,9 @@
     <Compile Include="Math\Half3.cs" />
     <Compile Include="Math\Half4.cs" />
     <Compile Include="Math\HalfUtils.cs" />
+    <Compile Include="Math\Int2.cs" />
+    <Compile Include="Math\Int3.cs" />
+    <Compile Include="Math\Int4.cs" />
     <Compile Include="Math\Mathf.cs" />
     <Compile Include="Math\Matrix.cs" />
     <Compile Include="Math\Matrix2x2.cs" />
@@ -375,20 +402,28 @@
     <Compile Include="Math\Rectangle.cs" />
     <Compile Include="Math\SphericalHarmonics.cs" />
     <Compile Include="Math\Transform.cs" />
+    <Compile Include="Math\TypeConverters\ColorConverter.cs" />
+    <Compile Include="Math\TypeConverters\Int2Converter.cs" />
+    <Compile Include="Math\TypeConverters\Int3Converter.cs" />
+    <Compile Include="Math\TypeConverters\Int4Converter.cs" />
+    <Compile Include="Math\TypeConverters\QuaternionConverter.cs" />
+    <Compile Include="Math\TypeConverters\Vector2Converter.cs" />
+    <Compile Include="Math\TypeConverters\Vector3Converter.cs" />
+    <Compile Include="Math\TypeConverters\Vector4Converter.cs" />
     <Compile Include="Math\Viewport.cs" />
-    <Compile Include="Engine\Exceptions\MissingReferenceException.cs" />
     <Compile Include="Engine\Object.cs" />
     <Compile Include="Math\Plane.cs" />
+    <Compile Include="Plugins\GamePlugin.cs" />
+    <Compile Include="Plugins\Plugin.cs" />
+    <Compile Include="Plugins\PluginDescription.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Math\Quaternion.cs" />
     <Compile Include="Math\Ray.cs" />
     <Compile Include="Attributes\RequireChildActorAttribute.cs" />
     <Compile Include="Enums\ShadowsCastingMode.cs" />
     <Compile Include="Enums\StaticFlags.cs" />
-    <Compile Include="Engine\Exceptions\UnassignedReferenceException.cs" />
     <Compile Include="Internals\UnhandledExceptionHandler.cs" />
     <Compile Include="Engine\Exceptions\FlaxException.cs" />
-    <Compile Include="Internals\FlaxLogWriter.cs" />
     <Compile Include="Math\Vector2.cs" />
     <Compile Include="Math\Vector3.cs" />
     <Compile Include="Math\Vector4.cs" />
@@ -408,6 +443,7 @@
     <Compile Include="Rendering\RenderPass.cs" />
     <Compile Include="Rendering\RenderView.cs" />
     <Compile Include="Rendering\SceneRenderTask.cs" />
+    <Compile Include="Rendering\TessellationMethod.cs" />
     <Compile Include="Rendering\TextureFlags.cs" />
     <Compile Include="Rendering\ViewFlags.cs" />
     <Compile Include="Rendering\ViewMode.cs" />
@@ -421,8 +457,11 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
-    <Exec Command="call &quot;$(SolutionDir)onbuild.bat&quot;" Condition=" '$(OS)' == 'Windows_NT' " />
+    <Exec Command="call &quot;$(SolutionDir)onbuild.bat&quot; -Engine" Condition=" '$(OS)' == 'Windows_NT' " />
   </Target>
 </Project>

@@ -1,4 +1,4 @@
-// Flax Engine scripting API
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 // -----------------------------------------------------------------------------
 // Original code from SharpDX project. https://github.com/sharpdx/SharpDX/
@@ -54,7 +54,7 @@ namespace FlaxEngine
         /// </summary>
         /// <value>The Z component of the vector.</value>
         public Half Z;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:FlaxEngine.Half3" /> structure.
         /// </summary>

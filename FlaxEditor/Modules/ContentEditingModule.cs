@@ -1,12 +1,10 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using System;
 using FlaxEditor.Content;
 using FlaxEditor.Windows;
 using FlaxEngine;
-using FlaxEngine.GUI.Docking;
+using DockState = FlaxEditor.GUI.Docking.DockState;
 
 namespace FlaxEditor.Modules
 {
@@ -17,7 +15,7 @@ namespace FlaxEditor.Modules
     public sealed class ContentEditingModule : EditorModule
     {
         internal ContentEditingModule(Editor editor)
-            : base(editor)
+        : base(editor)
         {
         }
 
@@ -56,14 +54,16 @@ namespace FlaxEditor.Modules
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Editor.LogWarning(ex);
             }
             if (window != null && !disableAutoShow)
             {
                 // Check if there is a floating window that has the same size
                 Vector2 defaultSize = window.DefaultSize;
-                foreach (var win in Editor.UI.MasterPanel.FloatingPanels)
+                for (var i = 0; i < Editor.UI.MasterPanel.FloatingPanels.Count; i++)
                 {
+                    var win = Editor.UI.MasterPanel.FloatingPanels[i];
+
                     // Check if size is similar
                     if (Vector2.Abs(win.Size - defaultSize).LengthSquared < 100)
                     {
@@ -95,7 +95,7 @@ namespace FlaxEditor.Modules
             // Check if name is the same except has some chars in upper case and some in lower case
             if (shortName.Equals(item.ShortName, StringComparison.OrdinalIgnoreCase))
             {
-                // The same file names but some chars have diffrent case
+                // The same file names but some chars have different case
             }
             else
             {
@@ -112,8 +112,7 @@ namespace FlaxEditor.Modules
                 }
 
                 // Find invalid characters
-                char[] illegalChars = { '?', '\\', '/', '\"', '<', '>', '|', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006', '\a', '\b', '\t', '\n', '\v', '\f', '\r', '\u000E', '\u000F', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015', '\u0016', '\u0017', '\u0018', '\u0019', '\u001A', '\u001B', '\u001C', '\u001D', '\u001E', '\u001F' };
-                if (shortName.IndexOfAny(illegalChars) != -1)
+                if (Utilities.Utils.HasInvalidPathChar(shortName))
                 {
                     hint = "Name contains invalid character.";
                     return false;
@@ -127,7 +126,7 @@ namespace FlaxEditor.Modules
 
                 if (item.IsFolder)
                 {
-                    // Check if direcotry is unique
+                    // Check if directory is unique
                     if (System.IO.Directory.Exists(destinationPath))
                     {
                         hint = "Already exists.";
@@ -148,7 +147,7 @@ namespace FlaxEditor.Modules
             hint = string.Empty;
             return true;
         }
-        
+
         /// <summary>
         /// Clones the asset to the temporary folder.
         /// </summary>
@@ -160,7 +159,7 @@ namespace FlaxEditor.Modules
             var extension = System.IO.Path.GetExtension(item.Path);
             var id = Guid.NewGuid();
             resultPath = StringUtils.CombinePaths(Globals.TemporaryFolder, id.ToString("N")) + extension;
-            
+
             if (CloneAssetFile(resultPath, item.Path, id))
                 return true;
 

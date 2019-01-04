@@ -1,6 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2012-2018 Flax Engine. All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2012-2018 Wojciech Figat. All rights reserved.
 
 using FlaxEngine;
 using FlaxEngine.Rendering;
@@ -38,10 +36,5 @@ namespace FlaxEditor
         /// The default format of previews atlas.
         /// </summary>
         public const PixelFormat AssetIconsAtlasFormat = PixelFormat.R8G8B8A8_UNorm;
-
-        /// <summary>
-        /// The asset type content domain.
-        /// </summary>
-        public const ContentDomain Domain = ContentDomain.Texture;
     }
 }
